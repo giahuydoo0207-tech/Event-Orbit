@@ -1,4 +1,4 @@
-# Event Orbit — Organiser Dashboard
+# Event Orbit — Organiser Dashboard 
 
 Hệ thống quản lý sự kiện và tự động hóa điểm phong trào bằng AI + SBT (Soulbound Token) trên mạng **EDU Chain Testnet**.
 
