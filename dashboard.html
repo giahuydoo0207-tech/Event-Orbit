@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Orbit — Trang chủ</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.1.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 140 140"><rect width="140" height="140" rx="24" fill="#185FA5"/><circle cx="70" cy="70" r="48" fill="#14F195"/><g fill="#0A2540"><rect x="48" y="48" width="11" height="44" rx="3"/><rect x="65" y="38" width="11" height="54" rx="3"/><rect x="82" y="58" width="11" height="34" rx="3"/></g><circle cx="93" cy="50" r="6" fill="#0A2540"/></svg></div>
+        <span>Event Orbit</span>
+      </div>
+
+      <nav style="flex-grow: 1;">
+        <ul class="menu-list">
+          <li class="menu-item active">
+            <a href="./dashboard.html">
+              <i class="ti ti-home"></i> Trang chủ
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./stats.html">
+              <i class="ti ti-chart-bar"></i> Dashboard
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./create-event.html">
+              <i class="ti ti-plus"></i> Tạo sự kiện
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./participants.html">
+              <i class="ti ti-users"></i> Người tham gia
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./history.html">
+              <i class="ti ti-history"></i> Lịch sử mint SBT
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="wallet-badge">
+          <span class="label">Tài khoản BTC</span>
+          <span class="address" id="wallet-address">Not Connected</span>
+          <span class="role-badge" id="oc-badge">Connected with OC ID</span>
+        </div>
+        <button class="btn-disconnect" id="btn-disconnect">Ngắt kết nối</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="header-row">
+        <div class="page-title">
+          <h1>Trang Chủ</h1>
+          <p>Quản lý sự kiện và phát hành Soulbound Token cho sinh viên</p>
+        </div>
+        <div>
+          <a href="./create-event.html" class="btn btn-primary">
+            <i class="ti ti-plus" style="font-size:14px;"></i> Tạo sự kiện mới
+          </a>
+        </div>
+      </div>
+
+      <!-- Events List Section -->
+      <section>
+        <div class="section-title">
+          <span>Sự kiện đang diễn ra</span>
+        </div>
+        <div class="grid-events" id="events-grid">
+          <!-- Rendered dynamically -->
+          <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--eo-text-secondary);">
+            Đang tải danh sách sự kiện...
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>

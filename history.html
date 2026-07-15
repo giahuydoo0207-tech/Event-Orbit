@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Orbit — Lịch sử mint SBT</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.1.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 140 140"><rect width="140" height="140" rx="24" fill="#185FA5"/><circle cx="70" cy="70" r="48" fill="#14F195"/><g fill="#0A2540"><rect x="48" y="48" width="11" height="44" rx="3"/><rect x="65" y="38" width="11" height="54" rx="3"/><rect x="82" y="58" width="11" height="34" rx="3"/></g><circle cx="93" cy="50" r="6" fill="#0A2540"/></svg></div>
+        <span>Event Orbit</span>
+      </div>
+
+      <nav style="flex-grow: 1;">
+        <ul class="menu-list">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i class="ti ti-home"></i> Trang chủ
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./stats.html">
+              <i class="ti ti-chart-bar"></i> Dashboard
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./create-event.html">
+              <i class="ti ti-plus"></i> Tạo sự kiện
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./participants.html">
+              <i class="ti ti-users"></i> Người tham gia
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./history.html">
+              <i class="ti ti-history"></i> Lịch sử mint SBT
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="wallet-badge">
+          <span class="label">Tài khoản BTC</span>
+          <span class="address" id="wallet-address">Not Connected</span>
+          <span class="role-badge">Connected with OC ID</span>
+        </div>
+        <button class="btn-disconnect" id="btn-disconnect">Ngắt kết nối</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="header-row">
+        <div class="page-title">
+          <h1>Lịch sử Mint Soulbound Token (SBT)</h1>
+          <p>Xem danh sách giao dịch check-in và nhận điểm phong trào trên blockchain</p>
+        </div>
+      </div>
+
+      <!-- Filters Row -->
+      <div style="background-color: var(--eo-bg-card); border: 1px solid var(--eo-border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 24px; box-shadow: var(--shadow-sm); display: flex; gap: 16px; flex-wrap: wrap; align-items: center;">
+        <div style="flex-grow: 1; min-width: 250px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: var(--eo-text-secondary); text-transform: uppercase; margin-bottom: 6px;">Tìm kiếm sinh viên hoặc sự kiện</label>
+          <div style="position: relative;">
+            <input type="text" id="history-search" class="form-control" placeholder="Nhập tên sinh viên, địa chỉ ví hoặc tên sự kiện..." style="padding-left: 36px;">
+            <i class="ti ti-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--eo-text-secondary); font-size: 16px;"></i>
+          </div>
+        </div>
+        <div style="width: 250px; min-width: 200px;">
+          <label style="display: block; font-size: 11px; font-weight: 700; color: var(--eo-text-secondary); text-transform: uppercase; margin-bottom: 6px;">Lọc theo sự kiện</label>
+          <select id="history-filter-event" class="form-control">
+            <option value="all">Tất cả sự kiện</option>
+            <!-- Rendered dynamically -->
+          </select>
+        </div>
+      </div>
+
+      <!-- History Table -->
+      <div class="table-container">
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Sinh viên</th>
+                <th>Sự kiện</th>
+                <th>Block ID (Tx Hash)</th>
+                <th>Điểm phong trào</th>
+                <th>Thời gian nhận</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Rendered dynamically -->
+              <tr>
+                <td colspan="5" style="text-align: center; padding: 40px; color: var(--eo-text-secondary);">
+                  Đang tải lịch sử...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="./js/history.js"></script>
+</body>
+</html>

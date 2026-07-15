@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Orbit — Tạo sự kiện mới</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.1.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 140 140"><rect width="140" height="140" rx="24" fill="#185FA5"/><circle cx="70" cy="70" r="48" fill="#14F195"/><g fill="#0A2540"><rect x="48" y="48" width="11" height="44" rx="3"/><rect x="65" y="38" width="11" height="54" rx="3"/><rect x="82" y="58" width="11" height="34" rx="3"/></g><circle cx="93" cy="50" r="6" fill="#0A2540"/></svg></div>
+        <span>Event Orbit</span>
+      </div>
+
+      <nav style="flex-grow: 1;">
+        <ul class="menu-list">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i class="ti ti-home"></i> Trang chủ
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./stats.html">
+              <i class="ti ti-chart-bar"></i> Dashboard
+            </a>
+          </li>
+          <li class="menu-item active">
+            <a href="./create-event.html">
+              <i class="ti ti-plus"></i> Tạo sự kiện
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./participants.html">
+              <i class="ti ti-users"></i> Người tham gia
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./history.html">
+              <i class="ti ti-history"></i> Lịch sử mint SBT
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="wallet-badge">
+          <span class="label">Tài khoản BTC</span>
+          <span class="address" id="wallet-address">Not Connected</span>
+          <span class="role-badge">Connected with OC ID</span>
+        </div>
+        <button class="btn-disconnect" id="btn-disconnect">Ngắt kết nối</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="header-row">
+        <div class="page-title">
+          <h1>Tạo Sự Kiện Mới</h1>
+          <p>Nhập thông tin sự kiện và kích hoạt hệ thống phát thưởng điểm phong trào</p>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <form id="create-event-form">
+          <div class="form-group">
+            <label for="event-name">Tên sự kiện *</label>
+            <input type="text" id="event-name" class="form-control" placeholder="Ví dụ: Workshop Lập trình Blockchain với Solidity" required>
+          </div>
+
+          <div class="form-group">
+            <label for="event-desc">Mô tả sự kiện * (Nhập mô tả để AI gợi ý kỹ năng)</label>
+            <textarea id="event-desc" class="form-control" placeholder="Viết mô tả ngắn về nội dung sự kiện để AI tự động phân tích và sinh tag kỹ năng phù hợp..." required></textarea>
+            
+            <!-- AI Auto-Tagging Box -->
+            <div class="tag-suggestion-box" id="ai-tag-box" style="display: none;">
+              <div class="tag-suggestion-title">
+                <i class="ti ti-cpu" style="font-size: 14px; color: var(--eo-text-secondary);"></i>
+                <span>AI Auto-Tagging: Gợi ý tag dựa trên mô tả</span>
+              </div>
+              <div class="tag-suggestions" id="ai-tags-container">
+                <!-- Dynamic tag chips -->
+              </div>
+              <div class="mt-4" style="display: flex; gap: 8px; align-items: center; margin-top: 16px;">
+                <input type="text" id="custom-tag-input" class="form-control" placeholder="Nhập tag tự chọn..." style="padding: 6px 12px; width: 180px; font-size: 12px;">
+                <button type="button" id="btn-add-tag" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">+ Thêm tag</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="event-datetime">Thời gian bắt đầu *</label>
+              <input type="datetime-local" id="event-datetime" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="event-location">Địa điểm tổ chức *</label>
+              <input type="text" id="event-location" class="form-control" placeholder="Hội trường A / Zoom Online" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="event-capacity">Giới hạn số người tham gia</label>
+              <input type="number" id="event-capacity" class="form-control" min="1" value="100" required>
+            </div>
+            <div class="form-group">
+              <label for="event-points">Điểm phong trào thưởng (SBT reward points) *</label>
+              <input type="number" id="event-points" class="form-control" min="1" max="100" value="5" required>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 16px; margin-top: 16px;">
+            <button type="submit" class="btn btn-primary">
+              Tạo sự kiện &amp; Mở đăng ký
+            </button>
+            <a href="./dashboard.html" class="btn btn-secondary">Hủy bỏ</a>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="./js/create-event.js"></script>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event Orbit — Hiển thị QR Check-in</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.1.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><svg viewBox="0 0 140 140"><rect width="140" height="140" rx="24" fill="#185FA5"/><circle cx="70" cy="70" r="48" fill="#14F195"/><g fill="#0A2540"><rect x="48" y="48" width="11" height="44" rx="3"/><rect x="65" y="38" width="11" height="54" rx="3"/><rect x="82" y="58" width="11" height="34" rx="3"/></g><circle cx="93" cy="50" r="6" fill="#0A2540"/></svg></div>
+        <span>Event Orbit</span>
+      </div>
+
+      <nav style="flex-grow: 1;">
+        <ul class="menu-list">
+          <li class="menu-item">
+            <a href="./dashboard.html">
+              <i class="ti ti-home"></i> Trang chủ
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./stats.html">
+              <i class="ti ti-chart-bar"></i> Dashboard
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./create-event.html">
+              <i class="ti ti-plus"></i> Tạo sự kiện
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./participants.html">
+              <i class="ti ti-users"></i> Người tham gia
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="./history.html">
+              <i class="ti ti-history"></i> Lịch sử mint SBT
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="wallet-badge">
+          <span class="label">Tài khoản BTC</span>
+          <span class="address" id="wallet-address">Not Connected</span>
+          <span class="role-badge">Connected with OC ID</span>
+        </div>
+        <button class="btn-disconnect" id="btn-disconnect">Ngắt kết nối</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="header-row">
+        <div class="page-title">
+          <h1 id="event-title-display">Hiển thị QR Check-in</h1>
+          <p id="event-details-display">Chiếu mã QR lên màn hình lớn — sinh viên tự quét bằng điện thoại để check-in</p>
+        </div>
+        <div>
+          <a href="./dashboard.html" class="btn btn-secondary">
+            <i class="ti ti-arrow-left"></i> Quay lại Trang chủ
+          </a>
+        </div>
+      </div>
+
+      <!-- QR Display Grid -->
+      <div class="scanner-grid">
+        <!-- Left: QR Code Display -->
+        <div class="qr-display-card">
+          <h3 style="align-self: flex-start; font-size: 18px; font-weight: 600;">Mã QR sự kiện</h3>
+          <p style="align-self: flex-start; font-size: 13px; color: var(--eo-text-secondary); margin-top: -12px;">Sinh viên quét mã này bằng camera điện thoại để tự check-in và nhận SBT</p>
+
+          <div class="qr-canvas-wrapper">
+            <canvas id="checkin-qr-canvas"></canvas>
+          </div>
+
+          <div class="qr-url-display" id="checkin-qr-url">
+            Đang tạo mã QR...
+          </div>
+
+          <div style="width: 100%; display: flex; justify-content: center; gap: 8px; margin-top: 4px;">
+            <button id="btn-fullscreen-qr" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">
+              <i class="ti ti-arrows-maximize"></i> Phóng to toàn màn hình
+            </button>
+            <button id="btn-copy-url" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+              <i class="ti ti-copy"></i> Copy link
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Real-time Stats -->
+        <div class="scan-logs">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 18px; font-weight: 600;">Trạng Thái Check-in</h3>
+            <div class="live-badge active">
+              <div class="live-dot"></div>
+              <span>Live</span>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div style="background-color: var(--eo-bg-card); border: 1px solid var(--eo-border); border-radius: var(--radius); padding: 12px; text-align: center;">
+              <div style="font-size: 12px; color: var(--eo-text-secondary);">Đã check-in</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--eo-accent);" id="count-checked-in">0</div>
+            </div>
+            <div style="background-color: var(--eo-bg-card); border: 1px solid var(--eo-border); border-radius: var(--radius); padding: 12px; text-align: center;">
+              <div style="font-size: 12px; color: var(--eo-text-secondary);">Tổng đăng ký</div>
+              <div style="font-size: 24px; font-weight: 700;" id="count-total-registered">0</div>
+            </div>
+          </div>
+
+          <h4 style="font-size: 14px; font-weight: 600; color: var(--eo-text-secondary); border-bottom: 1px solid var(--eo-border); padding-bottom: 8px;">Lượt check-in gần đây</h4>
+          <div id="checkin-logs-list" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="text-align: center; padding: 20px; color: var(--eo-text-secondary); font-size: 13px;">
+              Đang chờ sinh viên quét mã QR...
+            </div>
+          </div>
+
+          <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--eo-border); font-size: 11px; color: var(--eo-text-secondary); text-align: center;">
+            Tự động cập nhật mỗi 5 giây
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Fullscreen QR Modal -->
+  <div id="fullscreen-qr-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+      <button id="fullscreen-close" style="position: absolute; right: 20px; top: 20px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--eo-text-secondary); line-height: 1;">&times;</button>
+      <h2 id="fullscreen-event-name" style="font-size: 20px; font-weight: 700;"></h2>
+      <p style="font-size: 13px; color: var(--eo-text-secondary);">Quét mã QR bên dưới bằng camera điện thoại để check-in</p>
+      <div class="qr-canvas-wrapper" style="padding: 28px;">
+        <canvas id="fullscreen-qr-canvas"></canvas>
+      </div>
+      <div style="font-size: 12px; color: var(--eo-text-secondary);">Powered by EduAI Orbit · EDU Chain</div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script type="module" src="./js/checkin.js"></script>
+</body>
+</html>
