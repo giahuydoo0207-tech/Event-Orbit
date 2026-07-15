@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv';
+import { kv } from './kv.js';
 
 export default async function handler(req, res) {
   // Set CORS headers so it works across domains if needed
