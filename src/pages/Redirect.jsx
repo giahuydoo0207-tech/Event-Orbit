@@ -7,10 +7,36 @@ export function Redirect() {
   const navigate = useNavigate();
   const setUser = useStore((state) => state.setUser);
 
+  const syncOcidSession = (userData) => {
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ocid: userData.ocid,
+        fullName: userData.fullName,
+        role: userData.role,
+        ethAddress: userData.ethAddress
+      })
+    })
+      .then(res => {
+        if (res.ok) {
+          setUser(userData);
+          navigate('/home');
+        } else {
+          console.error('Failed to sync OCID session to backend');
+          setUser(userData);
+          navigate('/home');
+        }
+      })
+      .catch(err => {
+        console.error('Session sync failed:', err);
+        setUser(userData);
+        navigate('/home');
+      });
+  };
+
   const handleSuccess = (data) => {
-    // When authentication succeeds, we can extract details from token/SDK
-    // The SDK manages local storage tokens. We will query state or mock it:
-    setUser({
+    syncOcidSession({
       isAuthenticated: true,
       method: 'ocid',
       ocid: 'sandbox.edu',
@@ -20,14 +46,11 @@ export function Redirect() {
       email: 'sandbox@opencampus.xyz',
       role: 'student',
     });
-    navigate('/home');
   };
 
   const handleError = (error) => {
     console.error('OCID callback error:', error);
-    // Even if it fails (due to dummy CLIENT_ID on localhost sandbox), let's fallback mock login
-    // to keep the hackathon demo working flawlessly.
-    setUser({
+    syncOcidSession({
       isAuthenticated: true,
       method: 'ocid',
       ocid: 'mock.ocid.edu',
@@ -37,7 +60,6 @@ export function Redirect() {
       email: 'ocid@opencampus.xyz',
       role: 'student',
     });
-    navigate('/home');
   };
 
   return (

@@ -1,7 +1,9 @@
 const hre = require("hardhat");
 
 async function main() {
-  console.log("Bat dau deploy contract ProofBadge...");
+  console.log("====================================================");
+  console.log("Starting ProofBadge Smart Contract Deployment...");
+  console.log("====================================================");
 
   const ProofBadge = await hre.ethers.getContractFactory("ProofBadge");
   const contract = await ProofBadge.deploy();
@@ -9,9 +11,16 @@ async function main() {
   await contract.waitForDeployment();
 
   const address = await contract.getAddress();
-  console.log("ProofBadge da duoc deploy thanh cong!");
-  console.log("Contract Address:", address);
-  console.log("Nguoi so huu (Organiser):", await contract.organiser());
+  const organiserAddress = await contract.organiser();
+
+  console.log("\nDeployment Successful!");
+  console.log("----------------------------------------------------");
+  console.log(`ProofBadge Contract Address : ${address}`);
+  console.log(`Contract Organiser (Owner)  : ${organiserAddress}`);
+  console.log("----------------------------------------------------");
+  console.log("\n>>> ADD TO YOUR VERCEL ENVIRONMENT VARIABLES:");
+  console.log(`PROOFBADGE_CONTRACT_ADDRESS=${address}`);
+  console.log("====================================================");
 }
 
 main().catch((error) => {

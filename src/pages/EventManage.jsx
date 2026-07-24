@@ -2,12 +2,14 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchEventById, fetchEventAttendees, checkInStudent } from '../api/mockApi';
 import QRCode from 'qrcode';
+import { AttendeeImportModal } from '../components/AttendeeImportModal';
 
 export function EventManage() {
   const { id, chapterId } = useParams();
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const qrCanvasRef = useRef(null);
 
   const loadData = async () => {
@@ -34,10 +36,35 @@ export function EventManage() {
     return () => clearInterval(interval);
   }, [id]);
 
+  const [qrData, setQrData] = useState('');
+
+  const fetchQRData = async () => {
+    try {
+      const res = await fetch(`/api/events/${id}/qr`);
+      if (res.ok) {
+        const data = await res.json();
+        setQrData(data.qrData);
+      }
+    } catch (err) {
+      console.error('Failed to fetch signed QR data:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (event) {
+      fetchQRData();
+      const interval = setInterval(fetchQRData, 270000); // 4.5 minutes
+      return () => clearInterval(interval);
+    }
+  }, [event, id]);
+
   // Generate QR Canvas inside detail card
   useEffect(() => {
     if (event && qrCanvasRef.current) {
-      const checkinUrl = `${window.location.origin}/student-checkin?eventId=${event.id}`;
+      const checkinUrl = qrData 
+        ? `${window.location.origin}/student-checkin?qrData=${qrData}`
+        : `${window.location.origin}/student-checkin?eventId=${event.id}`;
+
       QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
         width: 240,
         margin: 2,
@@ -47,7 +74,7 @@ export function EventManage() {
         }
       }).catch(err => console.error('QR generation error in manager', err));
     }
-  }, [event]);
+  }, [event, qrData]);
 
   const handleManualCheckIn = async (att) => {
     try {
@@ -100,11 +127,19 @@ export function EventManage() {
       </div>
 
       {/* Title */}
-      <div className="border-b border-border pb-4">
-        <h1 className="text-2xl font-bold text-navy">Manage Event: {event.name}</h1>
-        <p className="text-xs text-text-secondary mt-1">
-          Date: {new Date(event.datetime).toLocaleString()} &bull; Location: {event.location}
-        </p>
+      <div className="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Manage Event: {event.name}</h1>
+          <p className="text-xs text-text-secondary mt-1">
+            Date: {new Date(event.datetime).toLocaleString()} &bull; Location: {event.location}
+          </p>
+        </div>
+        <button
+          onClick={() => setIsImportModalOpen(true)}
+          className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded shadow-sm flex items-center justify-center gap-1.5 shrink-0"
+        >
+          <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -121,7 +156,9 @@ export function EventManage() {
           </div>
 
           <div className="bg-white border border-border rounded p-2 w-full text-[9px] font-mono select-all truncate text-text-secondary">
-            {window.location.origin}/student-checkin.html?eventId=${event.id}
+            {qrData 
+              ? `${window.location.origin}/student-checkin?qrData=${qrData}` 
+              : `${window.location.origin}/student-checkin?eventId=${event.id}`}
           </div>
 
           {/* Quick Stats inside card */}
@@ -211,6 +248,19 @@ export function EventManage() {
         </div>
 
       </div>
+
+      {/* Import Attendee List Modal */}
+      {event && (
+        <AttendeeImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          events={[event]}
+          chapterId={chapterId}
+          onImportSuccess={() => {
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

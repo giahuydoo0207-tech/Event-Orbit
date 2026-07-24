@@ -11,6 +11,23 @@ const KEYS = {
   CHAPTERS: 'orbit_chapters_react'
 };
 
+function getAuthHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  try {
+    const raw = localStorage.getItem('orbit_user_session');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const u = parsed?.state?.user || parsed?.user || parsed;
+      if (u && (u.isAuthenticated || u.role)) {
+        headers['x-user-session'] = btoa(unescape(encodeURIComponent(JSON.stringify(u))));
+      }
+    }
+  } catch (e) {
+    console.error('Error generating auth headers:', e);
+  }
+  return headers;
+}
+
 // Database Initialization
 export function initDB() {
   // If the user has old Phase 1 database version, force reset
@@ -113,14 +130,19 @@ export async function createEventApi(eventData) {
   try {
     const res = await fetch('/api/events', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
+      credentials: 'same-origin',
       body: JSON.stringify(newEvent)
     });
     if (res.ok) {
-      return newEvent;
+      const created = await res.json();
+      return created || newEvent;
+    } else {
+      const errData = await res.json().catch(() => ({}));
+      console.warn('Backend event creation returned status', res.status, errData);
     }
   } catch (e) {
-    console.warn('Vercel KV createEventApi failed, falling back to localStorage:', e);
+    console.warn('Vercel createEventApi failed, falling back to localStorage:', e);
   }
 
   const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
@@ -194,29 +216,20 @@ export async function registerForEvent(eventId, student) {
   return { success: true, registration: newReg };
 }
 
-export async function checkInStudent(eventId, student) {
+export async function checkInStudent(qrData, student) {
   initDB();
   await delay(1000);
 
-  const event = await fetchEventById(eventId);
-  if (!event) return { success: false, error: 'Event not found' };
-
   try {
-    const res = await fetch('/api/achievements', {
+    const res = await fetch('/api/checkin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventId,
-        student: {
-          ...student,
-          eventName: event.name,
-          points: event.points
-        }
-      })
+      headers: getAuthHeaders(),
+      credentials: 'same-origin',
+      body: JSON.stringify({ qrData })
     });
     if (res.ok) {
       const data = await res.json();
-      return { success: true, txHash: data.txHash, achievement: data.achievement };
+      return { success: true, txHash: data.txHash, points: data.points };
     } else {
       const errorData = await res.json();
       return { success: false, error: errorData.error || 'Check-in failed.' };
@@ -224,6 +237,16 @@ export async function checkInStudent(eventId, student) {
   } catch (e) {
     console.warn('Vercel KV checkInStudent failed, falling back to localStorage:', e);
   }
+
+  // Local storage offline fallback logic
+  let eventId = qrData;
+  try {
+    const decoded = JSON.parse(atob(qrData));
+    eventId = decoded.eventId;
+  } catch (e) {}
+
+  const event = await fetchEventById(eventId);
+  if (!event) return { success: false, error: 'Event not found' };
 
   const regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
   const achievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
@@ -524,4 +547,29 @@ export async function toggleFollowChapter(id, isFollow) {
     return chapters[chIdx];
   }
   return null;
+}
+
+// ── Attendee List Import Endpoint ──
+
+export async function importAttendeesBatchApi(eventId, attendeesBatch) {
+  const res = await fetch('/api/import-attendees', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      eventId,
+      attendees: attendeesBatch
+    })
+  });
+
+  if (!res.ok) {
+    let errMessage = 'Failed to import attendees.';
+    try {
+      const errData = await res.json();
+      errMessage = errData.error || errMessage;
+    } catch (e) {}
+    throw new Error(errMessage);
+  }
+
+  return await res.json();
 }

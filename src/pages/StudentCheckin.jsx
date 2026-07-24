@@ -7,7 +7,8 @@ import useToastStore from '../store/useToastStore';
 
 export function StudentCheckin() {
   const [searchParams] = useSearchParams();
-  const eventId = searchParams.get('eventId');
+  const qrData = searchParams.get('qrData');
+  const [eventId, setEventId] = useState(searchParams.get('eventId'));
   const navigate = useNavigate();
   
   const { user, setUser } = useStore();
@@ -25,15 +26,29 @@ export function StudentCheckin() {
   const [showLocalLogin, setShowLocalLogin] = useState(false);
 
   const loadEvent = async () => {
-    if (!eventId) {
+    let currentEventId = eventId;
+    
+    // Attempt to extract eventId from qrData payload if present
+    if (qrData) {
+      try {
+        const decoded = JSON.parse(atob(qrData));
+        currentEventId = decoded.eventId;
+        setEventId(currentEventId);
+      } catch (e) {
+        console.error('Failed to decode qrData payload:', e);
+      }
+    }
+
+    if (!currentEventId) {
       setStatusState('error');
       setErrorMessage('Missing Event ID in the QR code.');
       setLoading(false);
       return;
     }
+
     setLoading(true);
     try {
-      const ev = await fetchEventById(eventId);
+      const ev = await fetchEventById(currentEventId);
       if (!ev) {
         setStatusState('error');
         setErrorMessage('This event does not exist or has expired.');
@@ -43,7 +58,7 @@ export function StudentCheckin() {
 
       // If already logged in, check duplication status
       if (user.isAuthenticated) {
-        const attendees = await fetchEventAttendees(eventId);
+        const attendees = await fetchEventAttendees(currentEventId);
         const alreadyChecked = attendees.some(r => r.checkedIn && (
           (user.ethAddress && r.ethAddress?.toLowerCase() === user.ethAddress.toLowerCase()) ||
           (user.mssv && r.mssv === user.mssv)
@@ -65,21 +80,35 @@ export function StudentCheckin() {
 
   useEffect(() => {
     loadEvent();
-  }, [eventId, user.isAuthenticated]);
+  }, [eventId, qrData, user.isAuthenticated]);
 
   const handleOCIDLogin = () => {
     try {
       ocAuth.signInWithRedirect({ state: 'opencampus' });
     } catch (err) {
       // Sandbox fallback mock session
-      setUser({
-        isAuthenticated: true,
-        method: 'ocid',
+      const payload = {
         ocid: 'alex.edu',
-        ethAddress: '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6',
-        mssv: null,
         fullName: 'Alex Mercer',
-        role: 'student'
+        role: 'student',
+        ethAddress: '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6'
+      };
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(res => {
+        if (res.ok) {
+          setUser({
+            isAuthenticated: true,
+            method: 'ocid',
+            ocid: 'alex.edu',
+            ethAddress: '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6',
+            mssv: null,
+            fullName: 'Alex Mercer',
+            role: 'student'
+          });
+        }
       });
     }
   };
@@ -88,14 +117,30 @@ export function StudentCheckin() {
     e.preventDefault();
     if (!mssvInput.trim() || !fullNameInput.trim()) return;
 
-    setUser({
-      isAuthenticated: true,
-      method: 'mssv',
+    const payload = {
       ocid: null,
-      ethAddress: '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join(''),
       mssv: mssvInput.trim(),
       fullName: fullNameInput.trim(),
-      role: 'student'
+      role: 'student',
+      ethAddress: null // Option (b)
+    };
+
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => {
+      if (res.ok) {
+        setUser({
+          isAuthenticated: true,
+          method: 'mssv',
+          ocid: null,
+          ethAddress: null,
+          mssv: mssvInput.trim(),
+          fullName: fullNameInput.trim(),
+          role: 'student'
+        });
+      }
     });
   };
 
@@ -104,7 +149,7 @@ export function StudentCheckin() {
   const handleConfirmCheckin = async () => {
     setStatusState('processing');
     try {
-      const res = await checkInStudent(eventId, user);
+      const res = await checkInStudent(qrData || eventId, user);
       if (res.success) {
         setTxHash(res.txHash);
         setStatusState('success');

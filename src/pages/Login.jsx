@@ -33,23 +33,46 @@ export function Login() {
       return;
     }
 
-    // Set mock user session in store
-    setUser({
-      isAuthenticated: true,
-      method: 'mssv',
+    const payload = {
       ocid: null,
-      ethAddress: '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join(''),
       mssv: mssv.trim(),
       fullName: fullName.trim(),
-      email: `${mssv.trim().toLowerCase()}@student.edu.vn`,
-      role: loginRole, // Can be student or organizer
-    });
+      role: loginRole,
+      ethAddress: null // Set to null for MSSV accounts as per Option (b)
+    };
 
-    if (loginRole === 'organizer') {
-      navigate('/manage');
-    } else {
-      navigate('/home');
-    }
+    // Create session in backend database
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(res => {
+        if (res.ok) {
+          setUser({
+            isAuthenticated: true,
+            method: 'mssv',
+            ocid: null,
+            ethAddress: null,
+            mssv: mssv.trim(),
+            fullName: fullName.trim(),
+            email: `${mssv.trim().toLowerCase()}@student.edu.vn`,
+            role: loginRole,
+          });
+
+          if (loginRole === 'organizer') {
+            navigate('/manage');
+          } else {
+            navigate('/home');
+          }
+        } else {
+          showToast('Failed to create secure session on backend.', 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Login request failed:', err);
+        showToast('Server connection failed.', 'error');
+      });
   };
 
   const handleDemoLogin = (role) => {

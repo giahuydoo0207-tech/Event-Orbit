@@ -57,30 +57,51 @@ export const useStore = create(
           role: account.role,
           chapterId: account.chapterId || null,
           email: `${account.mssv.toLowerCase()}@opencampus.org`,
+          ethAddress: account.ethAddress || null,
           // Reset followedChapterIds on role switch to avoid mixing demo data
           followedChapterIds: account.role === 'student' ? ['org-001'] : [],
         };
+
+        // Call backend to establish session cookie in background
+        fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ocid: account.ocid || null,
+            mssv: account.mssv,
+            fullName: account.fullName,
+            role: account.role,
+            chapterId: account.chapterId || null,
+            ethAddress: account.ethAddress || null
+          })
+        }).catch(err => console.error('Demo login session sync failed:', err));
+
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
         return { user: newUser };
       }),
 
-      logout: () => set(() => {
-        localStorage.removeItem(LOCAL_USER_KEY);
-        return {
-          user: {
-            isAuthenticated: false,
-            method: null,
-            ocid: null,
-            ethAddress: null,
-            mssv: null,
-            fullName: null,
-            email: null,
-            role: null,
-            followedChapterIds: [],
-            joinedAt: 'September 2025'
-          }
-        };
-      }),
+      logout: () => {
+        // Clear session on backend in background
+        fetch('/api/auth/logout', { method: 'POST' }).catch(err => console.error('Backend logout failed:', err));
+
+        set(() => {
+          localStorage.removeItem(LOCAL_USER_KEY);
+          return {
+            user: {
+              isAuthenticated: false,
+              method: null,
+              ocid: null,
+              ethAddress: null,
+              mssv: null,
+              fullName: null,
+              email: null,
+              role: null,
+              followedChapterIds: [],
+              joinedAt: 'September 2025'
+            }
+          };
+        });
+      },
 
       // ── Follow Chapter Actions ──
       followChapter: (chapterId) => set((state) => {

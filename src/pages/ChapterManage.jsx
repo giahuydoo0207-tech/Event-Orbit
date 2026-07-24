@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchOrganizerEvents, fetchChapterById } from '../api/mockApi';
+import { AttendeeImportModal } from '../components/AttendeeImportModal';
 
 // NOTE: Management routes use chapterId (e.g. /manage/org-001) while public routes
 // use slug (e.g. /chapters/fit). This is intentional — management URLs are only
@@ -12,6 +13,7 @@ export function ChapterManage() {
   const [chapter, setChapter] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Aggregate Metrics
   const [metrics, setMetrics] = useState({
@@ -204,6 +206,12 @@ export function ChapterManage() {
         >
           Export CSV Report
         </button>
+        <button
+          onClick={() => setIsImportModalOpen(true)}
+          className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded text-center shadow-sm flex items-center justify-center gap-1.5"
+        >
+          <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
+        </button>
         <Link
           to={`/manage/${chapterId}/events/create`}
           className="px-4 py-2 bg-navy text-white hover:bg-navy-light text-xs font-semibold rounded text-center"
@@ -295,6 +303,17 @@ export function ChapterManage() {
           </div>
         )}
       </div>
+
+      {/* Attendee List Import Modal */}
+      <AttendeeImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        events={events}
+        chapterId={chapterId}
+        onImportSuccess={() => {
+          fetchOrganizerEvents(chapterId).then(setEvents).catch(console.error);
+        }}
+      />
     </div>
   );
 }
