@@ -11,7 +11,7 @@ const KEYS = {
   CHAPTERS: 'orbit_chapters_react'
 };
 
-function getAuthHeaders() {
+export function getAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
   try {
     const raw = localStorage.getItem('orbit_user_session');
@@ -69,25 +69,66 @@ export function initDB() {
 
 // ── Event Endpoints ──
 
-export async function fetchEvents() {
+export async function fetchEvents(options = {}) {
   initDB();
   await delay();
   try {
-    const res = await fetch('/api/events');
+    const params = new URLSearchParams();
+    if (options.includeDeleted) params.append('includeDeleted', 'true');
+    if (options.chapterId) params.append('chapterId', options.chapterId);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetch(`/api/events${queryString}`, {
+      headers: getAuthHeaders(),
+      credentials: 'same-origin'
+    });
     if (res.ok) {
       const dynamicEvents = await res.json();
       const combined = [...dynamicEvents, ...initialEvents];
       const seen = new Set();
       return combined.filter(e => {
         if (seen.has(e.id)) return false;
+        // Filter out deleted unless requested
+        if (!options.includeDeleted && e.deletedAt) return false;
         seen.add(e.id);
         return true;
       });
     }
   } catch (e) {
-    console.warn('Vercel KV fetchEvents failed, falling back to localStorage:', e);
+    console.warn('fetchEvents failed, falling back to localStorage:', e);
   }
-  return JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
+  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
+  if (!options.includeDeleted) {
+    return events.filter(e => !e.deletedAt);
+  }
+  return events;
+}
+
+export async function deleteEventApi(eventId) {
+  const res = await fetch(`/api/events?id=${eventId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+    credentials: 'same-origin'
+  });
+
+  if (!res.ok) {
+    let errMessage = 'Failed to delete event.';
+    try {
+      const errData = await res.json();
+      errMessage = errData.error || errMessage;
+    } catch (e) {}
+    throw new Error(errMessage);
+  }
+
+  // Also soft-delete in localStorage fallback
+  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
+  const ev = events.find(e => e.id === eventId || e.slug === eventId);
+  if (ev) {
+    ev.deletedAt = new Date().toISOString();
+    localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+  }
+
+  return await res.json();
 }
 
 export async function fetchEventById(id) {
@@ -102,60 +143,39 @@ export async function fetchEventBySlug(slug) {
 
 export async function createEventApi(eventData) {
   initDB();
-  await delay(800);
+  await delay(600);
 
-  const localEvents = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  let totalCount = localEvents.length;
-  try {
-    const res = await fetch('/api/events');
-    if (res.ok) {
-      const dynamicEvents = await res.json();
-      totalCount = dynamicEvents.length + initialEvents.length;
-    }
-  } catch (e) {}
+  const res = await fetch('/api/events', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify(eventData)
+  });
 
-  const newId = String(totalCount + 101);
-  const slug = eventData.name
-    ? eventData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    : `event-${newId}`;
-  
-  const newEvent = {
-    ...eventData,
-    id: newId,
-    slug,
-    registered: 0,
-    coverImage: eventData.coverImage || `https://picsum.photos/seed/evt-${newId}/800/400`
-  };
-
-  try {
-    const res = await fetch('/api/events', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      credentials: 'same-origin',
-      body: JSON.stringify(newEvent)
-    });
-    if (res.ok) {
-      const created = await res.json();
-      return created || newEvent;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      console.warn('Backend event creation returned status', res.status, errData);
-    }
-  } catch (e) {
-    console.warn('Vercel createEventApi failed, falling back to localStorage:', e);
+  if (!res.ok) {
+    let errMessage = 'Failed to store event in database.';
+    try {
+      const errData = await res.json();
+      errMessage = errData.error || errData.details || errMessage;
+    } catch (e) {}
+    throw new Error(errMessage);
   }
 
+  const created = await res.json();
+
+  // Save real database record to localStorage cache
   const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  events.unshift(newEvent);
+  events.unshift(created);
   localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
-  return newEvent;
+
+  return created;
 }
 
 // ── Registration & Check-in Endpoints ──
 
 export async function registerForEvent(eventId, student) {
   initDB();
-  await delay(700);
+  await delay(400);
 
   const event = await fetchEventById(eventId);
   const capacity = event ? event.capacity : 50;
@@ -163,62 +183,25 @@ export async function registerForEvent(eventId, student) {
   try {
     const res = await fetch('/api/registrations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
+      credentials: 'same-origin',
       body: JSON.stringify({ eventId, student, capacity })
     });
     if (res.ok) {
       const newReg = await res.json();
       return { success: true, registration: newReg };
     } else {
-      const errorData = await res.json();
+      const errorData = await res.json().catch(() => ({}));
       return { success: false, error: errorData.error || 'Registration failed.' };
     }
   } catch (e) {
-    console.warn('Vercel KV registerForEvent failed, falling back to localStorage:', e);
+    return { success: false, error: e.message || 'Network error during registration.' };
   }
-
-  const regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
-  const exists = regs.find(r => r.eventId === eventId && (
-    (r.ethAddress && r.ethAddress.toLowerCase() === student.ethAddress?.toLowerCase()) ||
-    (r.mssv && r.mssv === student.mssv)
-  ));
-
-  if (exists) {
-    return { success: false, error: 'You have already registered for this event.' };
-  }
-
-  const currentCount = regs.filter(r => r.eventId === eventId).length;
-  if (currentCount >= capacity) {
-    return { success: false, error: 'This event is full.' };
-  }
-
-  const newReg = {
-    id: `REG-${Math.floor(Math.random() * 90000 + 10000)}`,
-    eventId,
-    studentName: student.fullName || 'Anonymous Student',
-    ocid: student.ocid || null,
-    ethAddress: student.ethAddress || null,
-    mssv: student.mssv || null,
-    checkedIn: false,
-    checkedInAt: null
-  };
-
-  regs.push(newReg);
-  localStorage.setItem(KEYS.REGISTRATIONS, JSON.stringify(regs));
-
-  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  const ev = events.find(e => e.id === eventId);
-  if (ev) {
-    ev.registered = (ev.registered || 0) + 1;
-    localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
-  }
-
-  return { success: true, registration: newReg };
 }
 
 export async function checkInStudent(qrData, student) {
   initDB();
-  await delay(1000);
+  await delay(600);
 
   try {
     const res = await fetch('/api/checkin', {
@@ -231,91 +214,12 @@ export async function checkInStudent(qrData, student) {
       const data = await res.json();
       return { success: true, txHash: data.txHash, points: data.points };
     } else {
-      const errorData = await res.json();
+      const errorData = await res.json().catch(() => ({}));
       return { success: false, error: errorData.error || 'Check-in failed.' };
     }
   } catch (e) {
-    console.warn('Vercel KV checkInStudent failed, falling back to localStorage:', e);
+    return { success: false, error: e.message || 'Network error during check-in.' };
   }
-
-  // Local storage offline fallback logic
-  let eventId = qrData;
-  try {
-    const decoded = JSON.parse(atob(qrData));
-    eventId = decoded.eventId;
-  } catch (e) {}
-
-  const event = await fetchEventById(eventId);
-  if (!event) return { success: false, error: 'Event not found' };
-
-  const regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
-  const achievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
-
-  const alreadyCheckedIn = achievements.some(a => a.eventId === eventId && (
-    (a.studentWallet && a.studentWallet.toLowerCase() === student.ethAddress?.toLowerCase()) ||
-    (a.ocid && a.ocid === student.ocid)
-  ));
-
-  if (alreadyCheckedIn) {
-    return { success: false, error: 'You have already checked in for this event.' };
-  }
-
-  let reg = regs.find(r => r.eventId === eventId && (
-    (r.ethAddress && r.ethAddress.toLowerCase() === student.ethAddress?.toLowerCase()) ||
-    (r.mssv && r.mssv === student.mssv)
-  ));
-
-  if (reg && reg.checkedIn) {
-    return { success: false, error: 'You have already checked in for this event.' };
-  }
-
-  const checkInTime = new Date().toISOString();
-  if (!reg) {
-    reg = {
-      id: `REG-${Math.floor(Math.random() * 90000 + 10000)}`,
-      eventId,
-      studentName: student.fullName || `Student ${student.mssv || student.ocid || 'Guest'}`,
-      ocid: student.ocid || null,
-      ethAddress: student.ethAddress || null,
-      mssv: student.mssv || null,
-      checkedIn: true,
-      checkedInAt: checkInTime
-    };
-    regs.push(reg);
-  } else {
-    reg.checkedIn = true;
-    reg.checkedInAt = checkInTime;
-  }
-
-  const txHash = '0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join('');
-
-  const newAch = {
-    id: `ACH-${Math.floor(Math.random() * 90000 + 10000)}`,
-    studentWallet: student.ethAddress || null,
-    ocid: student.ocid || null,
-    eventName: event.name,
-    eventId: eventId,
-    points: event.points,
-    earnedAt: reg.checkedInAt,
-    txHash,
-    badgeImage: `https://picsum.photos/seed/badge-${eventId}/150/150`
-  };
-
-  achievements.unshift(newAch);
-
-  localStorage.setItem(KEYS.REGISTRATIONS, JSON.stringify(regs));
-  localStorage.setItem(KEYS.ACHIEVEMENTS, JSON.stringify(achievements));
-
-  const localEvents = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  const localEv = localEvents.find(e => e.id === eventId);
-  if (localEv) {
-    if (!regs.find(r => r.eventId === eventId)) {
-      localEv.registered = (localEv.registered || 0) + 1;
-    }
-    localStorage.setItem(KEYS.EVENTS, JSON.stringify(localEvents));
-  }
-
-  return { success: true, txHash, achievement: newAch };
 }
 
 // ── Student Achievement Endpoints ──
@@ -394,10 +298,10 @@ export async function fetchStudentAchievementsByOcid(ocid) {
 
 // ── Organizer Endpoints ──
 
-export async function fetchOrganizerEvents(chapterId) {
+export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
   initDB();
   await delay();
-  const events = await fetchEvents();
+  const events = await fetchEvents({ includeDeleted, chapterId });
   let regs = [];
   try {
     const res = await fetch('/api/registrations');
@@ -408,12 +312,10 @@ export async function fetchOrganizerEvents(chapterId) {
     regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
   }
 
-  const filteredEvents = chapterId
-    ? events.filter(e => e.chapterId === chapterId)
-    : events;
+  const activeEvents = includeDeleted ? events : events.filter(e => !e.deletedAt);
 
-  return filteredEvents.map(event => {
-    const eventRegs = regs.filter(r => r.eventId === event.id);
+  return activeEvents.map(event => {
+    const eventRegs = regs.filter(r => r.eventId === event.id || r.eventId === event.slug);
     const attendedCount = eventRegs.filter(r => r.checkedIn).length;
     return {
       ...event,
@@ -512,41 +414,34 @@ export async function toggleFollowChapter(id, isFollow) {
   initDB();
   await delay(200);
 
-  try {
-    const res = await fetch('/api/chapters-follow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chapterId: id,
-        action: isFollow ? 'follow' : 'unfollow'
-      })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const localChapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
-      const chIdx = localChapters.findIndex(c => c.id === id);
-      if (chIdx !== -1) {
-        localChapters[chIdx].followerCount = data.followerCount;
-        localStorage.setItem(KEYS.CHAPTERS, JSON.stringify(localChapters));
-        return localChapters[chIdx];
-      }
-    }
-  } catch (e) {
-    console.warn('Vercel KV toggleFollowChapter failed, falling back to localStorage:', e);
+  const res = await fetch('/api/chapters-follow', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      chapterId: id,
+      action: isFollow ? 'follow' : 'unfollow'
+    })
+  });
+
+  if (!res.ok) {
+    let errMessage = 'Failed to toggle follow status.';
+    try {
+      const errData = await res.json();
+      errMessage = errData.error || errMessage;
+    } catch (e) {}
+    throw new Error(errMessage);
   }
 
-  const chapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
-  const chIdx = chapters.findIndex(c => c.id === id);
+  const data = await res.json();
+  const localChapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
+  const chIdx = localChapters.findIndex(c => c.id === id);
   if (chIdx !== -1) {
-    if (isFollow) {
-      chapters[chIdx].followerCount += 1;
-    } else {
-      chapters[chIdx].followerCount = Math.max(0, chapters[chIdx].followerCount - 1);
-    }
-    localStorage.setItem(KEYS.CHAPTERS, JSON.stringify(chapters));
-    return chapters[chIdx];
+    localChapters[chIdx].followerCount = data.followerCount;
+    localStorage.setItem(KEYS.CHAPTERS, JSON.stringify(localChapters));
+    return localChapters[chIdx];
   }
-  return null;
+  return { id, followerCount: data.followerCount };
 }
 
 // ── Attendee List Import Endpoint ──

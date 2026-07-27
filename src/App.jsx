@@ -25,6 +25,7 @@ const ManageHub = lazy(() => import('./pages/ManageHub'));
 const ChapterManage = lazy(() => import('./pages/ChapterManage'));
 const EventCreate = lazy(() => import('./pages/EventCreate'));
 const EventManage = lazy(() => import('./pages/EventManage'));
+const EventHistory = lazy(() => import('./pages/EventHistory'));
 const StudentCheckin = lazy(() => import('./pages/StudentCheckin'));
 
 function App() {
@@ -129,6 +130,26 @@ function App() {
             <ProtectedRoute requireRole="organizer">
               <DashboardLayout>
                 <EventManage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage/:chapterId/history"
+          element={
+            <ProtectedRoute requireRole="organizer">
+              <DashboardLayout>
+                <EventHistory />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/manage/:chapterId/history/:eventId"
+          element={
+            <ProtectedRoute requireRole="organizer">
+              <DashboardLayout>
+                <EventHistory />
               </DashboardLayout>
             </ProtectedRoute>
           }

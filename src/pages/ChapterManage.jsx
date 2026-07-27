@@ -2,17 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchOrganizerEvents, fetchChapterById } from '../api/mockApi';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
-
-// NOTE: Management routes use chapterId (e.g. /manage/org-001) while public routes
-// use slug (e.g. /chapters/fit). This is intentional — management URLs are only
-// accessed by organizers clicking from ManageHub, not typed manually. Public URLs
-// use human-readable slugs for shareability.
+import { CategoryIcon } from '../components/CategoryIcon';
 
 export function ChapterManage() {
   const { chapterId } = useParams();
   const [chapter, setChapter] = useState(null);
-  const [events, setEvents] = useState([]);
+  const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'upcoming' | 'ongoing' | 'completed' | 'deleted'
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Aggregate Metrics
@@ -22,41 +19,80 @@ export function ChapterManage() {
     totalAttended: 0,
   });
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const [chapterData, eventData] = await Promise.all([
-          fetchChapterById(chapterId),
-          fetchOrganizerEvents(chapterId),
-        ]);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Include deleted events so filter tabs can calculate complete stats (Bizcafe style)
+      const [chapterData, eventData] = await Promise.all([
+        fetchChapterById(chapterId),
+        fetchOrganizerEvents(chapterId, true),
+      ]);
 
-        setChapter(chapterData);
-        setEvents(eventData);
+      setChapter(chapterData);
+      setAllEvents(eventData);
 
-        const totalEvents = eventData.length;
-        const totalRegistered = eventData.reduce(
-          (sum, e) => sum + (e.registeredCount || 0),
-          0
-        );
-        const totalAttended = eventData.reduce(
-          (sum, e) => sum + (e.attendedCount || 0),
-          0
-        );
+      // Active non-deleted events count for top metrics
+      const activeEventsList = eventData.filter(e => !e.deletedAt);
+      const totalEvents = activeEventsList.length;
+      const totalRegistered = activeEventsList.reduce(
+        (sum, e) => sum + (e.registeredCount || 0),
+        0
+      );
+      const totalAttended = activeEventsList.reduce(
+        (sum, e) => sum + (e.attendedCount || 0),
+        0
+      );
 
-        setMetrics({ totalEvents, totalRegistered, totalAttended });
-      } catch (err) {
-        console.error('Failed to load chapter management data', err);
-      } finally {
-        setLoading(false);
-      }
+      setMetrics({ totalEvents, totalRegistered, totalAttended });
+    } catch (err) {
+      console.error('Failed to load chapter management data', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadData();
   }, [chapterId]);
 
+  // Helper to categorize event status (Bizcafe 4-state classifier)
+  const getEventStatus = (event) => {
+    if (event.deletedAt) return 'deleted';
+    if (!event.datetime) return 'completed';
+
+    const eventDate = new Date(event.datetime);
+    const today = new Date();
+
+    const isToday =
+      eventDate.getDate() === today.getDate() &&
+      eventDate.getMonth() === today.getMonth() &&
+      eventDate.getFullYear() === today.getFullYear();
+
+    if (isToday) return 'ongoing';
+    if (eventDate > today) return 'upcoming';
+    return 'completed';
+  };
+
+  // Tab counters (Bizcafe live tab numbers)
+  const tabCounts = {
+    all: allEvents.length,
+    upcoming: allEvents.filter(e => getEventStatus(e) === 'upcoming').length,
+    ongoing: allEvents.filter(e => getEventStatus(e) === 'ongoing').length,
+    completed: allEvents.filter(e => getEventStatus(e) === 'completed').length,
+    deleted: allEvents.filter(e => getEventStatus(e) === 'deleted').length,
+  };
+
+  // Filtered event list based on selected tab
+  const filteredEvents = allEvents.filter(event => {
+    const status = getEventStatus(event);
+    if (activeTab === 'all') return true;
+    return status === activeTab;
+  });
+
   // ── CSV Export ──
   const handleExportCSV = () => {
-    if (events.length === 0) return;
+    const activeList = allEvents.filter(e => !e.deletedAt);
+    if (activeList.length === 0) return;
 
     const headers = [
       'Event ID',
@@ -69,7 +105,7 @@ export function ChapterManage() {
       'Points',
     ];
 
-    const rows = events.map((e) => [
+    const rows = activeList.map((e) => [
       e.id,
       `"${e.name.replace(/"/g, '""')}"`,
       e.category,
@@ -80,9 +116,7 @@ export function ChapterManage() {
       e.points,
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join(
-      '\n'
-    );
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -98,221 +132,251 @@ export function ChapterManage() {
     document.body.removeChild(link);
   };
 
-  // ── Loading State ──
   if (loading) {
     return (
-      <div className="py-20 text-center space-y-4 max-w-sm mx-auto">
-        <div className="text-sm font-medium text-text-secondary">
-          Loading chapter management console...
-        </div>
-        <div className="w-10 h-1 bg-border rounded-full mx-auto overflow-hidden relative">
-          <div className="absolute top-0 left-0 bottom-0 bg-accent-blue w-1/2 rounded-full animate-[pulse_1s_infinite]"></div>
+      <div className="py-24 text-center space-y-4 max-w-sm mx-auto">
+        <div className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Loading Chapter Console</div>
+        <div className="w-16 h-0.5 bg-oc-periwinkle/30 rounded-full mx-auto overflow-hidden relative">
+          <div className="absolute top-0 left-0 bottom-0 bg-oc-blue w-1/3 rounded-full animate-pulse"></div>
         </div>
       </div>
     );
   }
 
-  // ── Not Found State ──
   if (!chapter) {
     return (
-      <div className="py-24 text-center max-w-lg mx-auto space-y-4">
-        <h2 className="text-lg font-bold text-navy">Chapter Not Found</h2>
-        <p className="text-xs text-text-secondary">
-          The chapter you are looking for does not exist or has been removed.
+      <div className="text-center py-24">
+        <h2 className="text-lg font-bold text-oc-ink">Chapter Not Found</h2>
+        <p className="text-sm text-slate-500 mt-2">
+          The requested chapter does not exist or has been removed.
         </p>
         <Link
           to="/manage"
-          className="text-xs text-accent-blue hover:underline font-semibold inline-block mt-2"
+          className="text-sm text-oc-blue hover:underline font-bold inline-block mt-4"
         >
-          Back to Manage Hub
+          &larr; Return to Manage Hub
         </Link>
       </div>
     );
   }
 
-  const initials = chapter.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase();
-
   return (
-    <div className="space-y-10">
-      {/* Back Link + Header */}
-      <div>
-        <Link
-          to="/manage"
-          className="text-xs text-accent-blue hover:underline font-semibold"
-        >
-          Back to Manage Hub
-        </Link>
+    <div className="space-y-12 font-sans max-w-4xl">
+      {/* ── Navigation Breadcrumb ── */}
+      <Link
+        to="/manage"
+        className="text-xs font-semibold text-slate-400 hover:text-oc-blue transition-colors uppercase tracking-widest"
+      >
+        &larr; Manage Hub
+      </Link>
 
-        <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div
-            className={`w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg bg-gradient-to-br ${chapter.avatarGradient || 'from-slate-600 to-slate-900'} shrink-0`}
-          >
-            {initials}
+      {/* ── Chapter Identity + Hero Metric ── */}
+      <div className="space-y-8">
+        {/* Chapter Identity Row */}
+        <div className="flex items-start gap-4">
+          {/* Monochrome outline icon — lighter than gradient-filled squares */}
+          <div className="w-12 h-12 rounded-xl border border-oc-periwinkle flex items-center justify-center shrink-0">
+            <CategoryIcon category={chapter.category} className="w-6 h-6 text-oc-blue" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-navy">{chapter.name}</h1>
-            <div className="flex items-center gap-3 mt-1">
-              <span className="text-[11px] font-mono text-accent-blue">
-                {chapter.ocid}
-              </span>
-              <span className="inline-block px-2 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-xl font-black text-oc-ink leading-tight">{chapter.name}</h1>
+              <span className="badge-kicker text-[9px] text-slate-400">
                 {chapter.category}
               </span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-surface border border-border rounded-xl p-5 hover:shadow-sm transition-all">
-          <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest mb-2">
-            Total Events
-          </div>
-          <div className="text-3xl font-extrabold text-navy">
-            {metrics.totalEvents}
-          </div>
-        </div>
-
-        <div className="bg-surface border border-border rounded-xl p-5 hover:shadow-sm transition-all">
-          <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest mb-2">
-            Total Registrations
-          </div>
-          <div className="text-3xl font-extrabold text-navy">
-            {metrics.totalRegistered}
-          </div>
-        </div>
-
-        <div className="bg-surface border border-border rounded-xl p-5 hover:shadow-sm transition-all">
-          <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest mb-2">
-            Total Checked-in
-          </div>
-          <div className="text-3xl font-extrabold text-navy">
-            {metrics.totalAttended}
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2 border border-border bg-white text-navy hover:bg-slate-50 text-xs font-semibold rounded"
-        >
-          Export CSV Report
-        </button>
-        <button
-          onClick={() => setIsImportModalOpen(true)}
-          className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded text-center shadow-sm flex items-center justify-center gap-1.5"
-        >
-          <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
-        </button>
-        <Link
-          to={`/manage/${chapterId}/events/create`}
-          className="px-4 py-2 bg-navy text-white hover:bg-navy-light text-xs font-semibold rounded text-center"
-        >
-          Create New Event
-        </Link>
-      </div>
-
-      {/* Events Table */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-navy">Chapter Events</h2>
-
-        {events.length === 0 ? (
-          <div className="text-center py-16 bg-surface border border-dashed border-border rounded-xl">
-            <h3 className="text-sm font-semibold text-navy">No events yet</h3>
-            <p className="text-xs text-text-secondary mt-1">
-              Create your first event for this chapter to get started.
-            </p>
-          </div>
-        ) : (
-          <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-border uppercase tracking-widest text-[9px] font-bold text-text-secondary">
-                    <th className="p-4">Event Name</th>
-                    <th className="p-4">Date</th>
-                    <th className="p-4 text-center">Registered</th>
-                    <th className="p-4 text-center">Attended</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {events.map((e) => {
-                    const dateStr = new Date(e.datetime).toLocaleDateString(
-                      'en-US',
-                      {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      }
-                    );
-
-                    const isUpcoming = new Date(e.datetime) >= new Date();
-
-                    return (
-                      <tr key={e.id} className="hover:bg-slate-50/50">
-                        <td className="p-4">
-                          <div className="font-semibold text-navy text-sm">
-                            {e.name}
-                          </div>
-                          <span className="text-[10px] text-text-secondary uppercase font-bold tracking-wider">
-                            {e.category} — +{e.points} pts
-                          </span>
-                        </td>
-                        <td className="p-4 text-text-secondary">{dateStr}</td>
-                        <td className="p-4 text-center font-semibold">
-                          {e.registeredCount}
-                        </td>
-                        <td className="p-4 text-center font-bold text-success">
-                          {e.attendedCount}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2 py-0.5 rounded-[3px] text-[10px] font-semibold uppercase tracking-wider ${
-                              isUpcoming
-                                ? 'bg-blue-50 text-blue-600 border border-blue-100'
-                                : 'bg-slate-100 text-slate-500 border border-slate-200'
-                            }`}
-                          >
-                            {isUpcoming ? 'Upcoming' : 'Completed'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <Link
-                            to={`/manage/${chapterId}/events/${e.id}`}
-                            className="text-xs font-semibold text-accent-blue hover:underline"
-                          >
-                            Manage
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="text-[11px] font-mono text-slate-400 mt-1 font-medium">
+              {chapter.ocid}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* ── Hero Number — Luma-style: large bold pure text, no circle/badge wrapper ── */}
+        <div className="pt-2">
+          <div className="editorial-hero-number">
+            {metrics.totalRegistered}
+          </div>
+          <p className="editorial-subtitle mt-2">
+            total registrations across <span className="num font-bold">{metrics.totalEvents}</span> active event{metrics.totalEvents !== 1 ? 's' : ''} · <span className="num font-bold">{metrics.totalAttended}</span> attended
+          </p>
+        </div>
       </div>
 
-      {/* Attendee List Import Modal */}
+      {/* ── Actions — text links for secondary, solid button for primary CTA ── */}
+      <div className="hairline pb-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-6">
+          <Link
+            to={`/manage/${chapterId}/events/create`}
+            className="px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
+          >
+            Create New Event
+          </Link>
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="text-xs font-bold text-oc-blue hover:underline transition-colors"
+          >
+            Import &amp; Issue Badges
+          </button>
+          <Link
+            to={`/manage/${chapterId}/history`}
+            className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
+          >
+            Event History
+          </Link>
+          <button
+            onClick={handleExportCSV}
+            className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* ── Events Console — sticky header + scrollable table ── */}
+      <div>
+        {/* Sticky header: title + tabs stay visible while table scrolls */}
+        <div className="space-y-4 pb-4">
+          <h2 className="text-sm font-black text-oc-ink uppercase tracking-wider">Events</h2>
+
+          {/* Filter Tabs — kept for functional value */}
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { id: 'all', label: 'All', count: tabCounts.all },
+              { id: 'upcoming', label: 'Upcoming', count: tabCounts.upcoming },
+              { id: 'ongoing', label: 'Today', count: tabCounts.ongoing },
+              { id: 'completed', label: 'Completed', count: tabCounts.completed },
+              { id: 'deleted', label: 'Deleted', count: tabCounts.deleted },
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                    isActive
+                      ? 'bg-oc-ink text-white'
+                      : 'text-slate-500 hover:text-oc-ink hover:bg-slate-50'
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`ml-1.5 font-mono text-[11px] ${isActive ? 'text-white/60' : 'text-slate-400'}`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Scrollable table container — scroll events, not the whole page */}
+        <div className="max-h-[560px] overflow-y-auto overflow-x-auto">
+          {filteredEvents.length === 0 ? (
+            <div className="text-center py-20">
+              <h3 className="text-sm font-bold text-oc-ink">No events in this view</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Select another filter or create a new event.
+              </p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
+              <thead className="sticky top-0 bg-oc-mist z-10">
+                <tr className="border-b border-oc-periwinkle/40">
+                  <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px]">Event</th>
+                  <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px]">Date</th>
+                  <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px] text-center">Reg.</th>
+                  <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px] text-center">Att.</th>
+                  <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px]">Status</th>
+                  <th className="pb-3 pt-1 badge-kicker text-slate-400 text-[10px] text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredEvents.map((event) => {
+                  const status = getEventStatus(event);
+
+                  return (
+                    <tr key={event.id} className="border-b border-oc-periwinkle/20 hover:bg-oc-mist/30 transition-colors">
+                      <td className="py-4 pr-4 max-w-xs sm:max-w-md">
+                        <div className="font-bold text-oc-ink text-sm leading-tight">
+                          {event.name}
+                          <span className="ml-2 badge-kicker text-slate-400 text-[9px]">
+                            +{event.points} pts
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                          {event.description || 'No description provided.'}
+                        </div>
+                      </td>
+
+                      <td className="py-4 pr-4 text-slate-500 font-medium whitespace-nowrap">
+                        {new Date(event.datetime).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </td>
+
+                      <td className="py-4 pr-4 text-center font-bold text-oc-ink num">
+                        {event.registeredCount || 0}
+                      </td>
+
+                      <td className="py-4 pr-4 text-center font-bold text-emerald-600 num">
+                        {event.attendedCount || 0}
+                      </td>
+
+                      {/* Lighter status indicators — subtle tint, no border */}
+                      <td className="py-4 pr-4 whitespace-nowrap">
+                        {status === 'upcoming' && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600">
+                            Upcoming
+                          </span>
+                        )}
+                        {status === 'ongoing' && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 animate-pulse">
+                            Live
+                          </span>
+                        )}
+                        {status === 'completed' && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-500">
+                            Done
+                          </span>
+                        )}
+                        {status === 'deleted' && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-500">
+                            Deleted
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-4 text-right whitespace-nowrap">
+                        {status !== 'deleted' ? (
+                          <Link
+                            to={`/manage/${chapterId}/events/${event.id}`}
+                            className="text-xs font-bold text-oc-blue hover:underline"
+                          >
+                            Manage &rarr;
+                          </Link>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">
+                            Archived
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Attendee Import Modal */}
       <AttendeeImportModal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
-        events={events}
+        events={allEvents.filter(e => !e.deletedAt)}
         chapterId={chapterId}
-        onImportSuccess={() => {
-          fetchOrganizerEvents(chapterId).then(setEvents).catch(console.error);
-        }}
+        onImportSuccess={() => loadData()}
       />
     </div>
   );

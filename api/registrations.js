@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -19,35 +19,68 @@ export default async function handler(req, res) {
       const { eventId, userId } = req.query;
 
       if (eventId) {
-        // Fetch registrations for a specific event
+        // 1. Resolve event UUID (supports UUID, slug, or legacy mock ID)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        let realEventId = eventId;
+
+        if (!uuidRegex.test(eventId)) {
+          const legacySlugMap = {
+            '101': 'hcmc-ai-meetup-2026',
+            '102': 'solidity-smart-contract-workshop'
+          };
+          const slugKey = legacySlugMap[eventId] || eventId;
+
+          const { data: matchedEv } = await supabase
+            .from('events')
+            .select('id, chapter_id')
+            .or(`slug.eq.${slugKey},name.ilike.%${slugKey}%`)
+            .limit(1)
+            .maybeSingle();
+
+          if (matchedEv) {
+            realEventId = matchedEv.id;
+          }
+        }
+
+        // If realEventId is still not a valid UUID format, return empty list safely
+        if (!uuidRegex.test(realEventId)) {
+          return res.status(200).json([]);
+        }
+
+        // 2. Fetch registrations for the target event
         const { data: regs, error: regsError } = await supabase
           .from('registrations')
           .select('*')
-          .eq('event_id', eventId);
+          .eq('event_id', realEventId);
 
         if (regsError) throw regsError;
 
-        // Fetch check-in data (achievements) for this event
+        // 3. Fetch achievements for badge mint status and check-in timestamp
         const { data: achs, error: achsError } = await supabase
           .from('achievements')
-          .select('user_id, checked_in_at')
-          .eq('event_id', eventId);
+          .select('*')
+          .eq('event_id', realEventId);
 
         if (achsError) throw achsError;
 
-        // Combine registrations and check-in statuses in memory
+        // 4. Combine in memory to form enriched attendee records
         const responseData = (regs || []).map(r => {
           const ach = (achs || []).find(a => a.user_id === r.user_id);
           return {
             id: r.id,
             eventId: r.event_id,
+            userId: r.user_id,
             studentName: r.student_name || 'Anonymous Student',
-            ocid: r.ocid,
-            mssv: r.mssv,
-            ethAddress: r.eth_address,
+            ocid: r.ocid || null,
+            mssv: r.mssv || null,
+            ethAddress: r.eth_address || null,
             registeredAt: r.registered_at,
             checkedIn: !!ach,
-            checkedInAt: ach ? ach.checked_in_at : null
+            checkedInAt: ach ? ach.checked_in_at : null,
+            mintStatus: ach ? (ach.mint_status || 'success') : 'not_issued',
+            txHash: ach ? ach.tx_hash : null,
+            credentialId: ach ? ach.credential_id : null,
+            source: r.source || 'qr_checkin'
           };
         });
 
@@ -65,7 +98,7 @@ export default async function handler(req, res) {
 
         const { data: achs, error: achsError } = await supabase
           .from('achievements')
-          .select('event_id, checked_in_at')
+          .select('*')
           .eq('user_id', userId);
 
         if (achsError) throw achsError;
@@ -78,7 +111,10 @@ export default async function handler(req, res) {
             userId: r.user_id,
             registeredAt: r.registered_at,
             checkedIn: !!ach,
-            checkedInAt: ach ? ach.checked_in_at : null
+            checkedInAt: ach ? ach.checked_in_at : null,
+            mintStatus: ach ? (ach.mint_status || 'success') : 'not_issued',
+            txHash: ach ? ach.tx_hash : null,
+            source: r.source || 'qr_checkin'
           };
         });
 
@@ -94,7 +130,7 @@ export default async function handler(req, res) {
 
       const { data: achs, error: achsError } = await supabase
         .from('achievements')
-        .select('event_id, user_id, checked_in_at');
+        .select('*');
 
       if (achsError) throw achsError;
 
@@ -109,7 +145,10 @@ export default async function handler(req, res) {
           ethAddress: r.eth_address,
           registeredAt: r.registered_at,
           checkedIn: !!ach,
-          checkedInAt: ach ? ach.checked_in_at : null
+          checkedInAt: ach ? ach.checked_in_at : null,
+          mintStatus: ach ? (ach.mint_status || 'success') : 'not_issued',
+          txHash: ach ? ach.tx_hash : null,
+          source: r.source || 'qr_checkin'
         };
       });
 
@@ -128,12 +167,34 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing event ID.' });
       }
 
+      // Resolve event UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      let realEventId = eventId;
+      if (!uuidRegex.test(eventId)) {
+        const legacySlugMap = {
+          '101': 'hcmc-ai-meetup-2026',
+          '102': 'solidity-smart-contract-workshop'
+        };
+        const slugKey = legacySlugMap[eventId] || eventId;
+
+        const { data: matchedEv } = await supabase
+          .from('events')
+          .select('id')
+          .or(`slug.eq.${slugKey},name.ilike.%${slugKey}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (matchedEv) {
+          realEventId = matchedEv.id;
+        }
+      }
+
       // 2. Capacity Check
       if (capacity !== undefined) {
         const { count, error: countError } = await supabase
           .from('registrations')
           .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId);
+          .eq('event_id', realEventId);
 
         if (countError) throw countError;
 
@@ -146,12 +207,13 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('registrations')
         .insert({
-          event_id: eventId,
+          event_id: realEventId,
           user_id: session.user_id,
           student_name: session.full_name || 'Anonymous Student',
           ocid: session.ocid || null,
           mssv: session.mssv || null,
-          eth_address: session.eth_address || null
+          eth_address: session.eth_address || null,
+          source: 'qr_checkin'
         })
         .select()
         .single();
@@ -164,7 +226,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Failed to complete registration.' });
       }
 
-      // Map back to expected client structure
       return res.status(201).json({
         id: data.id,
         eventId: data.event_id,
@@ -174,7 +235,9 @@ export default async function handler(req, res) {
         ethAddress: data.eth_address,
         registeredAt: data.registered_at,
         checkedIn: false,
-        checkedInAt: null
+        checkedInAt: null,
+        mintStatus: 'not_issued',
+        source: 'qr_checkin'
       });
     }
 

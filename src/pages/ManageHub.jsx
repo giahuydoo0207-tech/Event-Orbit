@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
 import { fetchChapters } from '../api/mockApi';
-import { useStore } from '../store/useStore';
+import { ChapterCard } from '../components/ChapterCard';
+
+const CATEGORY_ORDER = ['Tech', 'Design', 'Business', 'Social'];
 
 export function ManageHub() {
-  const { user } = useStore();
   const [chapters, setChapters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     async function loadChapters() {
       setLoading(true);
       try {
-        // In this demo the organizer manages all chapters
         const data = await fetchChapters();
         setChapters(data);
       } catch (err) {
@@ -24,109 +24,121 @@ export function ManageHub() {
     loadChapters();
   }, []);
 
-  // ── Loading State ──
+  // Search filter
+  const filteredChapters = useMemo(() => {
+    if (!searchQuery.trim()) return chapters;
+    const q = searchQuery.toLowerCase();
+    return chapters.filter(ch =>
+      ch.name.toLowerCase().includes(q) ||
+      (ch.category && ch.category.toLowerCase().includes(q)) ||
+      (ch.ocid && ch.ocid.toLowerCase().includes(q))
+    );
+  }, [chapters, searchQuery]);
+
+  // Group by category when > 10 chapters
+  const shouldGroup = filteredChapters.length > 10;
+
+  const groupedChapters = useMemo(() => {
+    if (!shouldGroup) return null;
+    const groups = {};
+    filteredChapters.forEach(ch => {
+      const cat = ch.category || 'Other';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(ch);
+    });
+    const ordered = [];
+    CATEGORY_ORDER.forEach(cat => {
+      if (groups[cat]) ordered.push({ category: cat, items: groups[cat] });
+    });
+    Object.keys(groups).forEach(cat => {
+      if (!CATEGORY_ORDER.includes(cat)) {
+        ordered.push({ category: cat, items: groups[cat] });
+      }
+    });
+    return ordered;
+  }, [filteredChapters, shouldGroup]);
+
   if (loading) {
     return (
-      <div className="py-20 text-center space-y-4 max-w-sm mx-auto">
-        <div className="text-sm font-medium text-text-secondary">Loading managed chapters...</div>
-        <div className="w-10 h-1 bg-border rounded-full mx-auto overflow-hidden relative">
-          <div className="absolute top-0 left-0 bottom-0 bg-accent-blue w-1/2 rounded-full animate-[pulse_1s_infinite]"></div>
+      <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
+        <div className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Loading Chapters</div>
+        <div className="w-16 h-0.5 bg-oc-periwinkle/30 rounded-full mx-auto overflow-hidden relative">
+          <div className="absolute top-0 left-0 bottom-0 bg-oc-blue w-1/3 rounded-full animate-pulse"></div>
         </div>
-      </div>
-    );
-  }
-
-  // ── Empty State ──
-  if (chapters.length === 0) {
-    return (
-      <div className="py-24 text-center max-w-lg mx-auto space-y-3">
-        <h2 className="text-lg font-bold text-navy">No Managed Chapters</h2>
-        <p className="text-xs text-text-secondary">
-          You are not currently managing any chapters. Contact your campus administrator to get started.
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 font-sans max-w-5xl">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-navy">Manage Chapters</h1>
-        <p className="text-xs text-text-secondary mt-1 font-medium max-w-xl">
-          Select a chapter to view event metrics, manage check-ins, and create new events.
+        <h1 className="text-2xl font-black text-oc-ink">Manage Chapters</h1>
+        <p className="text-sm text-slate-400 mt-2 font-medium max-w-2xl leading-relaxed">
+          Select a chapter to manage events, view attendance, and issue Soulbound Token credentials on EDU Chain.
         </p>
       </div>
 
+      {/* Search — editorial underline style */}
+      {chapters.length > 4 && (
+        <div className="relative max-w-md">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search chapters..."
+            className="w-full bg-transparent border-0 border-b border-oc-periwinkle/40 focus:border-oc-blue pb-2 text-sm text-oc-ink placeholder:text-slate-300 font-medium outline-none transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-0 top-0 text-slate-400 hover:text-oc-ink text-xs font-bold transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Chapters Grid */}
-      {chapters.length === 0 ? (
-        <div className="text-center py-16 space-y-2">
-          <p className="text-sm font-bold text-navy">You don't manage any chapters yet</p>
-          <p className="text-xs text-text-secondary">Contact your department admin to get assigned as an organizer.</p>
+      {filteredChapters.length === 0 ? (
+        <div className="text-center py-20">
+          <p className="text-sm font-bold text-oc-ink">
+            {searchQuery ? 'No chapters match your search' : 'No managed chapters assigned'}
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            {searchQuery
+              ? 'Try a different search term or clear the filter.'
+              : 'Contact your Open Campus administrator to get assigned as a chapter host.'}
+          </p>
+        </div>
+      ) : shouldGroup && groupedChapters ? (
+        /* Grouped by category — each group in its own grid */
+        <div className="space-y-10">
+          {groupedChapters.map(group => (
+            <div key={group.category}>
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="badge-kicker text-[10px] text-slate-400">
+                  {group.category}
+                </h2>
+                <span className="num text-[10px] text-slate-300 font-bold">{group.items.length}</span>
+                <div className="flex-1 h-px bg-oc-periwinkle/20"></div>
+              </div>
+              <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map(chapter => (
+                  <ChapterCard key={chapter.id} chapter={chapter} linkTo={`/manage/${chapter.id}`} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {chapters.map((chapter) => {
-          const initials = chapter.name
-            .split(' ')
-            .map((w) => w[0])
-            .join('')
-            .substring(0, 2)
-            .toUpperCase();
-
-          return (
-            <Link
-              key={chapter.id}
-              to={`/manage/${chapter.id}`}
-              className="bg-white border border-border rounded-xl p-6 hover:shadow-md transition-all block group"
-            >
-              {/* Avatar + Name */}
-              <div className="flex items-start gap-4">
-                <div
-                  className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-sm bg-gradient-to-br ${chapter.avatarGradient || 'from-slate-600 to-slate-900'} shrink-0`}
-                >
-                  {initials}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-bold text-navy leading-snug group-hover:text-accent-blue transition-colors truncate">
-                    {chapter.name}
-                  </h3>
-                  <div className="text-[11px] font-mono text-accent-blue mt-0.5 truncate">
-                    {chapter.ocid}
-                  </div>
-                </div>
-              </div>
-
-              {/* Category Badge */}
-              <div className="mt-4">
-                <span className="inline-block px-2 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
-                  {chapter.category}
-                </span>
-              </div>
-
-              {/* Stats Row */}
-              <div className="mt-4 pt-4 border-t border-border flex items-center gap-6">
-                <div>
-                  <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">
-                    Events
-                  </div>
-                  <div className="text-lg font-extrabold text-navy mt-0.5">
-                    {chapter.eventsHosted}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">
-                    Followers
-                  </div>
-                  <div className="text-lg font-extrabold text-navy mt-0.5">
-                    {chapter.followerCount}
-                  </div>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+        /* Flat grid when ≤ 10 chapters */
+        <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredChapters.map(chapter => (
+            <ChapterCard key={chapter.id} chapter={chapter} linkTo={`/manage/${chapter.id}`} />
+          ))}
+        </div>
       )}
     </div>
   );

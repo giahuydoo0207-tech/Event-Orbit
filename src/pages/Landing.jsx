@@ -1,6 +1,22 @@
 import { Link } from 'react-router-dom';
+import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useCountUp } from '../hooks/useCountUp';
+
+function StatCounter({ value, label, suffix = '' }) {
+  const { ref, count } = useCountUp(value, 1300);
+  return (
+    <div ref={ref} className="text-center">
+      <div className="num text-3xl font-bold text-oc-blue sm:text-4xl">
+        {count.toLocaleString()}{suffix}
+      </div>
+      <div className="badge-kicker text-slate-500 mt-1">{label}</div>
+    </div>
+  );
+}
 
 export function Landing() {
+  const containerRef = useScrollReveal();
+
   const valueProps = [
     {
       title: 'Chapter Communities',
@@ -10,7 +26,7 @@ export function Landing() {
     {
       title: 'Verified Attendance',
       description:
-        'Check in with QR codes. Receive Soulbound Token badges minted on EDU Chain as proof.',
+        'Check in with QR codes. Receive Soulbound Token (SBT) badges minted on EDU Chain as proof.',
     },
     {
       title: 'Achievement Portfolio',
@@ -20,65 +36,74 @@ export function Landing() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy via-navy-light to-indigo-900 px-6 py-28 sm:py-36 lg:py-44">
-        {/* Decorative background layers */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(59,130,246,0.1),transparent_60%)]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 h-px w-3/4 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+    <div ref={containerRef} className="min-h-screen flex flex-col bg-oc-mist font-sans">
+      {/* Hero Section - Open Campus Deep Navy background */}
+      <section className="relative overflow-hidden bg-oc-navy px-6 py-16 sm:py-20 lg:py-24 text-white">
+        {/* Static background glows */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,237,190,0.12),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,27,235,0.25),transparent_60%)]" />
 
-        <div className="relative mx-auto max-w-4xl text-center">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-indigo-300">
-            Powered by Open Campus ID
-          </p>
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+        {/* Animated glow drift — subtle turquoise pulse behind headline */}
+        <div
+          className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(0,237,190,0.14) 0%, transparent 70%)',
+          }}
+        />
+
+        <div className="relative mx-auto max-w-5xl text-center">
+          {/* Badge — reveals immediately (hero content) */}
+          <div className="reveal inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6">
+            <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
+            <span className="badge-kicker text-oc-turquoise text-[10px]">
+              Powered by Open Campus ID
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="reveal reveal-delay-1 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
             Campus Events.{' '}
-            <span className="bg-gradient-to-r from-indigo-300 to-sky-300 bg-clip-text text-transparent">
+            <span className="text-oc-turquoise whitespace-nowrap">
               Verified on Chain.
             </span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-indigo-100/80 sm:text-xl">
-            Event Orbit connects students with campus chapters, verifies
-            attendance with Soulbound Tokens, and builds certified achievement
-            profiles &mdash; all powered by Open Campus ID.
+
+          {/* Subtitle */}
+          <p className="reveal reveal-delay-2 mx-auto mt-6 max-w-2xl text-base leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
+            Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles &mdash; all powered by Open Campus.
           </p>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          {/* CTAs — hover-lift effect */}
+          <div className="reveal reveal-delay-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/login"
-              className="inline-flex h-12 items-center rounded-lg bg-white px-8 text-sm font-semibold text-navy shadow-lg shadow-white/10 transition hover:bg-indigo-50 hover:shadow-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="hover-lift inline-flex h-12 items-center rounded-xl bg-oc-blue px-8 text-xs font-bold text-white shadow-lg hover:bg-oc-indigo transition-all"
             >
               Connect with OCID
             </Link>
             <Link
               to="/events"
-              className="inline-flex h-12 items-center rounded-lg border border-white/25 px-8 text-sm font-semibold text-white transition hover:border-white/50 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
+              className="hover-lift inline-flex h-12 items-center rounded-xl border border-oc-periwinkle/40 bg-white/5 px-8 text-xs font-bold text-white transition hover:border-oc-periwinkle hover:bg-white/10"
             >
               Browse Events
             </Link>
           </div>
         </div>
-
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent" />
       </section>
 
-      {/* Value Proposition Cards */}
+      {/* Value Proposition Cards — staggered reveal */}
       <section className="relative -mt-12 px-6 pb-20">
         <div className="mx-auto max-w-5xl">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {valueProps.map((card) => (
+            {valueProps.map((prop, idx) => (
               <div
-                key={card.title}
-                className="group rounded-xl border border-border bg-white p-8 shadow-sm transition hover:shadow-md hover:border-accent-blue/30"
+                key={idx}
+                className={`reveal reveal-delay-${idx + 1} hover-lift rounded-2xl border border-oc-periwinkle/70 bg-white p-8 shadow-sm space-y-3`}
               >
-                <div className="mb-4 h-1 w-10 rounded-full bg-gradient-to-r from-accent-blue to-indigo-500 transition-all group-hover:w-16" />
-                <h3 className="text-lg font-bold text-text-primary">
-                  {card.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-                  {card.description}
+                <div className="badge-kicker text-oc-blue">0{idx + 1} &bull; Feature</div>
+                <h3 className="text-lg font-bold text-oc-ink">{prop.title}</h3>
+                <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                  {prop.description}
                 </p>
               </div>
             ))}
@@ -86,53 +111,26 @@ export function Landing() {
         </div>
       </section>
 
-      {/* How It Works (visual rhythm break) */}
-      <section className="border-t border-border bg-surface px-6 py-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-bold text-text-primary sm:text-3xl">
-            Three steps to a verified campus profile
-          </h2>
-          <p className="mt-3 text-text-secondary">
-            From discovery to credential — everything on-chain.
-          </p>
-        </div>
-
-        <div className="mx-auto mt-14 flex max-w-4xl flex-col items-start gap-10 sm:flex-row sm:items-center sm:gap-0">
-          {[
-            { step: '01', label: 'Discover chapters & events' },
-            { step: '02', label: 'Attend & scan your QR badge' },
-            { step: '03', label: 'Earn SBTs on your OCID profile' },
-          ].map((item, idx) => (
-            <div key={item.step} className="flex flex-1 flex-col items-center text-center">
-              <span className="text-3xl font-extrabold text-accent-blue">
-                {item.step}
-              </span>
-              <p className="mt-3 text-sm font-medium text-text-primary">
-                {item.label}
-              </p>
-              {idx < 2 && (
-                <div className="mt-6 hidden h-px w-full bg-border sm:block" />
-              )}
-            </div>
-          ))}
+      {/* Stats Section — animated counters */}
+      <section className="px-6 py-16 border-t border-oc-periwinkle/30">
+        <div className="reveal mx-auto max-w-4xl">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            <StatCounter value={500} suffix="+" label="Students" />
+            <StatCounter value={12} label="Chapters" />
+            <StatCounter value={48} label="Events Hosted" />
+            <StatCounter value={156} label="SBTs Minted" />
+          </div>
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="px-6 py-20">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-2xl font-bold text-text-primary sm:text-3xl">
-            Ready to get started?
-          </h2>
-          <p className="mt-3 text-text-secondary">
-            Connect your Open Campus ID and join the on-chain campus experience.
+      {/* Open Campus Ecosystem Section — scroll reveal */}
+      <section className="px-6 py-16 bg-white border-t border-oc-periwinkle/40">
+        <div className="reveal max-w-4xl mx-auto text-center space-y-4">
+          <div className="badge-kicker text-oc-blue">Open Campus Ecosystem</div>
+          <h2 className="text-2xl font-black text-oc-ink">Decentralized Credentials for Education</h2>
+          <p className="text-xs text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
+            Every event check-in issues an immutable Soulbound Token (SBT) credential linked directly to your Open Campus ID (OCID).
           </p>
-          <Link
-            to="/login"
-            className="mt-8 inline-flex h-12 items-center rounded-lg bg-navy px-10 text-sm font-semibold text-white transition hover:bg-navy-light focus:outline-none focus:ring-2 focus:ring-navy/40"
-          >
-            Sign In
-          </Link>
         </div>
       </section>
     </div>

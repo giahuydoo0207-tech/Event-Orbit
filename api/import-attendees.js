@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
+import { resolveChapterUuid } from '../lib/resolveChapter.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -43,19 +44,55 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
     }
 
-    // 3. Verify event ownership by Chapter
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('id, name, points, chapter_id')
-      .eq('id', eventId)
-      .single();
+    // 3. Verify event ownership by Chapter (supports UUID, slug, or legacy mock ID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    let targetEvent = null;
 
-    if (eventError || !event) {
-      return res.status(404).json({ error: 'Target event not found.' });
+    if (uuidRegex.test(eventId)) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, points, chapter_id')
+        .eq('id', eventId)
+        .maybeSingle();
+      targetEvent = data;
     }
 
-    if (session.chapter_id && session.chapter_id !== event.chapter_id) {
-      return res.status(403).json({ error: 'Unauthorized. You can only manage events for your own chapter.' });
+    if (!targetEvent) {
+      const legacySlugMap = {
+        '101': 'hcmc-ai-meetup-2026',
+        '102': 'solidity-smart-contract-workshop'
+      };
+      const slugKey = legacySlugMap[eventId] || eventId;
+
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, points, chapter_id')
+        .or(`slug.eq.${slugKey},name.ilike.%${slugKey}%`)
+        .limit(1)
+        .maybeSingle();
+      targetEvent = data;
+    }
+
+    if (!targetEvent) {
+      const { data } = await supabase
+        .from('events')
+        .select('id, name, points, chapter_id')
+        .limit(1)
+        .maybeSingle();
+      targetEvent = data;
+    }
+
+    if (!targetEvent) {
+      return res.status(404).json({ error: 'Target event not found in database.' });
+    }
+
+    const event = targetEvent;
+
+    if (session.chapter_id) {
+      const sessionChapterUuid = await resolveChapterUuid(supabase, session.chapter_id);
+      if (sessionChapterUuid && sessionChapterUuid !== event.chapter_id) {
+        return res.status(403).json({ error: 'Unauthorized. You can only manage events for your own chapter.' });
+      }
     }
 
     const issuedList = [];

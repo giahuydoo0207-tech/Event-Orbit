@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { checkRateLimit } from '../../lib/rateLimit.js';
+import { resolveChapterUuid } from '../../lib/resolveChapter.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -31,14 +32,16 @@ export default async function handler(req, res) {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+    const validChapterUuid = await resolveChapterUuid(supabase, chapterId);
+
     const { error } = await supabase.from('sessions').insert({
       token,
-      user_id: ocid || mssv,
-      role,
-      chapter_id: chapterId || null,
+      user_id: ocid || mssv || 'user-' + Date.now(),
+      role: role || 'student',
+      chapter_id: validChapterUuid,
       ocid: ocid || null,
       mssv: mssv || null,
-      full_name: fullName,
+      full_name: fullName || 'User',
       eth_address: ethAddress || null,
       expires_at: expiresAt,
     });

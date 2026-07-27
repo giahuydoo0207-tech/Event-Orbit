@@ -6,9 +6,13 @@ import ToastContainer from './components/ToastContainer.jsx';
 import App from './App.jsx';
 import './index.css';
 
+const defaultRedirectUri = typeof window !== 'undefined'
+  ? `${window.location.origin}/redirect`
+  : 'http://localhost:5173/redirect';
+
 const opts = {
   clientId: import.meta.env.VITE_OCID_CLIENT_ID || 'sandbox-demo',
-  redirectUri: import.meta.env.VITE_OCID_REDIRECT_URI || 'http://localhost:5173/redirect',
+  redirectUri: import.meta.env.VITE_OCID_REDIRECT_URI || defaultRedirectUri,
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(

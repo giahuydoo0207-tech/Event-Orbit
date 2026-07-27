@@ -1,15 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { fetchEventById, fetchEventAttendees, checkInStudent } from '../api/mockApi';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { fetchEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
 import QRCode from 'qrcode';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
+import useToastStore from '../store/useToastStore';
 
 export function EventManage() {
   const { id, chapterId } = useParams();
+  const navigate = useNavigate();
+  const showToast = useToastStore((state) => state.showToast);
+
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const qrCanvasRef = useRef(null);
 
   const loadData = async () => {
@@ -40,7 +46,10 @@ export function EventManage() {
 
   const fetchQRData = async () => {
     try {
-      const res = await fetch(`/api/events/${id}/qr`);
+      const res = await fetch(`/api/events/${id}/qr`, {
+        headers: getAuthHeaders(),
+        credentials: 'same-origin'
+      });
       if (res.ok) {
         const data = await res.json();
         setQrData(data.qrData);
@@ -93,6 +102,22 @@ export function EventManage() {
     }
   };
 
+  const handleDeleteEvent = async () => {
+    if (!event) return;
+    setDeleting(true);
+    try {
+      await deleteEventApi(event.id);
+      showToast('Event soft deleted successfully. Recorded in Event History.', 'success');
+      navigate(`/manage/${chapterId}`);
+    } catch (err) {
+      console.error('Failed to delete event:', err);
+      showToast(err.message || 'Failed to delete event.', 'error');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-20 text-center space-y-4 max-w-sm mx-auto">
@@ -134,12 +159,20 @@ export function EventManage() {
             Date: {new Date(event.datetime).toLocaleString()} &bull; Location: {event.location}
           </p>
         </div>
-        <button
-          onClick={() => setIsImportModalOpen(true)}
-          className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded shadow-sm flex items-center justify-center gap-1.5 shrink-0"
-        >
-          <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded shadow-sm flex items-center justify-center gap-1.5"
+          >
+            <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded shadow-sm transition-colors"
+          >
+            Delete Event
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -156,86 +189,57 @@ export function EventManage() {
           </div>
 
           <div className="bg-white border border-border rounded p-2 w-full text-[9px] font-mono select-all truncate text-text-secondary">
-            {qrData 
-              ? `${window.location.origin}/student-checkin?qrData=${qrData}` 
-              : `${window.location.origin}/student-checkin?eventId=${event.id}`}
-          </div>
-
-          {/* Quick Stats inside card */}
-          <div className="grid grid-cols-2 gap-4 w-full pt-4 border-t border-border/50">
-            <div className="text-center">
-              <div className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Checked In</div>
-              <div className="text-2xl font-bold text-success">{attendedCount}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Registered</div>
-              <div className="text-2xl font-bold text-navy">{attendees.length}</div>
-            </div>
+            {qrData || 'Generating venue check-in token...'}
           </div>
         </div>
 
         {/* Attendees Manager list */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-base font-bold text-navy">Registrations List</h2>
-            <span className="bg-success-light text-success border border-success/20 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
-              Live updates active
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-navy uppercase tracking-wider">
+              Registrations ({attendees.length})
+            </h2>
+            <span className="text-xs text-text-secondary">
+              Checked-in: <b className="text-success">{attendees.filter(a => a.checkedIn).length}</b>
             </span>
           </div>
 
           {attendees.length === 0 ? (
-            <div className="text-center py-16 bg-white border border-border rounded-xl shadow-sm">
-              <h3 className="text-xs font-semibold text-navy">No registrations yet</h3>
-              <p className="text-[11px] text-text-secondary mt-1">Attendees will appear here once they register for the event.</p>
+            <div className="bg-surface border border-dashed border-border rounded-xl p-8 text-center text-xs text-text-secondary">
+              No registrations yet for this event.
             </div>
           ) : (
             <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-border uppercase tracking-widest text-[9px] font-bold text-text-secondary">
-                      <th className="p-4">Student Details</th>
-                      <th className="p-4">OCID / Student ID</th>
-                      <th className="p-4">Verification Status</th>
-                      <th className="p-4 text-right">Actions</th>
+                    <tr className="bg-slate-50 border-b border-border text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                      <th className="p-3">Student Name</th>
+                      <th className="p-3">MSSV / OCID</th>
+                      <th className="p-3 text-right">Check-in Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {attendees.map((att) => (
+                    {attendees.map(att => (
                       <tr key={att.id} className="hover:bg-slate-50/50">
-                        <td className="p-4">
-                          <div className="font-semibold text-navy text-sm">{att.studentName}</div>
-                          {att.ethAddress && (
-                            <div className="text-[10px] font-mono text-text-secondary truncate max-w-[160px]">{att.ethAddress}</div>
-                          )}
+                        <td className="p-3 font-semibold text-navy">
+                          {att.studentName || 'Anonymous Student'}
                         </td>
-                        <td className="p-4 font-mono text-text-secondary">
-                          {att.ocid || att.mssv || 'N/A'}
+                        <td className="p-3 font-mono text-text-secondary">
+                          {att.mssv || att.ocid || 'N/A'}
                         </td>
-                        <td className="p-4">
+                        <td className="p-3 text-right">
                           {att.checkedIn ? (
-                            <span className="text-success font-semibold flex items-center gap-1">
-                              &bull; Checked In
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              Checked-in
                             </span>
                           ) : (
-                            <span className="text-text-secondary">
-                              Registered
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-4 text-right">
-                          {!att.checkedIn && (
                             <button
                               onClick={() => handleManualCheckIn(att)}
-                              className="text-[11px] font-bold text-accent-blue hover:underline bg-accent-blue/5 border border-accent-blue/15 px-3 py-1 rounded hover:bg-accent-blue/10"
+                              className="px-2 py-1 bg-slate-100 hover:bg-accent-blue hover:text-white text-navy font-semibold rounded text-[10px] transition-colors"
                             >
                               Check-in
                             </button>
-                          )}
-                          {att.checkedIn && (
-                            <span className="text-[10px] text-text-secondary">
-                              {att.checkedInAt ? new Date(att.checkedInAt).toLocaleTimeString() : 'Verified'}
-                            </span>
                           )}
                         </td>
                       </tr>
@@ -246,8 +250,50 @@ export function EventManage() {
             </div>
           )}
         </div>
-
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm">
+          <div className="bg-white border border-border rounded-2xl p-6 shadow-2xl w-full max-w-md space-y-4">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-lg font-bold">
+                !
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-navy">Soft Delete Event?</h3>
+                <p className="text-xs text-text-secondary">This event will be hidden from public listings.</p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-1 text-amber-900">
+              <div><b>Registered Students:</b> {attendees.length}</div>
+              <div><b>Badges Issued:</b> {attendees.filter(a => a.checkedIn).length}</div>
+              <p className="pt-1.5 text-[11px] text-amber-800 border-t border-amber-200/60 mt-1">
+                Soft deleting hides the event from public discovery, but <b>WILL NOT</b> delete or invalidate badges already issued to students on-chain.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border border-border text-xs font-semibold rounded-lg text-navy bg-white hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteEvent}
+                disabled={deleting}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Confirm Soft Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Import Attendee List Modal */}
       {event && (

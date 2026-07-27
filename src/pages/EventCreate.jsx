@@ -108,8 +108,8 @@ export function EventCreate() {
       showToast('Event created successfully!', 'success');
       navigate(`/e/${newEvent.slug}`);
     } catch (err) {
-      console.error(err);
-      showToast('Failed to create event. Please try again.', 'error');
+      console.error('Event creation failed:', err);
+      showToast(err.message || 'Failed to create event. Please try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -122,16 +122,16 @@ export function EventCreate() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-navy">Create New Event</h1>
-        <p className="text-xs text-text-secondary mt-1">
-          Draft your event details and configure your SBT reward structures on-chain.
+        <h1 className="text-2xl font-black text-oc-ink">Create New Event</h1>
+        <p className="text-xs text-slate-500 mt-1 font-medium">
+          Draft your event details and configure your Soulbound Token (SBT) reward structures on EDU Chain.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
         {/* Form Column */}
-        <div className="bg-white border border-border rounded-xl p-6 md:p-8 space-y-6 shadow-sm">
+        <div className="bg-white border border-oc-periwinkle/70 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Title */}
             <div>

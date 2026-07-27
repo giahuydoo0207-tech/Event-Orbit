@@ -30,23 +30,40 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, o
 
   if (!isOpen) return null;
 
-  // Flexible Header Normalizer
+  const removeAccents = (str) => {
+    return str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  };
+
+  // Flexible Header Normalizer with Vietnamese accent removal
   const normalizeRow = (row) => {
     let mssv = '';
     let email = '';
     let name = '';
 
     Object.keys(row).forEach((key) => {
-      const cleanKey = key.trim().toLowerCase().replace(/[\s\-_]+/g, '');
+      const cleanKey = removeAccents(key.trim().toLowerCase()).replace(/[^a-z0-9]/g, '');
       const val = (row[key] !== null && row[key] !== undefined) ? String(row[key]).trim() : '';
 
-      if (!mssv && (cleanKey === 'mssv' || cleanKey === 'studentid' || cleanKey === 'masv' || cleanKey === 'svid')) {
+      if (!mssv && (
+        cleanKey === 'mssv' || cleanKey === 'studentid' || cleanKey === 'masv' || cleanKey === 'svid' ||
+        cleanKey.includes('mssv') || cleanKey.includes('masinhvien') || cleanKey.includes('studentid')
+      )) {
         mssv = val;
       }
-      if (!email && (cleanKey === 'email' || cleanKey === 'mail' || cleanKey === 'emailaddress' || cleanKey === 'diachiemail')) {
+      if (!email && (
+        cleanKey === 'email' || cleanKey === 'mail' || cleanKey === 'emailaddress' || cleanKey === 'diachiemail' ||
+        cleanKey.includes('email') || cleanKey.includes('mail')
+      )) {
         email = val;
       }
-      if (!name && (cleanKey === 'name' || cleanKey === 'fullname' || cleanKey === 'ten' || cleanKey === 'hoten' || cleanKey === 'studentname')) {
+      if (!name && (
+        cleanKey === 'name' || cleanKey === 'fullname' || cleanKey === 'ten' || cleanKey === 'hoten' || cleanKey === 'studentname' ||
+        cleanKey.includes('name') || cleanKey.includes('ten') || cleanKey.includes('hoten') || cleanKey.includes('hovaten') || cleanKey.includes('sinhvien')
+      )) {
         name = val;
       }
     });

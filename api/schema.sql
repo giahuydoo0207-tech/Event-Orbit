@@ -29,6 +29,7 @@ create table events (
   theme text default 'Minimal',
   visibility text default 'Public',
   cover_image text,
+  deleted_at timestamptz default null,
   created_at timestamptz default now()
 );
 
@@ -41,6 +42,7 @@ create table registrations (
   ocid text,
   mssv text,
   eth_address text,
+  source text default 'qr_checkin', -- 'qr_checkin' | 'import_excel'
   registered_at timestamptz default now(),
   unique(event_id, user_id)
 );

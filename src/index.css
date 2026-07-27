@@ -4,6 +4,119 @@
 
 @layer base {
   body {
-    @apply font-sans bg-white text-text-primary antialiased;
+    @apply font-sans bg-oc-mist text-oc-ink antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans tracking-tight;
+  }
+}
+
+/* Open Campus Signature Brand Gradient */
+.bg-oc-gradient {
+  background: linear-gradient(90deg, #141BEB 0%, #00EDBE 100%);
+}
+
+.text-oc-gradient {
+  background: linear-gradient(90deg, #141BEB 0%, #00EDBE 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Open Campus Micro Accent Tag */
+.badge-kicker {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.65rem;
+}
+
+/* ── Editorial Design Utilities ── */
+
+/* Global number font — all numeric values use Space Mono for consistency */
+.num {
+  font-family: 'Space Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Single focal hero number — Luma-style: large, bold, pure text, no shape wrapper */
+.editorial-hero-number {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #07094D; /* OC Navy — bold on light bg without Turquoise harshness */
+}
+
+/* Natural prose subtitle beneath hero numbers */
+.editorial-subtitle {
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+/* Hairline separator — replaces heavy bordered cards */
+.hairline {
+  border-bottom: 1px solid rgba(194, 199, 251, 0.4); /* oc-periwinkle/40 */
+}
+
+/* ── Scroll-Reveal Animation System ── */
+
+/* Base state: invisible + shifted down, ready to reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms ease-out, transform 600ms ease-out;
+}
+
+/* Revealed state — applied by IntersectionObserver */
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for card groups */
+.reveal-delay-1 { transition-delay: 100ms; }
+.reveal-delay-2 { transition-delay: 200ms; }
+.reveal-delay-3 { transition-delay: 300ms; }
+.reveal-delay-4 { transition-delay: 400ms; }
+
+/* Hero glow drift — subtle radial gradient movement behind headline */
+@keyframes glow-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+  33%      { transform: translate(30px, -20px) scale(1.05); opacity: 0.18; }
+  66%      { transform: translate(-20px, 15px) scale(0.95); opacity: 0.10; }
+}
+
+.hero-glow {
+  animation: glow-drift 8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* CTA + Card hover micro-interaction */
+.hover-lift {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.hover-lift:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 25px rgba(20, 27, 235, 0.12);
+}
+
+/* ── Accessibility: Respect prefers-reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .hero-glow {
+    animation: none !important;
+  }
+  .hover-lift:hover {
+    transform: none !important;
   }
 }

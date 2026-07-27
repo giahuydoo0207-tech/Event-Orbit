@@ -7,25 +7,39 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Official Open Campus 2026 Brand Bible Palette
+        oc: {
+          blue: '#141BEB',       // Primary Brand Color
+          turquoise: '#00EDBE',  // Accent (Used sparingly for highlights)
+          indigo: '#7075FF',     // Supporting CTA / Hover
+          periwinkle: '#C2C7FB', // Light borders & subtle cards
+          mist: '#EFF1FF',       // Surface & background
+          navy: '#07094D',       // Dark background & Sidebar
+          ink: '#252021',        // Primary typography
+        },
+        // Mapped legacy utility aliases for seamless backwards compatibility
         navy: {
-          DEFAULT: '#1a2a4a',
-          light: '#2d4a7a',
-          dark: '#0e182b',
+          DEFAULT: '#141BEB',
+          light: '#7075FF',
+          dark: '#07094D',
         },
         accent: {
-          blue: '#3b82f6',
-          hover: '#2563eb',
+          blue: '#141BEB',
+          hover: '#7075FF',
+          turquoise: '#00EDBE',
         },
-        surface: '#f8f9fa',
+        surface: '#EFF1FF',
+        border: '#C2C7FB',
         text: {
-          primary: '#1a1a1a',
-          secondary: '#6b7280',
+          primary: '#252021',
+          secondary: '#64748b',
         },
         success: '#10b981',
         error: '#ef4444',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        mono: ['Space Mono', 'monospace'],
       },
     },
   },
