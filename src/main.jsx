@@ -11,7 +11,7 @@ const defaultRedirectUri = typeof window !== 'undefined'
   : 'http://localhost:5173/redirect';
 
 const opts = {
-  clientId: import.meta.env.VITE_OCID_CLIENT_ID || 'sandbox-demo',
+  clientId: import.meta.env.VITE_OCID_CLIENT_ID || 'f0aa0ffa-b5e0-4e0e-90b6-035ac67e7676',
   redirectUri: import.meta.env.VITE_OCID_REDIRECT_URI || defaultRedirectUri,
 };
 
