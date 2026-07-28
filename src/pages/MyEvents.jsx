@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchEvents, fetchRegistrationsByUser } from '../api/mockApi';
 import { useStore } from '../store/useStore';
+import { LoadingBar } from '../components/LoadingBar';
 
 const TAB_OPTIONS = ['Upcoming', 'Past', 'All Events'];
 
@@ -88,28 +89,12 @@ export function MyEvents() {
     );
   }
 
-  // ── Loading skeleton ──────────────────────────────────────────
+  // ── Loading state ──────────────────────────────────────────
   if (loading) {
     return (
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="mb-2 h-8 w-40 animate-pulse rounded bg-surface" />
-        <div className="mb-8 h-5 w-64 animate-pulse rounded bg-surface" />
-        <div className="mb-6 flex gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-9 w-24 animate-pulse rounded-full bg-surface"
-            />
-          ))}
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-56 animate-pulse rounded-xl bg-surface"
-            />
-          ))}
-        </div>
+      <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
+        <div className="badge-kicker text-[10px] text-slate-400">Loading your registered events...</div>
+        <LoadingBar className="max-w-[140px] mx-auto" />
       </div>
     );
   }
