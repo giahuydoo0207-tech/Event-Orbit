@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchChapters } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { ChapterCard } from '../components/ChapterCard';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function Following() {
   const user = useStore((state) => state.user);
@@ -29,10 +30,8 @@ export function Following() {
   if (loading) {
     return (
       <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
-        <div className="text-xs font-semibold text-slate-400 tracking-wide uppercase">Loading followed chapters</div>
-        <div className="w-16 h-0.5 bg-oc-periwinkle/30 rounded-full mx-auto overflow-hidden relative">
-          <div className="absolute top-0 left-0 bottom-0 bg-oc-blue w-1/3 rounded-full animate-pulse"></div>
-        </div>
+        <div className="badge-kicker text-[10px] text-slate-400">Loading followed chapters</div>
+        <LoadingBar className="max-w-[140px] mx-auto" />
       </div>
     );
   }

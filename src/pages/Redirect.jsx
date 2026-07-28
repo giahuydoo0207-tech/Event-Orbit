@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js';
 import { useStore } from '../store/useStore';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function Redirect() {
   const navigate = useNavigate();
@@ -136,9 +137,7 @@ export function Redirect() {
       </div>
 
       {/* Animated Progress Bar */}
-      <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden relative">
-        <div className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-oc-blue to-oc-turquoise w-3/4 rounded-full animate-pulse"></div>
-      </div>
+      <LoadingBar variant="dark" />
     </div>
   );
 

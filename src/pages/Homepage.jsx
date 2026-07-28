@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchEvents, fetchChapters } from '../api/mockApi';
 import { useStore } from '../store/useStore';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function Homepage() {
   const user = useStore((state) => state.user);
@@ -46,11 +47,9 @@ export function Homepage() {
 
   if (loading) {
     return (
-      <div className="py-24 text-center space-y-4 max-w-lg mx-auto">
-        <div className="text-sm font-medium text-text-secondary">Loading your personalized feed...</div>
-        <div className="w-10 h-1 bg-border rounded-full mx-auto overflow-hidden relative">
-          <div className="absolute top-0 left-0 bottom-0 bg-accent-blue w-1/2 rounded-full animate-[pulse_1s_infinite]"></div>
-        </div>
+      <div className="py-24 text-center space-y-4 max-w-lg mx-auto font-sans">
+        <div className="badge-kicker text-[10px] text-slate-400">Loading your personalized feed...</div>
+        <LoadingBar className="max-w-[140px] mx-auto" />
       </div>
     );
   }
