@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 
 export function DashboardLayout({ children }) {
@@ -74,7 +74,7 @@ export function DashboardLayout({ children }) {
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-between
+                  className={`px-4 py-3 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors
                     ${isActive
                       ? 'bg-oc-blue text-white font-bold shadow-sm'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -83,7 +83,7 @@ export function DashboardLayout({ children }) {
                 >
                   <span>{link.label}</span>
                   {isActive && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-oc-turquoise animate-pulse"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-oc-turquoise"></span>
                   )}
                 </Link>
               );
@@ -115,7 +115,7 @@ export function DashboardLayout({ children }) {
       {/* Main Page Area */}
       <main className="flex-grow h-screen overflow-y-auto pt-16 md:pt-0 bg-oc-mist">
         <div className="max-w-6xl mx-auto p-6 md:p-10">
-          {children}
+          {children || <Outlet />}
         </div>
       </main>
     </div>
