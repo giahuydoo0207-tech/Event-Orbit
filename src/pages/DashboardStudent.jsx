@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchStudentAchievements } from '../api/mockApi';
 import { useStore } from '../store/useStore';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function DashboardStudent() {
   const user = useStore((state) => state.user);
@@ -27,11 +28,9 @@ export function DashboardStudent() {
 
   if (loading) {
     return (
-      <div className="py-20 text-center space-y-4 max-w-sm mx-auto">
-        <div className="text-xs font-semibold text-slate-500">Retrieving achievements catalog...</div>
-        <div className="w-12 h-1.5 bg-oc-periwinkle/40 rounded-full mx-auto overflow-hidden relative">
-          <div className="absolute top-0 left-0 bottom-0 bg-oc-blue w-1/2 rounded-full animate-pulse"></div>
-        </div>
+      <div className="py-20 text-center space-y-4 max-w-sm mx-auto font-sans">
+        <div className="badge-kicker text-[10px] text-slate-400">Retrieving achievements catalog...</div>
+        <LoadingBar className="max-w-[140px] mx-auto" />
       </div>
     );
   }
