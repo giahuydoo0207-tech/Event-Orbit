@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function DashboardLayout({ children }) {
   const { user, logout } = useStore();
@@ -112,10 +113,17 @@ export function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {/* Main Page Area */}
+      {/* Main Page Area — Suspense scoped strictly inside main container to keep sidebar stationary */}
       <main className="flex-grow h-screen overflow-y-auto pt-16 md:pt-0 bg-oc-mist">
         <div className="max-w-6xl mx-auto p-6 md:p-10">
-          {children || <Outlet />}
+          <Suspense fallback={
+            <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
+              <div className="badge-kicker text-[10px] text-slate-400">Loading page...</div>
+              <LoadingBar className="max-w-[140px] mx-auto" />
+            </div>
+          }>
+            {children || <Outlet />}
+          </Suspense>
         </div>
       </main>
     </div>

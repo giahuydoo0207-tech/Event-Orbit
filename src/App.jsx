@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Eagerly loaded — entry points & small shared components
@@ -32,58 +32,56 @@ function App() {
   return (
     <>
       <Router>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-oc-mist text-slate-400 text-xs font-semibold uppercase tracking-wider">Loading...</div>}>
-          <Routes>
-            {/* ── Public Routes ── */}
-            <Route path="/" element={<PublicLayout><Landing /></PublicLayout>} />
-            <Route path="/events" element={<PublicLayout><EventFeed /></PublicLayout>} />
-            <Route path="/e/:slug" element={<PublicLayout><EventDetail /></PublicLayout>} />
-            <Route path="/chapters" element={<PublicLayout><ChapterList /></PublicLayout>} />
-            <Route path="/chapters/:slug" element={<PublicLayout><ChapterProfile /></PublicLayout>} />
-            <Route path="/u/:ocid" element={<PublicLayout><PublicProfile /></PublicLayout>} />
+        <Routes>
+          {/* ── Public Routes ── */}
+          <Route path="/" element={<PublicLayout><Landing /></PublicLayout>} />
+          <Route path="/events" element={<PublicLayout><EventFeed /></PublicLayout>} />
+          <Route path="/e/:slug" element={<PublicLayout><EventDetail /></PublicLayout>} />
+          <Route path="/chapters" element={<PublicLayout><ChapterList /></PublicLayout>} />
+          <Route path="/chapters/:slug" element={<PublicLayout><ChapterProfile /></PublicLayout>} />
+          <Route path="/u/:ocid" element={<PublicLayout><PublicProfile /></PublicLayout>} />
 
-            {/* Student Self-check-in screen (standalone, no layout) */}
-            <Route path="/student-checkin.html" element={<StudentCheckin />} />
-            <Route path="/student-checkin" element={<StudentCheckin />} />
+          {/* Student Self-check-in screen (standalone, no layout) */}
+          <Route path="/student-checkin.html" element={<StudentCheckin />} />
+          <Route path="/student-checkin" element={<StudentCheckin />} />
 
-            {/* Auth callback handlers (no layout) */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/redirect" element={<Redirect />} />
+          {/* Auth callback handlers (no layout) */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/redirect" element={<Redirect />} />
 
-            {/* ── Authenticated Student Routes (Shared Persistent DashboardLayout) ── */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/home" element={<Homepage />} />
-              <Route path="/my-events" element={<MyEvents />} />
-              <Route path="/dashboard" element={<DashboardStudent />} />
-              <Route path="/following" element={<Following />} />
-            </Route>
+          {/* ── Authenticated Student Routes (Shared Persistent DashboardLayout) ── */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/home" element={<Homepage />} />
+            <Route path="/my-events" element={<MyEvents />} />
+            <Route path="/dashboard" element={<DashboardStudent />} />
+            <Route path="/following" element={<Following />} />
+          </Route>
 
-            {/* ── Organizer Protected Routes (Shared Persistent DashboardLayout) ── */}
-            <Route
-              element={
-                <ProtectedRoute requireRole="organizer">
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/manage" element={<ManageHub />} />
-              <Route path="/manage/:chapterId" element={<ChapterManage />} />
-              <Route path="/manage/:chapterId/events/create" element={<EventCreate />} />
-              <Route path="/manage/:chapterId/events/:id" element={<EventManage />} />
-              <Route path="/manage/:chapterId/history" element={<EventHistory />} />
-              <Route path="/manage/:chapterId/history/:eventId" element={<EventHistory />} />
-            </Route>
+          {/* ── Organizer Protected Routes (Shared Persistent DashboardLayout) ── */}
+          <Route
+            element={
+              <ProtectedRoute requireRole="organizer">
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/manage" element={<ManageHub />} />
+            <Route path="/manage/:chapterId" element={<ChapterManage />} />
+            <Route path="/manage/:chapterId/events/create" element={<EventCreate />} />
+            <Route path="/manage/:chapterId/events/:id" element={<EventManage />} />
+            <Route path="/manage/:chapterId/history" element={<EventHistory />} />
+            <Route path="/manage/:chapterId/history/:eventId" element={<EventHistory />} />
+          </Route>
 
-            {/* ── Catch-All 404 Route ── */}
-            <Route path="*" element={<NotFoundState title="Page not found" backTo="/" />} />
-          </Routes>
-        </Suspense>
+          {/* ── Catch-All 404 Route ── */}
+          <Route path="*" element={<NotFoundState title="Page not found" backTo="/" />} />
+        </Routes>
       </Router>
       <ToastContainer />
     </>

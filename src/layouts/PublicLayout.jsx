@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import SearchModal from '../components/SearchModal';
+import { LoadingBar } from '../components/LoadingBar';
 
 export function PublicLayout({ children }) {
   const { user, logout } = useStore();
@@ -81,9 +82,16 @@ export function PublicLayout({ children }) {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content — Suspense scoped inside main container */}
       <main className="flex-grow">
-        {children}
+        <Suspense fallback={
+          <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
+            <div className="badge-kicker text-[10px] text-slate-400">Loading page...</div>
+            <LoadingBar className="max-w-[140px] mx-auto" />
+          </div>
+        }>
+          {children}
+        </Suspense>
       </main>
 
       {/* Footer */}
