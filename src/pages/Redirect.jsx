@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js';
 import { useStore } from '../store/useStore';
 
@@ -8,12 +8,13 @@ export function Redirect() {
   const setUser = useStore((state) => state.setUser);
   const { ocAuth } = useOCAuth();
   const isProcessed = useRef(false);
+  const [authError, setAuthError] = useState(null);
 
   const syncOcidSession = (userData) => {
     if (isProcessed.current) return;
     isProcessed.current = true;
 
-    // Save session in state immediately
+    // Save session in store immediately
     setUser(userData);
 
     // Sync session with backend database
@@ -27,7 +28,10 @@ export function Redirect() {
         ethAddress: userData.ethAddress
       })
     })
-      .then(() => {
+      .then((res) => {
+        if (!res.ok) {
+          console.warn('Backend session endpoint returned non-200 status');
+        }
         navigate('/home', { replace: true });
       })
       .catch((err) => {
@@ -42,21 +46,21 @@ export function Redirect() {
 
     try {
       if (ocAuth) {
-        // 1. Parse decoded ID token claims from SDK
+        // 1. Parse decoded ID token claims strictly matching @opencampus/ocid-connect-js SDK spec
         if (typeof ocAuth.getParsedIdToken === 'function') {
           const parsedToken = ocAuth.getParsedIdToken();
           if (parsedToken) {
-            eduUsername = parsedToken.edu_username || parsedToken.ocid || parsedToken.sub;
-            ethAddress = parsedToken.eth_address || parsedToken.ethAddress;
+            eduUsername = parsedToken.edu_username || null;
+            ethAddress = parsedToken.eth_address || null;
           }
         }
 
-        // 2. Auth state fallback check
+        // 2. Auth state fallback check (matching AuthInfoManager.js spec: OCId & ethAddress)
         if (!eduUsername && typeof ocAuth.getAuthState === 'function') {
           const state = ocAuth.getAuthState();
           if (state) {
-            eduUsername = state.OCId || state.edu_username;
-            ethAddress = state.ethAddress;
+            eduUsername = state.OCId || null;
+            ethAddress = ethAddress || state.ethAddress || null;
           }
         }
       }
@@ -64,10 +68,16 @@ export function Redirect() {
       console.warn('Could not extract token claims:', e);
     }
 
-    // 100% Dynamic OCID User Extraction — Zero hardcoded accounts
-    const realOcid = eduUsername || (ethAddress ? `ocid-${ethAddress.slice(2, 8)}` : 'student.edu');
-    const realEthAddress = ethAddress || '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6';
-    const displayName = eduUsername || (ethAddress ? `OCID Student (${ethAddress.slice(0, 6)}...)` : 'Verified OCID Student');
+    // STRICT SECURITY: If neither eduUsername nor ethAddress is present, REJECT authentication!
+    if (!eduUsername && !ethAddress) {
+      console.error('OCID authentication failed: No valid identity claims found in token.');
+      setAuthError('Unable to verify identity claims from Open Campus ID. Please sign in again.');
+      return;
+    }
+
+    const realOcid = eduUsername || `ocid-${ethAddress.slice(2, 8)}`;
+    const realEthAddress = ethAddress || null;
+    const displayName = eduUsername || `OCID Student (${ethAddress.slice(0, 6)}...)`;
 
     syncOcidSession({
       isAuthenticated: true,
@@ -83,17 +93,18 @@ export function Redirect() {
 
   const handleError = (error) => {
     console.error('OCID callback error:', error);
-    handleSuccess();
+    const errorMsg = error?.message || 'Authentication was cancelled or failed on Open Campus ID.';
+    setAuthError(errorMsg);
   };
 
-  // Safety fallback: Ensure user is never stuck if SDK exchange takes over 3 seconds
+  // Timeout Detector: If OAuth exchange takes longer than 15 seconds, report timeout error
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isProcessed.current) {
-        console.log('Safety timer: processing login session');
-        handleSuccess();
+        console.warn('OCID authentication timed out after 15s');
+        setAuthError('Authentication timed out. Open Campus ID server did not respond in time.');
       }
-    }, 3000);
+    }, 15000);
 
     return () => clearTimeout(timer);
   }, []);
@@ -130,6 +141,36 @@ export function Redirect() {
       </div>
     </div>
   );
+
+  // Error State Component — Matches Deep Navy Theme
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-oc-navy flex flex-col justify-center items-center relative overflow-hidden font-sans">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(239,68,68,0.15),transparent_60%)]" />
+        <div className="relative z-10 text-center max-w-sm w-full mx-4 px-8 py-10 rounded-2xl bg-white/5 border border-red-500/30 backdrop-blur-md space-y-6 shadow-2xl">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-lg font-black text-white tracking-tight">Authentication Failed</h2>
+            <p className="text-xs text-slate-300 font-medium leading-relaxed">
+              {authError}
+            </p>
+          </div>
+
+          <Link
+            to="/login"
+            className="inline-block px-6 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-xl shadow-md hover:bg-oc-indigo transition-colors uppercase tracking-wider"
+          >
+            Return to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-oc-navy flex flex-col justify-center items-center relative overflow-hidden font-sans">

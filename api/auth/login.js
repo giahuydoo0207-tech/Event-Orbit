@@ -29,6 +29,11 @@ export default async function handler(req, res) {
   try {
     const { ocid, mssv, fullName, role, chapterId, ethAddress } = req.body;
 
+    // Security enforcement: Reject session creation if neither OCID nor MSSV is provided
+    if (!ocid && !mssv) {
+      return res.status(400).json({ error: 'Valid OCID or Student ID is required to create a session.' });
+    }
+
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -36,12 +41,12 @@ export default async function handler(req, res) {
 
     const { error } = await supabase.from('sessions').insert({
       token,
-      user_id: ocid || mssv || 'user-' + Date.now(),
+      user_id: ocid || mssv,
       role: role || 'student',
       chapter_id: validChapterUuid,
       ocid: ocid || null,
       mssv: mssv || null,
-      full_name: fullName || 'User',
+      full_name: fullName || ocid || mssv,
       eth_address: ethAddress || null,
       expires_at: expiresAt,
     });
