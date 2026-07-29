@@ -16,6 +16,9 @@ export function PublicLayout({ children }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-oc-mist text-oc-ink font-sans">
+      {/* Accessibility Skip Link */}
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
+
       {/* Header */}
       <header className="border-b border-oc-periwinkle/50 bg-white/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,7 +28,7 @@ export function PublicLayout({ children }) {
               <Link to="/" className="text-xl font-extrabold text-oc-blue tracking-tight hover:opacity-90 transition-opacity">
                 Event Orbit
               </Link>
-              <span className="badge-kicker text-[9px] px-1.5 py-0.5 rounded bg-oc-mist text-oc-blue border border-oc-periwinkle/60">
+              <span className="badge-kicker text-[9px] px-1.5 py-0.5 rounded-sm bg-oc-mist text-oc-blue border border-oc-periwinkle/60">
                 EDU CHAIN
               </span>
             </div>
@@ -34,9 +37,9 @@ export function PublicLayout({ children }) {
             <nav className="flex items-center space-x-3 sm:space-x-6">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="text-xs font-medium text-slate-600 hover:text-oc-blue transition-colors flex items-center gap-1.5 bg-oc-mist px-3 py-1.5 rounded-lg border border-oc-periwinkle/50"
+                className="text-xs font-medium text-slate-600 hover:text-oc-blue transition-colors flex items-center gap-1.5 bg-oc-mist px-3 py-1.5 rounded-md border border-oc-periwinkle/50 shadow-sm active:scale-95"
               >
-                <svg className="w-3.5 h-3.5 text-oc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5 text-oc-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 <span className="hidden sm:inline">Search</span>
@@ -72,7 +75,7 @@ export function PublicLayout({ children }) {
               ) : (
                 <Link
                   to="/login"
-                  className="bg-oc-blue hover:bg-oc-indigo text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-all"
+                  className="bg-oc-blue hover:bg-oc-indigo text-white px-4 py-2 rounded-md text-xs font-bold shadow-sm transition-all active:scale-95"
                 >
                   Sign In
                 </Link>
@@ -83,7 +86,7 @@ export function PublicLayout({ children }) {
       </header>
 
       {/* Main Content — Suspense scoped inside main container */}
-      <main className="flex-grow">
+      <main id="main-content" className="flex-grow">
         <Suspense fallback={
           <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
             <div className="badge-kicker text-[10px] text-slate-400">Loading page...</div>

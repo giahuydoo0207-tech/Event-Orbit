@@ -29,6 +29,8 @@ export function DashboardLayout({ children }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-oc-mist text-oc-ink font-sans">
+      {/* Accessibility Skip Link */}
+      <a href="#main-content" className="skip-to-content">Skip to main content</a>
       {/* Mobile Header Bar */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-oc-navy text-white flex justify-between items-center px-4 z-40 border-b border-oc-navy/80">
         <span className="font-extrabold text-lg text-white">Event Orbit</span>
@@ -114,7 +116,7 @@ export function DashboardLayout({ children }) {
       </aside>
 
       {/* Main Page Area — Suspense scoped strictly inside main container to keep sidebar stationary */}
-      <main className="flex-grow h-screen overflow-y-auto pt-16 md:pt-0 bg-oc-mist">
+      <main id="main-content" className="flex-grow h-screen overflow-y-auto pt-16 md:pt-0 bg-oc-mist">
         <div className="max-w-6xl mx-auto p-6 md:p-10">
           <Suspense fallback={
             <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">

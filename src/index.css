@@ -32,12 +32,49 @@
   font-size: 0.65rem;
 }
 
-/* ── Editorial Design Utilities ── */
-
-/* Global number font — all numeric values use Space Mono for consistency */
+/* Global number font — all numeric values use Space Mono + tabular-nums for consistent alignment */
 .num {
   font-family: 'Space Mono', monospace;
   font-variant-numeric: tabular-nums;
+}
+
+/* Typography Orphan Control (Taste Skill) */
+p, h1, h2, h3, h4 {
+  text-wrap: pretty;
+}
+
+/* Tactile Button Feedback (Taste Skill) */
+button:active:not(:disabled), a.btn:active:not(:disabled) {
+  transform: scale(0.98);
+  transition-duration: 100ms;
+}
+
+/* Tinted Brand Shadows (replaces harsh default black shadows) */
+.shadow-oc-sm {
+  box-shadow: 0 2px 8px -2px rgba(7, 9, 77, 0.08), 0 1px 4px -1px rgba(20, 27, 235, 0.04);
+}
+.shadow-oc-md {
+  box-shadow: 0 8px 24px -4px rgba(7, 9, 77, 0.1), 0 4px 12px -2px rgba(20, 27, 235, 0.06);
+}
+.shadow-oc-lg {
+  box-shadow: 0 16px 36px -6px rgba(7, 9, 77, 0.12), 0 8px 20px -4px rgba(20, 27, 235, 0.08);
+}
+
+/* Accessibility: Skip to Content */
+.skip-to-content {
+  position: absolute;
+  top: -100px;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #141BEB;
+  color: #ffffff;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: top 200ms ease;
+}
+.skip-to-content:focus {
+  top: 1rem;
 }
 
 /* Single focal hero number — Luma-style: large, bold, pure text, no shape wrapper */
