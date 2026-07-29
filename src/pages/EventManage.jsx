@@ -14,36 +14,12 @@ export function EventManage() {
   const [event, setEvent] = useState(null);
   const [attendees, setAttendees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isQrLoading, setIsQrLoading] = useState(true);
+  const [qrData, setQrData] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const qrCanvasRef = useRef(null);
-
-  const loadData = async () => {
-    try {
-      const ev = await fetchEventById(id);
-      setEvent(ev);
-      const atts = await fetchEventAttendees(id);
-      setAttendees(atts);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-
-    // Live update simulation (polling mock API attendee records every 4s)
-    const interval = setInterval(() => {
-      fetchEventAttendees(id).then(setAttendees).catch(console.error);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [id]);
-
-  const [qrData, setQrData] = useState('');
 
   const fetchQRData = async () => {
     try {
@@ -60,20 +36,46 @@ export function EventManage() {
     }
   };
 
-  useEffect(() => {
-    if (event) {
-      fetchQRData();
-      const interval = setInterval(fetchQRData, 270000); // 4.5 minutes
-      return () => clearInterval(interval);
+  const loadData = async () => {
+    try {
+      // Execute event data, attendees, and signed QR data fetching in parallel
+      const [ev, atts] = await Promise.all([
+        fetchEventById(id),
+        fetchEventAttendees(id),
+        fetchQRData()
+      ]);
+      setEvent(ev);
+      setAttendees(atts);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [event, id]);
+  };
 
-  // Generate QR Canvas inside detail card
   useEffect(() => {
-    if (event && qrCanvasRef.current) {
+    loadData();
+
+    // Refresh QR token every 4.5 minutes
+    const qrInterval = setInterval(fetchQRData, 270000);
+
+    // Live update simulation (polling mock API attendee records every 4s)
+    const attendeeInterval = setInterval(() => {
+      fetchEventAttendees(id).then(setAttendees).catch(console.error);
+    }, 4000);
+
+    return () => {
+      clearInterval(qrInterval);
+      clearInterval(attendeeInterval);
+    };
+  }, [id]);
+
+  // Generate QR Canvas with instant fallback and clean loading state
+  useEffect(() => {
+    if (qrCanvasRef.current && (event || id)) {
       const checkinUrl = qrData 
         ? `${window.location.origin}/student-checkin?qrData=${qrData}`
-        : `${window.location.origin}/student-checkin?eventId=${event.id}`;
+        : `${window.location.origin}/student-checkin?eventId=${id}`;
 
       QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
         width: 240,
@@ -82,9 +84,16 @@ export function EventManage() {
           dark: '#1a2a4a',
           light: '#FFFFFF'
         }
-      }).catch(err => console.error('QR generation error in manager', err));
+      })
+        .then(() => {
+          setIsQrLoading(false);
+        })
+        .catch((err) => {
+          console.error('QR generation error in manager', err);
+          setIsQrLoading(false);
+        });
     }
-  }, [event, qrData]);
+  }, [event, id, qrData]);
 
   const handleManualCheckIn = async (att) => {
     try {
@@ -95,11 +104,11 @@ export function EventManage() {
         mssv: att.mssv
       });
       if (res.success) {
-        alert(`Checked in ${att.studentName} successfully!`);
+        showToast(`Checked in ${att.studentName} successfully!`, 'success');
         loadData();
       }
     } catch (err) {
-      alert("Failed to manual check-in");
+      showToast("Failed to manual check-in", "error");
     }
   };
 
@@ -148,29 +157,30 @@ export function EventManage() {
         <Link to={`/manage/${chapterId}`} className="text-xs font-bold text-text-secondary hover:text-navy uppercase tracking-wider">
           &larr; Back to Chapter Management
         </Link>
-      </div>
+        
+        <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-navy">{event.name}</h1>
+            <p className="text-xs text-text-secondary mt-1">
+              {new Date(event.datetime).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })} &bull; {event.location}
+            </p>
+          </div>
 
-      {/* Title */}
-      <div className="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Manage Event: {event.name}</h1>
-          <p className="text-xs text-text-secondary mt-1">
-            Date: {new Date(event.datetime).toLocaleString()} &bull; Location: {event.location}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="px-4 py-2 bg-accent-blue text-white hover:bg-accent-hover text-xs font-semibold rounded shadow-sm flex items-center justify-center gap-1.5"
-          >
-            <span className="text-sm font-bold leading-none">+</span> Import &amp; Cấp Badge
-          </button>
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded shadow-sm transition-colors"
-          >
-            Delete Event
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsImportModalOpen(true)}
+              className="px-3 py-2 bg-navy text-white text-xs font-bold rounded shadow-sm hover:bg-navy-light transition-colors"
+            >
+              Import Attendees CSV
+            </button>
+            
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded shadow-sm transition-colors"
+            >
+              Delete Event
+            </button>
+          </div>
         </div>
       </div>
 
@@ -183,8 +193,17 @@ export function EventManage() {
             <p className="text-[11px] text-text-secondary mt-1">Project this screen on display. Students scan to self check-in.</p>
           </div>
           
-          <div className="bg-white border border-border p-3 rounded shadow-sm">
-            <canvas ref={qrCanvasRef}></canvas>
+          <div className="bg-white border border-border p-3 rounded shadow-sm relative min-w-[240px] min-h-[240px] flex items-center justify-center">
+            {isQrLoading && (
+              <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] flex flex-col items-center justify-center space-y-3 z-10 rounded">
+                <div className="relative w-10 h-10 flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-2 border-oc-blue/20" />
+                  <div className="absolute inset-0 rounded-full border-2 border-t-oc-turquoise border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                </div>
+                <span className="badge-kicker text-[9px] text-slate-400">Generating Venue QR...</span>
+              </div>
+            )}
+            <canvas ref={qrCanvasRef} className={isQrLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'} />
           </div>
 
           <div className="bg-white border border-border rounded p-2 w-full text-[9px] font-mono select-all truncate text-text-secondary">
@@ -199,7 +218,7 @@ export function EventManage() {
               Registrations ({attendees.length})
             </h2>
             <span className="text-xs text-text-secondary">
-              Checked-in: <b className="text-success">{attendees.filter(a => a.checkedIn).length}</b>
+              Checked-in: <b className="text-success">{attendedCount}</b>
             </span>
           </div>
 
@@ -219,25 +238,21 @@ export function EventManage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {attendees.map(att => (
-                      <tr key={att.id} className="hover:bg-slate-50/50">
-                        <td className="p-3 font-semibold text-navy">
-                          {att.studentName || 'Anonymous Student'}
-                        </td>
-                        <td className="p-3 font-mono text-text-secondary">
-                          {att.mssv || att.ocid || 'N/A'}
-                        </td>
+                    {attendees.map((att) => (
+                      <tr key={att.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-navy">{att.studentName}</td>
+                        <td className="p-3 font-mono text-text-secondary">{att.ocid || att.mssv || 'N/A'}</td>
                         <td className="p-3 text-right">
                           {att.checkedIn ? (
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              Checked-in
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                              &check; Checked In
                             </span>
                           ) : (
                             <button
                               onClick={() => handleManualCheckIn(att)}
-                              className="px-2 py-1 bg-slate-100 hover:bg-accent-blue hover:text-white text-navy font-semibold rounded text-[10px] transition-colors"
+                              className="text-[10px] font-bold text-oc-blue hover:underline bg-oc-mist px-2.5 py-1 rounded border border-oc-periwinkle/50"
                             >
-                              Check-in
+                              Check In
                             </button>
                           )}
                         </td>
@@ -251,62 +266,47 @@ export function EventManage() {
         </div>
       </div>
 
+      {/* Attendee Import Modal */}
+      <AttendeeImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        eventId={id}
+        onSuccess={() => {
+          showToast('Imported attendees successfully!', 'success');
+          loadData();
+        }}
+      />
+
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm">
-          <div className="bg-white border border-border rounded-2xl p-6 shadow-2xl w-full max-w-md space-y-4">
-            <div className="flex items-center gap-3 text-red-600">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-lg font-bold">
-                !
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-navy">Soft Delete Event?</h3>
-                <p className="text-xs text-text-secondary">This event will be hidden from public listings.</p>
-              </div>
-            </div>
-
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs space-y-1 text-amber-900">
-              <div><b>Registered Students:</b> {attendees.length}</div>
-              <div><b>Badges Issued:</b> {attendees.filter(a => a.checkedIn).length}</div>
-              <p className="pt-1.5 text-[11px] text-amber-800 border-t border-amber-200/60 mt-1">
-                Soft deleting hides the event from public discovery, but <b>WILL NOT</b> delete or invalidate badges already issued to students on-chain.
-              </p>
-            </div>
-
-            <div className="flex gap-3 justify-end pt-2">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-4 shadow-xl">
+            <h3 className="text-lg font-bold text-navy">Confirm Soft Delete</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to delete <b className="text-navy">{event.name}</b>?
+              The event will be removed from active lists and archived in <b>Event History</b>.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
               <button
-                type="button"
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-border text-xs font-semibold rounded-lg text-navy bg-white hover:bg-slate-50"
+                disabled={deleting}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={handleDeleteEvent}
                 disabled={deleting}
-                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded shadow-sm flex items-center gap-1.5"
               >
-                {deleting ? 'Deleting...' : 'Confirm Soft Delete'}
+                {deleting ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* Import Attendee List Modal */}
-      {event && (
-        <AttendeeImportModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          events={[event]}
-          chapterId={chapterId}
-          onImportSuccess={() => {
-            loadData();
-          }}
-        />
-      )}
     </div>
   );
 }
+
 export default EventManage;

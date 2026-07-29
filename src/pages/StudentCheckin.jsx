@@ -147,17 +147,29 @@ export function StudentCheckin() {
   const showToast = useToastStore((state) => state.showToast);
 
   const handleConfirmCheckin = async () => {
+    if (!qrData) {
+      setStatusState('error');
+      const msg = 'Venue QR code token is initializing. Please re-scan the QR code displayed on the venue screen.';
+      setErrorMessage(msg);
+      showToast(msg, 'warning');
+      return;
+    }
+
     setStatusState('processing');
     try {
-      const res = await checkInStudent(qrData || eventId, user);
+      const res = await checkInStudent(qrData, user);
       if (res.success) {
         setTxHash(res.txHash);
         setStatusState('success');
         showToast('Attendance confirmed! Badge issued.', 'success');
       } else {
         setStatusState('error');
-        setErrorMessage(res.error || 'Check-in failed.');
-        showToast(res.error || 'Check-in failed.', 'error');
+        let formattedError = res.error || 'Check-in failed.';
+        if (formattedError.includes('Invalid QR format') || formattedError.includes('signature') || formattedError.includes('Missing QR data')) {
+          formattedError = 'Mã QR chưa sẵn sàng hoặc đã hết hạn. Vui lòng quét lại mã QR trên màn hình sự kiện.';
+        }
+        setErrorMessage(formattedError);
+        showToast(formattedError, 'error');
       }
     } catch (err) {
       setStatusState('error');
@@ -290,9 +302,26 @@ export function StudentCheckin() {
                   </div>
                   <span className="font-mono text-accent-blue text-[10px]">{user.ocid || user.mssv}</span>
                 </div>
+
+                {!qrData && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center space-y-1">
+                    <p className="text-xs font-semibold text-amber-800">
+                      Mã QR chưa sẵn sàng
+                    </p>
+                    <p className="text-[11px] text-amber-700 leading-normal">
+                      Bạn đã quét mã lúc hệ thống đang khởi tạo token. Vui lòng quét lại mã QR hiển thị trên màn hình sự kiện.
+                    </p>
+                  </div>
+                )}
+
                 <button
                   onClick={handleConfirmCheckin}
-                  className="w-full py-3 bg-success hover:bg-success/90 text-white text-sm font-semibold rounded-md shadow-sm transition-colors"
+                  disabled={!qrData}
+                  className={`w-full py-3 text-sm font-semibold rounded-md shadow-sm transition-colors ${
+                    !qrData
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                      : 'bg-success hover:bg-success/90 text-white'
+                  }`}
                 >
                   Confirm Event Attendance
                 </button>
