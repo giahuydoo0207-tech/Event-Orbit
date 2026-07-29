@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { fetchChapterBySlug, fetchEvents, toggleFollowChapter } from '../api/mockApi';
+import { fetchChapterBySlug, fetchEvents, toggleFollowChapter, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import NotFoundState from '../components/NotFoundState';
 import useToastStore from '../store/useToastStore';
@@ -33,8 +33,8 @@ export function ChapterProfile() {
 
         setChapter(chapterData);
 
-        // Filter events belonging to this chapter
-        const filtered = allEvents.filter((e) => e.chapterId === chapterData.id);
+        // Robust matching for events belonging to this chapter
+        const filtered = allEvents.filter((e) => isEventInChapter(e, chapterData));
         setChapterEvents(filtered);
 
         // Initialize follow state from store

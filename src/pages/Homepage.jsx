@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchEvents, fetchChapters } from '../api/mockApi';
+import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 
@@ -24,7 +24,13 @@ export function Homepage() {
         // Show events from followed chapters only
         const followedIds = user.followedChapterIds || [];
         if (followedIds.length > 0) {
-          const filtered = allEvents.filter(e => followedIds.includes(e.chapterId));
+          const filtered = allEvents.filter(e => {
+            return followedIds.some(chId => {
+              const ch = allChapters.find(c => c.id === chId || c.slug === chId);
+              if (ch) return isEventInChapter(e, ch);
+              return e.chapterId === chId || e.chapter?.slug === chId;
+            });
+          });
           // Sort by date, upcoming first
           filtered.sort((a, b) => new Date(a.datetime) - new Date(b.datetime));
           setFeedEvents(filtered);
@@ -40,9 +46,10 @@ export function Homepage() {
     loadFeed();
   }, [user.followedChapterIds]);
 
-  const getChapterName = (chapterId) => {
-    const ch = chapters.find(c => c.id === chapterId);
-    return ch ? ch.name : 'Unknown Chapter';
+  const getChapterName = (event) => {
+    if (event.chapter?.name) return event.chapter.name;
+    const ch = chapters.find(c => isEventInChapter(event, c));
+    return ch ? ch.name : 'Campus Chapter';
   };
 
   if (loading) {
@@ -129,7 +136,7 @@ export function Homepage() {
                       {event.name}
                     </h2>
                     <p className="text-[11px] text-text-secondary font-medium">
-                      by {getChapterName(event.chapterId)}
+                      by {getChapterName(event)}
                     </p>
                   </div>
                 </div>

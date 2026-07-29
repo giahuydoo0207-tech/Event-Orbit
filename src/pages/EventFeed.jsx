@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { fetchEvents, fetchChapters } from '../api/mockApi';
+import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { CategoryIcon } from '../components/CategoryIcon';
 
 const CATEGORIES = [
@@ -43,6 +43,7 @@ export function EventFeed() {
     const map = {};
     chapters.forEach((ch) => {
       map[ch.id] = ch;
+      if (ch.slug) map[ch.slug] = ch;
     });
     return map;
   }, [chapters]);
@@ -63,11 +64,12 @@ export function EventFeed() {
         activeTag === 'All' ||
         event.category === activeTag ||
         (event.tags && event.tags.includes(activeTag));
+      const selectedChapterObj = chapters.find(c => c.id === selectedChapterId || c.slug === selectedChapterId);
       const matchesChapter =
-        !selectedChapterId || event.chapterId === selectedChapterId;
+        !selectedChapterId || (selectedChapterObj ? isEventInChapter(event, selectedChapterObj) : event.chapterId === selectedChapterId);
       return matchesTag && matchesChapter;
     });
-  }, [events, activeTag, selectedChapterId]);
+  }, [events, activeTag, selectedChapterId, chapters]);
 
   function handleTagChange(tag) {
     if (tag === 'All') {
@@ -188,7 +190,7 @@ export function EventFeed() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => {
-            const ch = chapterMap[event.chapterId] || event.chapter;
+            const ch = event.chapter || chapters.find(c => isEventInChapter(event, c)) || chapterMap[event.chapterId];
             return (
               <Link
                 key={event.id}

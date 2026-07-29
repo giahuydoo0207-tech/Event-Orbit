@@ -377,6 +377,34 @@ export async function fetchRegistrationsByUser(user) {
   });
 }
 
+// Helper to match an event to a chapter across UUID, slug, and legacy IDs
+export function isEventInChapter(event, chapter) {
+  if (!event || !chapter) return false;
+
+  const legacyMap = {
+    'org-001': 'fit',
+    'org-002': 'arts',
+    'org-003': 'hub',
+    'org-004': 'youth',
+    'fit': 'org-001',
+    'arts': 'org-002',
+    'hub': 'org-003',
+    'youth': 'org-004'
+  };
+
+  const eChId = String(event.chapterId || '').trim();
+  const eChSlug = String(event.chapter?.slug || '').trim();
+  const cId = String(chapter.id || '').trim();
+  const cSlug = String(chapter.slug || '').trim();
+
+  if (eChId && (eChId === cId || eChId === cSlug)) return true;
+  if (eChSlug && (eChSlug === cSlug || eChSlug === cId)) return true;
+  if (legacyMap[eChId] && (legacyMap[eChId] === cId || legacyMap[eChId] === cSlug)) return true;
+  if (legacyMap[cId] && (legacyMap[cId] === eChId || legacyMap[cId] === eChSlug)) return true;
+
+  return false;
+}
+
 // ── Chapter Endpoints ──
 
 export async function fetchChapters() {
@@ -390,24 +418,28 @@ export async function fetchChapters() {
     }
   } catch (e) {}
 
+  const events = await fetchEvents();
   const localChapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
 
   return localChapters.map(c => {
-    if (followersMap[c.id] !== undefined) {
-      return { ...c, followerCount: followersMap[c.id] };
-    }
-    return c;
+    const realEventCount = events.filter(e => !e.deletedAt && isEventInChapter(e, c)).length;
+    const followerCount = followersMap[c.id] !== undefined ? followersMap[c.id] : (c.followerCount || 0);
+    return {
+      ...c,
+      eventsHosted: realEventCount,
+      followerCount
+    };
   });
 }
 
 export async function fetchChapterById(id) {
   const chapters = await fetchChapters();
-  return chapters.find(c => c.id === id) || null;
+  return chapters.find(c => c.id === id || c.slug === id) || null;
 }
 
 export async function fetchChapterBySlug(slug) {
   const chapters = await fetchChapters();
-  return chapters.find(c => c.slug === slug) || null;
+  return chapters.find(c => c.slug === slug || c.id === slug) || null;
 }
 
 export async function toggleFollowChapter(id, isFollow) {
