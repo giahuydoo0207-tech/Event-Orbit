@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import NotFoundState from '../components/NotFoundState';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { CategoryIcon } from '../components/CategoryIcon';
 
 export function ChapterProfile() {
   const { slug } = useParams();
@@ -110,13 +111,6 @@ export function ChapterProfile() {
     );
   }
 
-  const initials = chapter.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .substring(0, 2)
-    .toUpperCase();
-
   const now = new Date();
   const upcomingEvents = chapterEvents.filter((e) => new Date(e.datetime) >= now);
   const pastEvents = chapterEvents.filter((e) => new Date(e.datetime) < now);
@@ -137,11 +131,9 @@ export function ChapterProfile() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* Left: Avatar + Info */}
           <div className="flex items-center gap-4">
-            {/* Avatar Icon Box: R_child = 16px - 24px padding = 2-4px (rounded-sm) matching ChapterCard */}
-            <div
-              className={`w-16 h-16 rounded-sm flex items-center justify-center text-white font-bold text-xl bg-gradient-to-br ${chapter.avatarGradient || 'from-slate-600 to-slate-900'} shrink-0 border border-oc-periwinkle/50 shadow-sm`}
-            >
-              {initials}
+            {/* Outline Icon Box: matching ChapterCard design & CategoryIcon scale */}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm border border-oc-periwinkle/70 bg-oc-mist/40 shadow-sm transition-colors">
+              <CategoryIcon category={chapter.category} className="w-8 h-8 text-oc-blue" />
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-extrabold text-navy leading-tight">
