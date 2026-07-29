@@ -196,7 +196,7 @@ export function StudentCheckin() {
         {/* Brand Header */}
         <div className="flex items-center gap-3 border-b border-border pb-4">
           <span className="text-lg font-bold text-navy tracking-tight">Event Orbit</span>
-          <span className="bg-accent-blue/10 text-accent-blue text-[10px] font-extrabold uppercase px-2 py-0.5 rounded">
+          <span className="bg-accent-blue/10 text-accent-blue text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-sm">
             Student Check-in
           </span>
         </div>
@@ -214,8 +214,9 @@ export function StudentCheckin() {
               <p className="text-xs text-text-secondary">{event?.location}</p>
             </div>
 
-            <div className="bg-accent-blue/5 border border-accent-blue/15 rounded-xl p-4 flex items-center gap-4">
-              <div className="text-center bg-accent-blue text-white rounded-lg p-2 min-w-[70px]">
+            {/* Inner Info Banner: R_parent = 12px, Padding = 16px -> R_child = 4px (rounded-sm) */}
+            <div className="bg-accent-blue/5 border border-accent-blue/15 rounded-lg p-4 flex items-center gap-4">
+              <div className="text-center bg-accent-blue text-white rounded-sm p-2 min-w-[70px]">
                 <span className="text-xs uppercase font-bold block leading-none">SBT</span>
                 <span className="text-xl font-black">+{event?.points}</span>
                 <span className="text-[9px] block uppercase leading-none">pts</span>

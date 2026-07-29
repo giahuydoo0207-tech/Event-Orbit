@@ -37,6 +37,15 @@ export default {
         success: '#10b981',
         error: '#ef4444',
       },
+      borderRadius: {
+        'sm': '4px',    // Small elements (micro badges, chips, status tags <=24px)
+        'DEFAULT': '6px',
+        'md': '8px',    // Medium elements (inputs, small buttons, tags 25-43px)
+        'lg': '12px',   // Large elements (primary buttons, cards, modals >=44px)
+        'xl': '16px',   // Extra large cards
+        '2xl': '20px',  // Containers & hero blocks
+        '3xl': '24px',  // Section containers
+      },
       fontFamily: {
         sans: ['Poppins', 'system-ui', 'sans-serif'],
         mono: ['Space Mono', 'monospace'],

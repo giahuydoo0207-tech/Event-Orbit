@@ -68,7 +68,7 @@ export function Homepage() {
 
       {/* Feed Content */}
       {feedEvents.length === 0 ? (
-        <div className="text-center py-20 bg-surface border border-dashed border-border rounded-2xl p-8 space-y-6">
+        <div className="text-center py-20 bg-surface border border-dashed border-border rounded-xl p-8 space-y-6">
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-navy">Your feed is empty</h2>
             <p className="text-xs text-text-secondary max-w-xs mx-auto">
@@ -78,13 +78,13 @@ export function Homepage() {
           <div className="flex justify-center gap-3">
             <Link
               to="/chapters"
-              className="inline-block py-2.5 px-6 bg-navy text-white text-xs font-semibold rounded hover:bg-navy-light uppercase tracking-wider transition-all"
+              className="inline-block py-2.5 px-6 bg-navy text-white text-xs font-semibold rounded-md hover:bg-navy-light uppercase tracking-wider transition-all"
             >
               Browse Chapters
             </Link>
             <Link
               to="/events"
-              className="inline-block py-2.5 px-6 bg-white border border-border text-navy text-xs font-semibold rounded hover:bg-slate-50 uppercase tracking-wider transition-all"
+              className="inline-block py-2.5 px-6 bg-white border border-border text-navy text-xs font-semibold rounded-md hover:bg-slate-50 uppercase tracking-wider transition-all"
             >
               Explore Events
             </Link>

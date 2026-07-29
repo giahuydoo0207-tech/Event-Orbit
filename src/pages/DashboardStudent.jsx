@@ -76,7 +76,7 @@ export function DashboardStudent() {
         </div>
 
         {achievements.length === 0 ? (
-          <div className="text-center py-16 bg-white border border-dashed border-oc-periwinkle rounded-2xl space-y-2">
+          <div className="text-center py-16 bg-white border border-dashed border-oc-periwinkle rounded-xl space-y-2">
             <h3 className="text-sm font-bold text-oc-ink">No credentials claimed yet</h3>
             <p className="text-xs text-slate-500">
               Attend campus events and check in via QR code to earn your first verified SBT badge.
@@ -87,13 +87,14 @@ export function DashboardStudent() {
             {achievements.map((ach) => (
               <div
                 key={ach.id}
-                className="bg-white border border-oc-periwinkle/70 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-4"
+                className="bg-white border border-oc-periwinkle/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all space-y-4"
               >
-                <div className="relative h-40 bg-oc-mist rounded-xl overflow-hidden flex items-center justify-center p-4 border border-oc-periwinkle/40">
+                {/* R_child = R_parent(16px) - Padding(16px) = 4px (rounded-sm) */}
+                <div className="relative h-40 bg-oc-mist rounded-sm overflow-hidden flex items-center justify-center p-3 border border-oc-periwinkle/40">
                   <img
                     src={ach.badgeImage}
                     alt={ach.eventName}
-                    className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
+                    className="max-h-full max-w-full object-contain rounded-sm shadow-sm"
                   />
                   <div className="absolute top-2 right-2">
                     <span className="badge-kicker bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full text-[9px]">
