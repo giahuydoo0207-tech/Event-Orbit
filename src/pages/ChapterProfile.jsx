@@ -133,12 +133,13 @@ export function ChapterProfile() {
       </Link>
 
       {/* Header Info Card */}
-      <div className="bg-surface border border-border rounded-2xl p-6 md:p-8">
+      <div className="bg-surface border border-border rounded-xl p-6 md:p-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* Left: Avatar + Info */}
           <div className="flex items-center gap-4">
+            {/* Avatar Icon Box: R_child = 16px - 24px padding = 2-4px (rounded-sm) matching ChapterCard */}
             <div
-              className={`w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl bg-gradient-to-br ${chapter.avatarGradient || 'from-slate-600 to-slate-900'} shrink-0`}
+              className={`w-16 h-16 rounded-sm flex items-center justify-center text-white font-bold text-xl bg-gradient-to-br ${chapter.avatarGradient || 'from-slate-600 to-slate-900'} shrink-0 border border-oc-periwinkle/50 shadow-sm`}
             >
               {initials}
             </div>
@@ -150,7 +151,7 @@ export function ChapterProfile() {
                 {chapter.ocid}
               </div>
               <div className="flex items-center gap-2 mt-1">
-                <span className="inline-block px-2 py-0.5 rounded-[3px] text-[9px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                <span className="inline-block px-2.5 py-0.5 rounded-sm text-[9px] font-bold uppercase tracking-wider bg-white/70 text-slate-600 border border-oc-periwinkle/60">
                   {chapter.category}
                 </span>
               </div>
@@ -172,7 +173,7 @@ export function ChapterProfile() {
               <button
                 disabled={isActionLoading}
                 onClick={handleFollowToggle}
-                className={`px-6 py-2.5 rounded text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 ${
+                className={`px-6 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm ${
                   followingState
                     ? 'bg-white border border-navy text-navy hover:bg-slate-50'
                     : 'bg-navy text-white hover:bg-navy-light'
@@ -264,10 +265,10 @@ export function ChapterProfile() {
                   }`}
                 >
                   <span
-                    className={`text-[9px] uppercase font-bold tracking-wider ${
+                    className={`badge-kicker text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border ${
                       activeTab === 'upcoming'
-                        ? 'text-accent-blue'
-                        : 'text-text-secondary'
+                        ? 'text-oc-blue bg-oc-mist border-oc-periwinkle/60'
+                        : 'text-text-secondary bg-slate-100 border-slate-200'
                     }`}
                   >
                     {event.category}

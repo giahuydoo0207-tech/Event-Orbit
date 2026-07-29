@@ -64,7 +64,7 @@ export function PublicProfile() {
       </div>
 
       {/* Main Profile Info Card */}
-      <div className="bg-surface border border-border rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="bg-surface border border-border rounded-xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
           {/* Avatar circle */}
           <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-extrabold text-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm shrink-0">
@@ -72,7 +72,7 @@ export function PublicProfile() {
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-extrabold text-navy leading-tight">{displayName}</h1>
-            <div className="inline-block bg-accent-blue/10 border border-accent-blue/20 text-accent-blue font-mono font-bold text-xs px-2.5 py-0.5 rounded">
+            <div className="inline-block bg-accent-blue/10 border border-accent-blue/20 text-accent-blue font-mono font-bold text-xs px-2.5 py-0.5 rounded-sm">
               {ocid}
             </div>
             <div className="text-[10px] text-text-secondary">
@@ -110,7 +110,8 @@ export function PublicProfile() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
             {achievements.map((ach) => (
               <div key={ach.id} className="bg-white border border-border rounded-xl p-4 text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-                <div className="aspect-square w-20 mx-auto rounded-lg overflow-hidden bg-slate-50 border border-border">
+                {/* R_child = 16px - 16px padding = 4px (rounded-sm) */}
+                <div className="aspect-square w-20 mx-auto rounded-sm overflow-hidden bg-slate-50 border border-border">
                   <img
                     src={ach.badgeImage}
                     alt={ach.eventName}

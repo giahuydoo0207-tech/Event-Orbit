@@ -55,7 +55,7 @@ export function Following() {
           </p>
           <Link
             to="/chapters"
-            className="inline-block mt-5 px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
+            className="inline-block mt-5 px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-md shadow-sm hover:bg-oc-indigo transition-colors"
           >
             Browse Chapters
           </Link>
