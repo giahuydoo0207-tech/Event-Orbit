@@ -32,6 +32,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
   // Sync selectedEventId when modal opens or eventId/events change
   useEffect(() => {
     if (isOpen) {
+      console.log(`[AttendeeImportModal] Opened - eventId prop: ${eventId}, selectedEventId: ${selectedEventId}, step: ${step}`);
       if (eventId) {
         setSelectedEventId(eventId);
       } else if (events && events.length > 0) {
@@ -39,6 +40,12 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
       }
     }
   }, [isOpen, eventId, events]);
+
+  useEffect(() => {
+    if (isOpen) {
+      console.log(`[AttendeeImportModal] Current step: ${step}, progress: ${progress}%`);
+    }
+  }, [step, progress, isOpen]);
 
   if (!isOpen) return null;
 
@@ -161,6 +168,8 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
   // Start Batch Submission
   const handleConfirmImport = async () => {
     const targetEventId = selectedEventId || eventId;
+    console.log(`[AttendeeImportModal] handleConfirmImport STARTED for event: ${targetEventId}, rows: ${mappedData.length}`);
+
     if (!targetEventId) {
       showToast('Please select a target event before proceeding.', 'error');
       return;
@@ -198,6 +207,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
         const currentStartPercent = Math.round((start / totalRows) * 100);
         setProgress(Math.max(5, currentStartPercent));
         setStatusText(`Processing batch ${i + 1} of ${totalBatches} (${start + 1} - ${end} of ${totalRows} rows)...`);
+        console.log(`[AttendeeImportModal] Processing batch ${i + 1}/${totalBatches}`);
 
         // Yield DOM tick
         await new Promise(r => setTimeout(r, 60));
@@ -216,15 +226,17 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
         await new Promise(r => setTimeout(r, 60));
       }
 
+      console.log(`[AttendeeImportModal] Batch COMPLETED! Issued: ${aggregatedResults.issuedList.length}, Dupes: ${aggregatedResults.alreadyIssuedList.length}, Unmatched: ${aggregatedResults.unmatchedList.length}`);
       setResults(aggregatedResults);
       setStep('results');
       showToast(`Processing complete! Issued ${aggregatedResults.issuedList.length} badges.`, 'success');
       
       if (handleSuccessCallback) {
+        console.log('[AttendeeImportModal] Invoking handleSuccessCallback background data reload');
         handleSuccessCallback();
       }
     } catch (err) {
-      console.error('Import processing failed:', err);
+      console.error('[AttendeeImportModal] Import processing failed:', err);
       showToast(err.message || 'Import failed due to server error.', 'error');
       setStep('preview');
     }

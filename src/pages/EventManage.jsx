@@ -37,6 +37,7 @@ export function EventManage() {
   };
 
   const loadData = async () => {
+    console.log(`[EventManage] loadData STARTED for eventId: ${id}`);
     try {
       // Execute event data, attendees, and signed QR data fetching in parallel
       const [ev, atts] = await Promise.all([
@@ -44,10 +45,11 @@ export function EventManage() {
         fetchEventAttendees(id),
         fetchQRData()
       ]);
+      console.log(`[EventManage] loadData COMPLETED - event: ${ev?.name}, attendeesCount: ${atts?.length}`);
       setEvent(ev);
       setAttendees(atts);
     } catch (err) {
-      console.error(err);
+      console.error('[EventManage] loadData Error:', err);
     } finally {
       setLoading(false);
     }
