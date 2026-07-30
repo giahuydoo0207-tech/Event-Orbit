@@ -458,69 +458,92 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
               <div className="border-b border-border pb-4">
                 <h3 className="text-lg font-extrabold text-navy">Import & Badge Issuance Summary</h3>
                 <p className="text-xs text-text-secondary">
-                  Processed {results.totalProcessed} records. Badges issued and on-chain SBTs dispatched.
+                  Processed <span className="num font-bold text-oc-blue">{results.totalProcessed}</span> records. Badges issued and on-chain SBTs dispatched.
                 </p>
               </div>
 
-              {/* Results Stat Cards */}
+              {/* Results Stat Cards with Taste Skill Vector Status Icons & Space Mono Nums */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
-                  <div className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider">
-                    Badges Issued
+                {/* Card 1: Issued */}
+                <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                    <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Badges Issued</span>
                   </div>
-                  <div className="text-3xl font-extrabold text-emerald-700 mt-1">
+                  <div className="num text-3xl font-extrabold text-emerald-700 tracking-tight mt-3">
                     {results.issuedList.length}
                   </div>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-                  <div className="text-[10px] font-bold uppercase text-amber-800 tracking-wider">
-                    Already Issued / Dupes
+                {/* Card 2: Dupes */}
+                <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                    <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                    </svg>
+                    <span>Already Issued</span>
                   </div>
-                  <div className="text-3xl font-extrabold text-amber-700 mt-1">
+                  <div className="num text-3xl font-extrabold text-amber-700 tracking-tight mt-3">
                     {results.alreadyIssuedList.length}
                   </div>
                 </div>
 
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-                  <div className="text-[10px] font-bold uppercase text-red-800 tracking-wider">
-                    Unmatched Rows
+                {/* Card 3: Unmatched */}
+                <div className="bg-rose-50/70 border border-rose-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-800">
+                    <svg className="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span>Unmatched Rows</span>
                   </div>
-                  <div className="text-3xl font-extrabold text-red-700 mt-1">
+                  <div className="num text-3xl font-extrabold text-rose-700 tracking-tight mt-3">
                     {results.unmatchedList.length}
                   </div>
                 </div>
               </div>
 
-              {/* Unmatched List Breakdown if any */}
+              {/* Unmatched List Breakdown Table */}
               {results.unmatchedList.length > 0 && (
-                <div className="bg-red-50/50 border border-red-200 rounded-xl p-4 space-y-3">
+                <div className="bg-rose-50/40 border border-rose-200/70 rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-bold text-red-900 uppercase tracking-wider">
-                      Unmatched Attendees ({results.unmatchedList.length})
+                    <h4 className="badge-kicker text-[10px] font-bold text-rose-900 tracking-wider">
+                      Unmatched Attendees (<span className="num">{results.unmatchedList.length}</span>)
                     </h4>
-                    <span className="text-[10px] text-red-700">
-                      Share these MSSVs/emails to remind students to register an OCID account.
+                    <span className="text-[10px] text-rose-700 font-medium">
+                      Remind these students to register an OCID account to claim badges.
                     </span>
                   </div>
 
-                  <div className="bg-white border border-red-100 rounded-lg overflow-x-auto max-h-40">
+                  <div className="bg-white border border-rose-100 rounded-lg overflow-x-auto max-h-44 shadow-xs">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-red-100/50 uppercase text-[9px] font-bold text-red-900">
-                          <th className="p-2">MSSV</th>
-                          <th className="p-2">Email</th>
-                          <th className="p-2">Name</th>
-                          <th className="p-2">Reason</th>
+                        <tr className="bg-rose-100/40 border-b border-rose-100">
+                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">MSSV</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Email</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Name</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Reason</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-red-50">
+                      <tbody className="divide-y divide-rose-50/80">
                         {results.unmatchedList.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="p-2 font-mono text-[10px] font-semibold text-navy">{item.mssv}</td>
-                            <td className="p-2 text-text-secondary">{item.email}</td>
-                            <td className="p-2 font-medium">{item.name}</td>
-                            <td className="p-2 text-red-600 text-[10px]">{item.reason}</td>
+                          <tr key={idx} className="hover:bg-rose-50/40 transition-colors">
+                            <td className="p-2.5 font-mono text-xs font-semibold text-oc-ink">{item.mssv}</td>
+                            <td className="p-2.5 text-slate-600 text-xs">{item.email}</td>
+                            <td className="p-2.5 font-medium text-oc-ink text-xs">{item.name}</td>
+                            <td className="p-2.5">
+                              <span
+                                className="inline-block px-2 py-0.5 rounded-sm bg-rose-100/80 text-rose-800 text-[10px] font-bold border border-rose-200/60"
+                                title={item.reason}
+                              >
+                                {item.reason.includes('both MSSV and Email')
+                                  ? 'Missing Info'
+                                  : item.reason.includes('Duplicate')
+                                  ? 'Duplicate Row'
+                                  : 'No OCID Account'}
+                              </span>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
