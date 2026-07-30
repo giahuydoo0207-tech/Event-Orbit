@@ -1,11 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { importAttendeesBatchApi } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 
-export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, onImportSuccess }) {
-  const [selectedEventId, setSelectedEventId] = useState(events[0]?.id || '');
+export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, chapterId, onImportSuccess, onSuccess }) {
+  const handleSuccessCallback = onImportSuccess || onSuccess;
+  const [selectedEventId, setSelectedEventId] = useState(eventId || events[0]?.id || '');
   const [file, setFile] = useState(null);
   const [parsedRows, setParsedRows] = useState([]);
   const [mappedData, setMappedData] = useState([]);
@@ -27,6 +28,17 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, o
 
   const fileInputRef = useRef(null);
   const showToast = useToastStore((state) => state.showToast);
+
+  // Sync selectedEventId when modal opens or eventId/events change
+  useEffect(() => {
+    if (isOpen) {
+      if (eventId) {
+        setSelectedEventId(eventId);
+      } else if (events && events.length > 0) {
+        setSelectedEventId(events[0].id);
+      }
+    }
+  }, [isOpen, eventId, events]);
 
   if (!isOpen) return null;
 
@@ -148,7 +160,8 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, o
 
   // Start Batch Submission
   const handleConfirmImport = async () => {
-    if (!selectedEventId) {
+    const targetEventId = selectedEventId || eventId;
+    if (!targetEventId) {
       showToast('Please select a target event before proceeding.', 'error');
       return;
     }
@@ -159,8 +172,11 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, o
     }
 
     setStep('processing');
-    setProgress(0);
+    setProgress(5);
     setStatusText('Initiating attendee list processing...');
+
+    // Yield DOM rendering tick so React renders processing spinner & progress bar
+    await new Promise(r => setTimeout(r, 100));
 
     const batchSize = 50;
     const totalRows = mappedData.length;
@@ -179,23 +195,34 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], chapterId, o
         const end = Math.min(start + batchSize, totalRows);
         const chunk = mappedData.slice(start, end);
 
+        const currentStartPercent = Math.round((start / totalRows) * 100);
+        setProgress(Math.max(5, currentStartPercent));
         setStatusText(`Processing batch ${i + 1} of ${totalBatches} (${start + 1} - ${end} of ${totalRows} rows)...`);
 
-        const res = await importAttendeesBatchApi(selectedEventId, chunk);
+        // Yield DOM tick
+        await new Promise(r => setTimeout(r, 60));
+
+        const res = await importAttendeesBatchApi(targetEventId, chunk);
 
         if (res.issuedList) aggregatedResults.issuedList.push(...res.issuedList);
         if (res.alreadyIssuedList) aggregatedResults.alreadyIssuedList.push(...res.alreadyIssuedList);
         if (res.unmatchedList) aggregatedResults.unmatchedList.push(...res.unmatchedList);
         aggregatedResults.totalProcessed += res.processedCount || chunk.length;
 
-        const percent = Math.round(((i + 1) / totalBatches) * 100);
-        setProgress(percent);
+        const currentEndPercent = Math.round(((i + 1) / totalBatches) * 100);
+        setProgress(currentEndPercent);
+
+        // Yield DOM tick
+        await new Promise(r => setTimeout(r, 60));
       }
 
       setResults(aggregatedResults);
       setStep('results');
-      showToast('Attendee list processing complete!', 'success');
-      if (onImportSuccess) onImportSuccess();
+      showToast(`Processing complete! Issued ${aggregatedResults.issuedList.length} badges.`, 'success');
+      
+      if (handleSuccessCallback) {
+        handleSuccessCallback();
+      }
     } catch (err) {
       console.error('Import processing failed:', err);
       showToast(err.message || 'Import failed due to server error.', 'error');

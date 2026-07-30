@@ -74,16 +74,7 @@ export default async function handler(req, res) {
     }
 
     if (!targetEvent) {
-      const { data } = await supabase
-        .from('events')
-        .select('id, name, points, chapter_id')
-        .limit(1)
-        .maybeSingle();
-      targetEvent = data;
-    }
-
-    if (!targetEvent) {
-      return res.status(404).json({ error: 'Target event not found in database.' });
+      return res.status(404).json({ error: 'Target event not found. Please refresh and select the correct event.' });
     }
 
     const event = targetEvent;
@@ -166,7 +157,7 @@ export default async function handler(req, res) {
         const { data: byEmail } = await supabase
           .from('sessions')
           .select('user_id, ocid, mssv, full_name, eth_address')
-          .ilike('ocid', `%${rawEmail}%`)
+          .ilike('ocid', rawEmail)
           .limit(1);
 
         if (byEmail && byEmail.length > 0) {
@@ -195,9 +186,9 @@ export default async function handler(req, res) {
       const { data: existingAch } = await supabase
         .from('achievements')
         .select('id')
-        .eq('event_id', eventId)
+        .or(`event_id.eq.${event.id},event_id.eq.${eventId}`)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (existingAch) {
         alreadyIssuedList.push({
@@ -209,16 +200,18 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // 6. Record Registration (Source: import_excel)
+      // 6. Record Registration (Source: import_excel) using exact Postgres Event UUID
       await supabase
         .from('registrations')
         .upsert({
-          event_id: eventId,
+          event_id: event.id,
           user_id: userId,
           student_name: studentName,
           ocid: studentOcid,
           mssv: studentMssv,
           eth_address: ethAddress,
+          checked_in: true,
+          source: 'import_excel',
           registered_at: new Date().toISOString()
         }, { onConflict: 'event_id,user_id' });
 
@@ -231,7 +224,7 @@ export default async function handler(req, res) {
         try {
           const relayerResult = await mintBadge({
             recipientAddress: ethAddress,
-            eventId,
+            eventId: event.id,
             points: event.points
           });
           txHash = relayerResult.txHash;
@@ -244,11 +237,11 @@ export default async function handler(req, res) {
         }
       }
 
-      // Record Achievement Badge
+      // Record Achievement Badge using exact Postgres Event UUID
       const { error: achErr } = await supabase
         .from('achievements')
         .insert({
-          event_id: eventId,
+          event_id: event.id,
           user_id: userId,
           ocid: studentOcid,
           credential_id: `cred-imp-${Date.now()}-${Math.floor(Math.random()*1000)}`,
