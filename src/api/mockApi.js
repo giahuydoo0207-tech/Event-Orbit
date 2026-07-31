@@ -1,15 +1,4 @@
-import { initialEvents, initialRegistrations, initialAchievements, CHAPTERS } from './mockData';
-
-// Helper to wait simulating latency
-const delay = (ms = 600) => new Promise(resolve => setTimeout(resolve, ms));
-
-// LocalStorage Keys
-const KEYS = {
-  EVENTS: 'orbit_events_react',
-  REGISTRATIONS: 'orbit_registrations_react',
-  ACHIEVEMENTS: 'orbit_achievements_react',
-  CHAPTERS: 'orbit_chapters_react'
-};
+import { CHAPTERS } from './mockData';
 
 export function getAuthHeaders() {
   const headers = { 'Content-Type': 'application/json' };
@@ -28,80 +17,33 @@ export function getAuthHeaders() {
   return headers;
 }
 
-// Database Initialization
-export function initDB() {
-  // If the user has old Phase 1 database version, force reset
-  const eventsRaw = localStorage.getItem(KEYS.EVENTS);
-  let forceReset = false;
-
-  if (eventsRaw) {
-    try {
-      const parsed = JSON.parse(eventsRaw);
-      const needsReset = parsed.some(e => !e.slug || e.organizerId);
-      if (needsReset) {
-        forceReset = true;
-      }
-    } catch (e) {
-      forceReset = true;
-    }
-  }
-
-  if (forceReset) {
-    localStorage.removeItem(KEYS.EVENTS);
-    localStorage.removeItem(KEYS.REGISTRATIONS);
-    localStorage.removeItem(KEYS.ACHIEVEMENTS);
-    localStorage.removeItem(KEYS.CHAPTERS);
-  }
-
-  if (!localStorage.getItem(KEYS.EVENTS)) {
-    localStorage.setItem(KEYS.EVENTS, JSON.stringify(initialEvents));
-  }
-  if (!localStorage.getItem(KEYS.REGISTRATIONS)) {
-    localStorage.setItem(KEYS.REGISTRATIONS, JSON.stringify(initialRegistrations));
-  }
-  if (!localStorage.getItem(KEYS.ACHIEVEMENTS)) {
-    localStorage.setItem(KEYS.ACHIEVEMENTS, JSON.stringify(initialAchievements));
-  }
-  if (!localStorage.getItem(KEYS.CHAPTERS)) {
-    localStorage.setItem(KEYS.CHAPTERS, JSON.stringify(CHAPTERS));
+async function parseErrorMessage(res, fallback) {
+  try {
+    const errData = await res.json();
+    return errData.error || errData.details || fallback;
+  } catch (e) {
+    return fallback;
   }
 }
 
 // ── Event Endpoints ──
 
 export async function fetchEvents(options = {}) {
-  initDB();
-  await delay();
-  try {
-    const params = new URLSearchParams();
-    if (options.includeDeleted) params.append('includeDeleted', 'true');
-    if (options.chapterId) params.append('chapterId', options.chapterId);
+  const params = new URLSearchParams();
+  if (options.includeDeleted) params.append('includeDeleted', 'true');
+  if (options.chapterId) params.append('chapterId', options.chapterId);
 
-    const queryString = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`/api/events${queryString}`, {
-      headers: getAuthHeaders(),
-      credentials: 'same-origin'
-    });
-    if (res.ok) {
-      const dynamicEvents = await res.json();
-      const combined = [...dynamicEvents, ...initialEvents];
-      const seen = new Set();
-      return combined.filter(e => {
-        if (seen.has(e.id)) return false;
-        // Filter out deleted unless requested
-        if (!options.includeDeleted && e.deletedAt) return false;
-        seen.add(e.id);
-        return true;
-      });
-    }
-  } catch (e) {
-    console.warn('fetchEvents failed, falling back to localStorage:', e);
+  const queryString = params.toString() ? `?${params.toString()}` : '';
+  const res = await fetch(`/api/events${queryString}`, {
+    headers: getAuthHeaders(),
+    credentials: 'same-origin'
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load events.'));
   }
-  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  if (!options.includeDeleted) {
-    return events.filter(e => !e.deletedAt);
-  }
-  return events;
+
+  return await res.json();
 }
 
 export async function deleteEventApi(eventId) {
@@ -112,20 +54,7 @@ export async function deleteEventApi(eventId) {
   });
 
   if (!res.ok) {
-    let errMessage = 'Failed to delete event.';
-    try {
-      const errData = await res.json();
-      errMessage = errData.error || errMessage;
-    } catch (e) {}
-    throw new Error(errMessage);
-  }
-
-  // Also soft-delete in localStorage fallback
-  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  const ev = events.find(e => e.id === eventId || e.slug === eventId);
-  if (ev) {
-    ev.deletedAt = new Date().toISOString();
-    localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+    throw new Error(await parseErrorMessage(res, 'Failed to delete event.'));
   }
 
   return await res.json();
@@ -142,9 +71,6 @@ export async function fetchEventBySlug(slug) {
 }
 
 export async function createEventApi(eventData) {
-  initDB();
-  await delay(600);
-
   const res = await fetch('/api/events', {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -153,30 +79,15 @@ export async function createEventApi(eventData) {
   });
 
   if (!res.ok) {
-    let errMessage = 'Failed to store event in database.';
-    try {
-      const errData = await res.json();
-      errMessage = errData.error || errData.details || errMessage;
-    } catch (e) {}
-    throw new Error(errMessage);
+    throw new Error(await parseErrorMessage(res, 'Failed to store event in database.'));
   }
 
-  const created = await res.json();
-
-  // Save real database record to localStorage cache
-  const events = JSON.parse(localStorage.getItem(KEYS.EVENTS)) || [];
-  events.unshift(created);
-  localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
-
-  return created;
+  return await res.json();
 }
 
 // ── Registration & Check-in Endpoints ──
 
 export async function registerForEvent(eventId, student) {
-  initDB();
-  await delay(400);
-
   const event = await fetchEventById(eventId);
   const capacity = event ? event.capacity : 50;
 
@@ -200,9 +111,6 @@ export async function registerForEvent(eventId, student) {
 }
 
 export async function checkInStudent(qrData, student) {
-  initDB();
-  await delay(600);
-
   try {
     const res = await fetch('/api/checkin', {
       method: 'POST',
@@ -225,101 +133,51 @@ export async function checkInStudent(qrData, student) {
 // ── Student Achievement Endpoints ──
 
 export async function fetchStudentAchievements(student) {
-  initDB();
-  await delay();
-  try {
-    let url = '/api/achievements';
-    if (student.ocid) {
-      url += `?ocid=${encodeURIComponent(student.ocid)}`;
-    } else if (student.ethAddress) {
-      url += `?wallet=${encodeURIComponent(student.ethAddress)}`;
-    }
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      const localAchievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
-      const filteredLocal = localAchievements.filter(a => {
-        const walletMatch = student.ethAddress && a.studentWallet && a.studentWallet.toLowerCase() === student.ethAddress.toLowerCase();
-        const ocidMatch = student.ocid && a.ocid && a.ocid === student.ocid;
-        return walletMatch || ocidMatch;
-      });
-      const combined = [...data.achievements, ...filteredLocal];
-      const seen = new Set();
-      const unique = combined.filter(a => {
-        if (seen.has(a.id)) return false;
-        seen.add(a.id);
-        return true;
-      });
-      const totalPoints = unique.reduce((sum, item) => sum + item.points, 0);
-      return { achievements: unique, totalPoints };
-    }
-  } catch (e) {
-    console.warn('Vercel KV fetchStudentAchievements failed, falling back to localStorage:', e);
+  let url = '/api/achievements';
+  if (student.ocid) {
+    url += `?ocid=${encodeURIComponent(student.ocid)}`;
+  } else if (student.ethAddress) {
+    url += `?wallet=${encodeURIComponent(student.ethAddress)}`;
   }
 
-  const achievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
-  const filtered = achievements.filter(a => {
-    const walletMatch = student.ethAddress && a.studentWallet && a.studentWallet.toLowerCase() === student.ethAddress.toLowerCase();
-    const ocidMatch = student.ocid && a.ocid && a.ocid === student.ocid;
-    return walletMatch || ocidMatch;
-  });
-  const totalPoints = filtered.reduce((sum, item) => sum + item.points, 0);
-  return { achievements: filtered, totalPoints };
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
+  }
+
+  const data = await res.json();
+  const totalPoints = (data.achievements || []).reduce((sum, item) => sum + item.points, 0);
+  return { achievements: data.achievements || [], totalPoints };
 }
 
 export async function fetchStudentAchievementsByOcid(ocid) {
-  initDB();
-  await delay();
-  try {
-    const res = await fetch(`/api/achievements?ocid=${encodeURIComponent(ocid)}`);
-    if (res.ok) {
-      const data = await res.json();
-      const localAchievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
-      const filteredLocal = localAchievements.filter(a => a.ocid && a.ocid === ocid);
-      const combined = [...data.achievements, ...filteredLocal];
-      const seen = new Set();
-      const unique = combined.filter(a => {
-        if (seen.has(a.id)) return false;
-        seen.add(a.id);
-        return true;
-      });
-      const totalPoints = unique.reduce((sum, item) => sum + item.points, 0);
-      return { achievements: unique, totalPoints };
-    }
-  } catch (e) {
-    console.warn('Vercel KV fetchStudentAchievementsByOcid failed, falling back to localStorage:', e);
+  const res = await fetch(`/api/achievements?ocid=${encodeURIComponent(ocid)}`);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
   }
 
-  const achievements = JSON.parse(localStorage.getItem(KEYS.ACHIEVEMENTS)) || [];
-  const filtered = achievements.filter(a => a.ocid && a.ocid === ocid);
-  const totalPoints = filtered.reduce((sum, item) => sum + item.points, 0);
-  return { achievements: filtered, totalPoints };
+  const data = await res.json();
+  const totalPoints = (data.achievements || []).reduce((sum, item) => sum + item.points, 0);
+  return { achievements: data.achievements || [], totalPoints };
 }
 
 // ── Organizer Endpoints ──
 
 export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
-  initDB();
-  await delay();
   const events = await fetchEvents({ includeDeleted, chapterId });
-  let regs = [];
-  try {
-    const res = await fetch('/api/registrations');
-    if (res.ok) {
-      regs = await res.json();
-    }
-  } catch (e) {
-    regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
+
+  const res = await fetch('/api/registrations');
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load registrations.'));
   }
+  const regs = await res.json();
 
   const activeEvents = includeDeleted ? events : events.filter(e => !e.deletedAt);
 
   return activeEvents.map(event => {
-    const eventRegs = regs.filter(r => 
-      r.eventId === event.id || 
-      r.eventId === event.slug ||
-      (event.legacyId && r.eventId === event.legacyId)
-    );
+    // Events only ever carry a real Postgres UUID now (see the long-term
+    // stability plan) — no slug/legacyId fallback needed here.
+    const eventRegs = regs.filter(r => r.eventId === event.id);
     const attendedCount = eventRegs.filter(r => r.checkedIn).length;
     return {
       ...event,
@@ -330,58 +188,27 @@ export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
 }
 
 export async function fetchEventAttendees(eventId) {
-  initDB();
-  await delay();
-  try {
-    const res = await fetch(`/api/registrations?eventId=${encodeURIComponent(eventId)}`);
-    if (res.ok) {
-      const data = await res.json();
-      const localRegs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
-      const filteredLocal = localRegs.filter(r => r.eventId === eventId);
-      const combined = [...data, ...filteredLocal];
-      const seen = new Set();
-      return combined.filter(r => {
-        if (seen.has(r.id)) return false;
-        seen.add(r.id);
-        return true;
-      });
-    }
-  } catch (e) {}
-
-  const regs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
-  return regs.filter(r => r.eventId === eventId);
+  const res = await fetch(`/api/registrations?eventId=${encodeURIComponent(eventId)}`);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load attendees.'));
+  }
+  return await res.json();
 }
 
 export async function fetchRegistrationsByUser(user) {
-  initDB();
-  await delay(400);
   if (!user) return [];
   const userId = user.ocid || user.mssv || user.ethAddress;
-  let apiRegs = [];
-  try {
-    const res = await fetch(`/api/registrations?userId=${encodeURIComponent(userId)}`);
-    if (res.ok) {
-      apiRegs = await res.json();
-    }
-  } catch (e) {}
 
-  const localRegs = JSON.parse(localStorage.getItem(KEYS.REGISTRATIONS)) || [];
-  const filteredLocal = localRegs.filter(r => 
-    (user.ocid && r.ocid === user.ocid) ||
-    (user.ethAddress && r.ethAddress?.toLowerCase() === user.ethAddress?.toLowerCase()) ||
-    (user.mssv && r.mssv === user.mssv)
-  );
-
-  const combined = [...apiRegs, ...filteredLocal];
-  const seen = new Set();
-  return combined.filter(r => {
-    if (seen.has(r.id)) return false;
-    seen.add(r.id);
-    return true;
-  });
+  const res = await fetch(`/api/registrations?userId=${encodeURIComponent(userId)}`);
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to load your registrations.'));
+  }
+  return await res.json();
 }
 
-// Helper to match an event to a chapter across UUID, slug, and legacy IDs
+// Helper to match an event to a chapter across UUID, slug, and legacy chapter IDs
+// (chapters themselves still use a mix of UUID/slug — this is a separate,
+// intentional mapping, not the event-legacy-ID pattern that was removed)
 export function isEventInChapter(event, chapter) {
   if (!event || !chapter) return false;
 
@@ -410,22 +237,20 @@ export function isEventInChapter(event, chapter) {
 }
 
 // ── Chapter Endpoints ──
+// NOTE: chapters still come from the hardcoded CHAPTERS list, not a real
+// /api/chapters endpoint. This wasn't in scope for this cleanup pass — flag
+// separately if Chapters should be migrated to Supabase like Events were.
 
 export async function fetchChapters() {
-  initDB();
-  await delay();
   let followersMap = {};
-  try {
-    const res = await fetch('/api/chapters-follow');
-    if (res.ok) {
-      followersMap = await res.json();
-    }
-  } catch (e) {}
+  const res = await fetch('/api/chapters-follow');
+  if (res.ok) {
+    followersMap = await res.json();
+  }
 
   const events = await fetchEvents();
-  const localChapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
 
-  return localChapters.map(c => {
+  return CHAPTERS.map(c => {
     const realEventCount = events.filter(e => !e.deletedAt && isEventInChapter(e, c)).length;
     const followerCount = followersMap[c.id] !== undefined ? followersMap[c.id] : (c.followerCount || 0);
     return {
@@ -447,9 +272,6 @@ export async function fetchChapterBySlug(slug) {
 }
 
 export async function toggleFollowChapter(id, isFollow) {
-  initDB();
-  await delay(200);
-
   const res = await fetch('/api/chapters-follow', {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -461,22 +283,10 @@ export async function toggleFollowChapter(id, isFollow) {
   });
 
   if (!res.ok) {
-    let errMessage = 'Failed to toggle follow status.';
-    try {
-      const errData = await res.json();
-      errMessage = errData.error || errMessage;
-    } catch (e) {}
-    throw new Error(errMessage);
+    throw new Error(await parseErrorMessage(res, 'Failed to toggle follow status.'));
   }
 
   const data = await res.json();
-  const localChapters = JSON.parse(localStorage.getItem(KEYS.CHAPTERS)) || CHAPTERS;
-  const chIdx = localChapters.findIndex(c => c.id === id);
-  if (chIdx !== -1) {
-    localChapters[chIdx].followerCount = data.followerCount;
-    localStorage.setItem(KEYS.CHAPTERS, JSON.stringify(localChapters));
-    return localChapters[chIdx];
-  }
   return { id, followerCount: data.followerCount };
 }
 
@@ -494,12 +304,7 @@ export async function importAttendeesBatchApi(eventId, attendeesBatch) {
   });
 
   if (!res.ok) {
-    let errMessage = 'Failed to import attendees.';
-    try {
-      const errData = await res.json();
-      errMessage = errData.error || errMessage;
-    } catch (e) {}
-    throw new Error(errMessage);
+    throw new Error(await parseErrorMessage(res, 'Failed to import attendees.'));
   }
 
   return await res.json();

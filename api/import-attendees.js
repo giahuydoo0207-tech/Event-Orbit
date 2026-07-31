@@ -44,9 +44,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
     }
 
-    // 3. Verify event ownership by Chapter (supports UUID, slug, or legacy mock ID)
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    // 3. Verify target event by exact Postgres UUID or exact slug
     let targetEvent = null;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     if (uuidRegex.test(eventId)) {
       const { data } = await supabase
@@ -55,66 +55,13 @@ export default async function handler(req, res) {
         .eq('id', eventId)
         .maybeSingle();
       targetEvent = data;
-    }
-
-    if (!targetEvent) {
-      const legacySlugMap = {
-        '101': 'hcmc-ai-meetup-2026',
-        '102': 'solidity-smart-contract-workshop',
-        '103': 'design-thinking-ux-bootcamp',
-        '201': 'design-thinking-ux-bootcamp',
-        '301': 'pitching-investors-startup-101',
-        '401': 'open-campus-sports-fest'
-      };
-      const slugKey = legacySlugMap[eventId] || eventId;
-
+    } else if (eventId) {
       const { data } = await supabase
         .from('events')
         .select('id, name, points, chapter_id')
-        .or(`slug.eq.${slugKey},name.ilike.%${slugKey}%`)
-        .limit(1)
+        .eq('slug', eventId)
         .maybeSingle();
       targetEvent = data;
-
-      // Fallback keyword search by event name if missing
-      if (!targetEvent && typeof eventId === 'string' && eventId.length > 2) {
-        const keywords = eventId.replace(/-/g, ' ').split(' ').filter(w => w.length > 2);
-        if (keywords.length > 0) {
-          const { data: kwMatch } = await supabase
-            .from('events')
-            .select('id, name, points, chapter_id')
-            .ilike('name', `%${keywords[0]}%`)
-            .limit(1)
-            .maybeSingle();
-          targetEvent = kwMatch;
-        }
-      }
-
-      // Auto-create/seed missing demo event in Supabase DB if not present
-      if (!targetEvent) {
-        const defaultName = (eventId === '103' || eventId === '201' || slugKey === 'design-thinking-ux-bootcamp')
-          ? 'Design Thinking & UX Bootcamp'
-          : `Event ${eventId}`;
-
-        const chapterUuid = session.chapter_id
-          ? await resolveChapterUuid(supabase, session.chapter_id)
-          : null;
-
-        const { data: newEv, error: createErr } = await supabase
-          .from('events')
-          .insert({
-            slug: slugKey.includes('-') ? slugKey : `event-${slugKey}`,
-            name: defaultName,
-            points: 4,
-            chapter_id: chapterUuid
-          })
-          .select('id, name, points, chapter_id')
-          .maybeSingle();
-
-        if (!createErr && newEv) {
-          targetEvent = newEv;
-        }
-      }
     }
 
     if (!targetEvent) {
