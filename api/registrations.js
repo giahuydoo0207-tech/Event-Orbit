@@ -26,7 +26,11 @@ export default async function handler(req, res) {
         if (!uuidRegex.test(eventId)) {
           const legacySlugMap = {
             '101': 'hcmc-ai-meetup-2026',
-            '102': 'solidity-smart-contract-workshop'
+            '102': 'solidity-smart-contract-workshop',
+            '103': 'design-thinking-ux-bootcamp',
+            '201': 'design-thinking-ux-bootcamp',
+            '301': 'pitching-investors-startup-101',
+            '401': 'open-campus-sports-fest'
           };
           const slugKey = legacySlugMap[eventId] || eventId;
 

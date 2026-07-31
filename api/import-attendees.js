@@ -60,7 +60,11 @@ export default async function handler(req, res) {
     if (!targetEvent) {
       const legacySlugMap = {
         '101': 'hcmc-ai-meetup-2026',
-        '102': 'solidity-smart-contract-workshop'
+        '102': 'solidity-smart-contract-workshop',
+        '103': 'design-thinking-ux-bootcamp',
+        '201': 'design-thinking-ux-bootcamp',
+        '301': 'pitching-investors-startup-101',
+        '401': 'open-campus-sports-fest'
       };
       const slugKey = legacySlugMap[eventId] || eventId;
 
@@ -71,6 +75,46 @@ export default async function handler(req, res) {
         .limit(1)
         .maybeSingle();
       targetEvent = data;
+
+      // Fallback keyword search by event name if missing
+      if (!targetEvent && typeof eventId === 'string' && eventId.length > 2) {
+        const keywords = eventId.replace(/-/g, ' ').split(' ').filter(w => w.length > 2);
+        if (keywords.length > 0) {
+          const { data: kwMatch } = await supabase
+            .from('events')
+            .select('id, name, points, chapter_id')
+            .ilike('name', `%${keywords[0]}%`)
+            .limit(1)
+            .maybeSingle();
+          targetEvent = kwMatch;
+        }
+      }
+
+      // Auto-create/seed missing demo event in Supabase DB if not present
+      if (!targetEvent) {
+        const defaultName = (eventId === '103' || eventId === '201' || slugKey === 'design-thinking-ux-bootcamp')
+          ? 'Design Thinking & UX Bootcamp'
+          : `Event ${eventId}`;
+
+        const chapterUuid = session.chapter_id
+          ? await resolveChapterUuid(supabase, session.chapter_id)
+          : null;
+
+        const { data: newEv, error: createErr } = await supabase
+          .from('events')
+          .insert({
+            slug: slugKey.includes('-') ? slugKey : `event-${slugKey}`,
+            name: defaultName,
+            points: 4,
+            chapter_id: chapterUuid
+          })
+          .select('id, name, points, chapter_id')
+          .maybeSingle();
+
+        if (!createErr && newEv) {
+          targetEvent = newEv;
+        }
+      }
     }
 
     if (!targetEvent) {
