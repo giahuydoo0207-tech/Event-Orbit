@@ -63,27 +63,66 @@ export default async function handler(req, res) {
 
         if (achsError) throw achsError;
 
-        // 4. Combine in memory to form enriched attendee records
-        const responseData = (regs || []).map(r => {
-          const ach = (achs || []).find(a => a.user_id === r.user_id);
-          return {
+        // 4. Combine registrations and achievements in memory via Full Outer Join
+        const studentMap = new Map();
+
+        // 4a. Process online registrations
+        (regs || []).forEach(r => {
+          const key = r.user_id || r.ocid || r.mssv || r.id;
+          const ach = (achs || []).find(a => 
+            (a.user_id && (a.user_id === r.user_id || a.user_id === r.ocid || a.user_id === r.mssv)) ||
+            (a.ocid && (a.ocid === r.ocid || a.ocid === r.user_id)) ||
+            (a.mssv && (a.mssv === r.mssv || a.mssv === r.user_id))
+          );
+
+          studentMap.set(key, {
             id: r.id,
             eventId: r.event_id,
             userId: r.user_id,
-            studentName: r.student_name || 'Anonymous Student',
-            ocid: r.ocid || null,
-            mssv: r.mssv || null,
-            ethAddress: r.eth_address || null,
+            studentName: r.student_name || (ach ? ach.student_name : null) || 'Anonymous Student',
+            ocid: r.ocid || (ach ? ach.ocid : null),
+            mssv: r.mssv || (ach ? ach.mssv : null),
+            ethAddress: r.eth_address || (ach ? ach.student_wallet : null),
             registeredAt: r.registered_at,
-            checkedIn: !!ach,
-            checkedInAt: ach ? ach.checked_in_at : null,
-            mintStatus: ach ? (ach.mint_status || 'success') : 'not_issued',
+            checkedIn: !!ach || !!r.checked_in,
+            checkedInAt: ach ? (ach.checked_in_at || ach.earned_at || r.registered_at) : (r.checked_in ? r.registered_at : null),
+            mintStatus: ach ? (ach.mint_status || 'success') : (r.checked_in ? 'success' : 'not_issued'),
             txHash: ach ? ach.tx_hash : null,
             credentialId: ach ? ach.credential_id : null,
-            source: r.source || 'qr_checkin'
-          };
+            source: r.source || (ach ? 'qr_checkin' : 'online_registration')
+          });
         });
 
+        // 4b. Include venue QR check-ins that had no prior registration
+        (achs || []).forEach(a => {
+          const key = a.user_id || a.ocid || a.mssv || a.id;
+          const existing = Array.from(studentMap.values()).find(s => 
+            (a.user_id && (s.userId === a.user_id || s.ocid === a.user_id || s.mssv === a.user_id)) ||
+            (a.ocid && (s.ocid === a.ocid || s.userId === a.ocid)) ||
+            (a.mssv && (s.mssv === a.mssv || s.userId === a.mssv))
+          );
+
+          if (!existing) {
+            studentMap.set(key, {
+              id: a.id,
+              eventId: a.event_id,
+              userId: a.user_id,
+              studentName: a.student_name || a.full_name || 'Student Attendee',
+              ocid: a.ocid || null,
+              mssv: a.mssv || null,
+              ethAddress: a.eth_address || a.student_wallet || null,
+              registeredAt: a.earned_at || a.checked_in_at || new Date().toISOString(),
+              checkedIn: true,
+              checkedInAt: a.earned_at || a.checked_in_at || new Date().toISOString(),
+              mintStatus: a.mint_status || 'success',
+              txHash: a.tx_hash || null,
+              credentialId: a.credential_id || null,
+              source: 'qr_checkin'
+            });
+          }
+        });
+
+        const responseData = Array.from(studentMap.values());
         return res.status(200).json(responseData);
       }
 
@@ -134,24 +173,67 @@ export default async function handler(req, res) {
 
       if (achsError) throw achsError;
 
-      const responseData = (regs || []).map(r => {
-        const ach = (achs || []).find(a => a.event_id === r.event_id && a.user_id === r.user_id);
-        return {
+      const studentMap = new Map();
+
+      // Process online registrations
+      (regs || []).forEach(r => {
+        const key = `${r.event_id}_${r.user_id || r.ocid || r.mssv || r.id}`;
+        const ach = (achs || []).find(a => 
+          a.event_id === r.event_id && (
+            (a.user_id && (a.user_id === r.user_id || a.user_id === r.ocid || a.user_id === r.mssv)) ||
+            (a.ocid && (a.ocid === r.ocid || a.ocid === r.user_id)) ||
+            (a.mssv && (a.mssv === r.mssv || a.mssv === r.user_id))
+          )
+        );
+
+        studentMap.set(key, {
           id: r.id,
           eventId: r.event_id,
-          studentName: r.student_name || 'Anonymous Student',
-          ocid: r.ocid,
-          mssv: r.mssv,
-          ethAddress: r.eth_address,
+          userId: r.user_id,
+          studentName: r.student_name || (ach ? ach.student_name : null) || 'Anonymous Student',
+          ocid: r.ocid || (ach ? ach.ocid : null),
+          mssv: r.mssv || (ach ? ach.mssv : null),
+          ethAddress: r.eth_address || (ach ? ach.student_wallet : null),
           registeredAt: r.registered_at,
-          checkedIn: !!ach,
-          checkedInAt: ach ? ach.checked_in_at : null,
-          mintStatus: ach ? (ach.mint_status || 'success') : 'not_issued',
+          checkedIn: !!ach || !!r.checked_in,
+          checkedInAt: ach ? (ach.checked_in_at || ach.earned_at || r.registered_at) : (r.checked_in ? r.registered_at : null),
+          mintStatus: ach ? (ach.mint_status || 'success') : (r.checked_in ? 'success' : 'not_issued'),
           txHash: ach ? ach.tx_hash : null,
-          source: r.source || 'qr_checkin'
-        };
+          source: r.source || (ach ? 'qr_checkin' : 'online_registration')
+        });
       });
 
+      // Include venue QR check-ins without prior registration
+      (achs || []).forEach(a => {
+        const key = `${a.event_id}_${a.user_id || a.ocid || a.mssv || a.id}`;
+        const existing = Array.from(studentMap.values()).find(s => 
+          s.eventId === a.event_id && (
+            (a.user_id && (s.userId === a.user_id || s.ocid === a.user_id || s.mssv === a.user_id)) ||
+            (a.ocid && (s.ocid === a.ocid || s.userId === a.ocid)) ||
+            (a.mssv && (s.mssv === a.mssv || s.userId === a.mssv))
+          )
+        );
+
+        if (!existing) {
+          studentMap.set(key, {
+            id: a.id,
+            eventId: a.event_id,
+            userId: a.user_id,
+            studentName: a.student_name || a.full_name || 'Student Attendee',
+            ocid: a.ocid || null,
+            mssv: a.mssv || null,
+            ethAddress: a.eth_address || a.student_wallet || null,
+            registeredAt: a.earned_at || a.checked_in_at || new Date().toISOString(),
+            checkedIn: true,
+            checkedInAt: a.earned_at || a.checked_in_at || new Date().toISOString(),
+            mintStatus: a.mint_status || 'success',
+            txHash: a.tx_hash || null,
+            source: 'qr_checkin'
+          });
+        }
+      });
+
+      const responseData = Array.from(studentMap.values());
       return res.status(200).json(responseData);
     }
 

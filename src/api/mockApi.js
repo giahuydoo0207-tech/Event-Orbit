@@ -315,7 +315,11 @@ export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
   const activeEvents = includeDeleted ? events : events.filter(e => !e.deletedAt);
 
   return activeEvents.map(event => {
-    const eventRegs = regs.filter(r => r.eventId === event.id || r.eventId === event.slug);
+    const eventRegs = regs.filter(r => 
+      r.eventId === event.id || 
+      r.eventId === event.slug ||
+      (event.legacyId && r.eventId === event.legacyId)
+    );
     const attendedCount = eventRegs.filter(r => r.checkedIn).length;
     return {
       ...event,
