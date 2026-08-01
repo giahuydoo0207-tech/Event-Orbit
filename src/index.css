@@ -43,6 +43,48 @@ p, h1, h2, h3, h4 {
   text-wrap: pretty;
 }
 
+/* ── Orbit Avatar Keyframe Animations ── */
+@keyframes orbit-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-counter-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes planet-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 45px rgba(0, 237, 190, 0.55), 0 0 90px rgba(0, 237, 190, 0.25);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 70px rgba(0, 237, 190, 0.75), 0 0 130px rgba(0, 237, 190, 0.4);
+  }
+}
+
+.animate-orbit-rotate {
+  animation: orbit-rotate 10s linear infinite;
+}
+
+.animate-orbit-reverse {
+  animation: orbit-counter-rotate 16s linear infinite;
+}
+
+.animate-planet-pulse {
+  animation: planet-pulse 4s ease-in-out infinite;
+}
+
 /* Tactile Button Feedback (Taste Skill) */
 button:active:not(:disabled), a.btn:active:not(:disabled) {
   transform: scale(0.98);

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
+import { OrbitAvatar } from '../components/OrbitAvatar';
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -37,56 +38,68 @@ export function Landing() {
 
   return (
     <div ref={containerRef} className="min-h-screen flex flex-col bg-oc-mist font-sans">
-      {/* Hero Section - Open Campus Deep Navy background */}
+      {/* Hero Section — Open Campus Deep Navy background with Animated Orbit Avatar */}
       <section className="relative overflow-hidden bg-oc-navy px-6 py-16 sm:py-20 lg:py-24 text-white">
-        {/* Static background glows */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,237,190,0.12),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,27,235,0.25),transparent_60%)]" />
+        {/* Radial Background Gradients */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,237,190,0.15),transparent_60%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,27,235,0.3),transparent_60%)] pointer-events-none" />
 
-        {/* Animated glow drift — subtle turquoise pulse behind headline */}
+        {/* Ambient Glow Pulse */}
         <div
-          className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full pointer-events-none"
+          className="hero-glow absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse, rgba(0,237,190,0.14) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse, rgba(0,237,190,0.16) 0%, transparent 70%)',
           }}
         />
 
-        <div className="relative mx-auto max-w-5xl text-center">
-          {/* Badge — reveals immediately (hero content) */}
-          <div className="reveal inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 mb-6">
-            <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
-            <span className="badge-kicker text-oc-turquoise text-[10px]">
-              Powered by Open Campus ID
-            </span>
-          </div>
+        <div className="relative mx-auto max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            {/* Left Column: Copy & CTA */}
+            <div className="lg:col-span-7 text-center lg:text-left space-y-6">
+              {/* Kicker Badge */}
+              <div className="reveal inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20">
+                <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
+                <span className="badge-kicker text-oc-turquoise text-[11px] font-mono tracking-wider uppercase">
+                  POWERED BY OPEN CAMPUS ID
+                </span>
+              </div>
 
-          {/* Headline */}
-          <h1 className="reveal reveal-delay-1 text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
-            Campus Events.{' '}
-            <span className="text-oc-turquoise whitespace-nowrap">
-              Verified on Chain.
-            </span>
-          </h1>
+              {/* Headline */}
+              <h1 className="reveal reveal-delay-1 text-4xl font-black leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Campus Events.{' '}
+                <span className="text-oc-turquoise block sm:inline">
+                  Verified on Chain.
+                </span>
+              </h1>
 
-          {/* Subtitle */}
-          <p className="reveal reveal-delay-2 mx-auto mt-6 max-w-2xl text-base leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
-            Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles &mdash; all powered by Open Campus.
-          </p>
+              {/* Subtitle */}
+              <p className="reveal reveal-delay-2 mx-auto lg:mx-0 max-w-xl text-base leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
+                Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles &mdash; all powered by Open Campus.
+              </p>
 
-          {/* CTAs — hover-lift effect */}
-          <div className="reveal reveal-delay-3 mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              to="/login"
-              className="hover-lift inline-flex h-12 items-center rounded-xl bg-oc-blue px-8 text-xs font-bold text-white shadow-lg hover:bg-oc-indigo transition-all"
-            >
-              Connect with OCID
-            </Link>
-            <Link
-              to="/events"
-              className="hover-lift inline-flex h-12 items-center rounded-xl border border-oc-periwinkle/40 bg-white/5 px-8 text-xs font-bold text-white transition hover:border-oc-periwinkle hover:bg-white/10"
-            >
-              Browse Events
-            </Link>
+              {/* CTA Buttons */}
+              <div className="reveal reveal-delay-3 pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                <Link
+                  to="/login"
+                  className="hover-lift w-full sm:w-auto inline-flex h-12 items-center justify-center rounded-xl bg-oc-blue px-8 text-xs font-bold text-white shadow-lg hover:bg-oc-indigo transition-all active:scale-95"
+                >
+                  Connect with OCID
+                </Link>
+                <Link
+                  to="/events"
+                  className="hover-lift w-full sm:w-auto inline-flex h-12 items-center justify-center rounded-xl border border-oc-periwinkle/40 bg-white/5 px-8 text-xs font-bold text-white transition hover:border-oc-periwinkle hover:bg-white/10 active:scale-95"
+                >
+                  Browse Events
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Column: Hero Centerpiece Animated Orbit Avatar */}
+            <div className="reveal reveal-delay-2 lg:col-span-5 flex justify-center lg:justify-end py-4 lg:py-0">
+              <OrbitAvatar size="hero" className="scale-90 sm:scale-100 transition-all duration-300" />
+            </div>
+
           </div>
         </div>
       </section>
