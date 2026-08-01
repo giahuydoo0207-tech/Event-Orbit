@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchOrganizerEvents, fetchChapterById, fetchEventAttendees } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { StatusBadge } from '../components/StatusBadge';
 
 export function EventHistory() {
   const { chapterId, eventId: paramEventId } = useParams();
@@ -276,47 +277,32 @@ export function EventHistory() {
                         </td>
 
                         <td className="p-4 text-center">
-                          {att.checkedIn ? (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              Checked-in
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">
-                              Registered Only
-                            </span>
-                          )}
+                          <StatusBadge
+                            status={att.checkedIn ? 'checked-in' : 'not_issued'}
+                            label={att.checkedIn ? 'CHECKED-IN' : 'REGISTERED ONLY'}
+                          />
                         </td>
 
                         <td className="p-4 text-center">
-                          {att.mintStatus === 'success' || att.mintStatus === 'minted_onchain' ? (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-200">
-                              SBT Minted
-                            </span>
-                          ) : att.mintStatus === 'skipped_no_wallet' ? (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
-                              Off-chain (No Wallet)
-                            </span>
-                          ) : att.mintStatus === 'pending' || att.mintStatus === 'minting' ? (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
-                              Minting...
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200">
-                              Not Issued
-                            </span>
-                          )}
+                          <StatusBadge
+                            status={att.mintStatus || (att.checkedIn ? 'success' : 'not_issued')}
+                            label={
+                              att.mintStatus === 'success' || att.mintStatus === 'minted_onchain'
+                                ? 'SBT MINTED'
+                                : att.mintStatus === 'skipped_no_wallet' || att.mintStatus === 'off_chain'
+                                ? 'OFF-CHAIN (NO WALLET)'
+                                : att.mintStatus === 'pending' || att.mintStatus === 'minting'
+                                ? 'MINTING...'
+                                : 'NOT ISSUED'
+                            }
+                          />
                         </td>
 
                         <td className="p-4 text-center">
-                          {att.source === 'import_excel' ? (
-                            <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800 border border-purple-200">
-                              Excel Import
-                            </span>
-                          ) : (
-                            <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200">
-                              QR Check-in
-                            </span>
-                          )}
+                          <StatusBadge
+                            status={att.source === 'import_excel' ? 'excel import' : 'qr check-in'}
+                            label={att.source === 'import_excel' ? 'EXCEL IMPORT' : 'QR CHECK-IN'}
+                          />
                         </td>
 
                         <td className="p-4 text-right font-mono text-[10px]">

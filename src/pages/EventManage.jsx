@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
 import QRCode from 'qrcode';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
+import { StatusBadge } from '../components/StatusBadge';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 
@@ -246,9 +247,7 @@ export function EventManage() {
                         <td className="p-3 font-mono text-text-secondary">{att.ocid || att.mssv || 'N/A'}</td>
                         <td className="p-3 text-right">
                           {att.checkedIn ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                              &check; Checked In
-                            </span>
+                            <StatusBadge status="checked-in" label="CHECKED IN" />
                           ) : (
                             <button
                               onClick={() => handleManualCheckIn(att)}

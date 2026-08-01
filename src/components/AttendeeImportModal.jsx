@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
+import { StatusBadge } from './StatusBadge';
 import { importAttendeesBatchApi } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 
@@ -533,16 +534,16 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                             <td className="p-2.5 text-slate-600 text-xs">{item.email}</td>
                             <td className="p-2.5 font-medium text-oc-ink text-xs">{item.name}</td>
                             <td className="p-2.5">
-                              <span
-                                className="inline-block px-2 py-0.5 rounded-sm bg-rose-100/80 text-rose-800 text-[10px] font-bold border border-rose-200/60"
-                                title={item.reason}
-                              >
-                                {item.reason.includes('both MSSV and Email')
-                                  ? 'Missing Info'
-                                  : item.reason.includes('Duplicate')
-                                  ? 'Duplicate Row'
-                                  : 'No OCID Account'}
-                              </span>
+                              <StatusBadge
+                                status="unmatched"
+                                label={
+                                  item.reason.includes('both MSSV and Email')
+                                    ? 'MISSING INFO'
+                                    : item.reason.includes('Duplicate')
+                                    ? 'DUPLICATE ROW'
+                                    : 'NO OCID ACCOUNT'
+                                }
+                              />
                             </td>
                           </tr>
                         ))}
