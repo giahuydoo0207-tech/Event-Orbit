@@ -325,23 +325,27 @@ export function ChapterManage() {
                       {/* Lighter status indicators — subtle tint, no border */}
                       <td className="py-4 pr-4 whitespace-nowrap">
                         {status === 'upcoming' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600">
-                            Upcoming
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase text-oc-blue tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-oc-blue" />
+                            <span>Upcoming</span>
                           </span>
                         )}
                         {status === 'ongoing' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 animate-pulse">
-                            Live
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase text-emerald-700 tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Live</span>
                           </span>
                         )}
                         {status === 'completed' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-500">
-                            Done
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold uppercase text-slate-500 tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            <span>Done</span>
                           </span>
                         )}
                         {status === 'deleted' && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-500">
-                            Deleted
+                          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase text-rose-700 tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                            <span>Deleted</span>
                           </span>
                         )}
                       </td>

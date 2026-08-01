@@ -256,13 +256,7 @@ export function ChapterProfile() {
                     activeTab === 'past' ? 'opacity-80 hover:opacity-100' : ''
                   }`}
                 >
-                  <span
-                    className={`badge-kicker text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm border ${
-                      activeTab === 'upcoming'
-                        ? 'text-oc-blue bg-oc-mist border-oc-periwinkle/60'
-                        : 'text-text-secondary bg-slate-100 border-slate-200'
-                    }`}
-                  >
+                  <span className="badge-kicker text-[10px] uppercase font-extrabold tracking-wider text-oc-blue block mb-1">
                     {event.category}
                   </span>
                   <h3 className="text-sm font-bold text-navy mt-1 leading-snug line-clamp-1">

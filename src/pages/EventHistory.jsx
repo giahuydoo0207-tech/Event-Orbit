@@ -193,12 +193,14 @@ export function EventHistory() {
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-navy">{selectedEvent.name}</h2>
                 {selectedEvent.deletedAt ? (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-red-100 text-red-700 border border-red-200">
-                    Soft Deleted
+                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold uppercase text-rose-700 tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                    <span>Soft Deleted</span>
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    Completed / Active
+                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold uppercase text-emerald-700 tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Completed / Active</span>
                   </span>
                 )}
               </div>
