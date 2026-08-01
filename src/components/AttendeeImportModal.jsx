@@ -382,30 +382,30 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
               {/* Taste Skill Unified Metric Bar Frame */}
               <div className="bg-slate-50/90 border border-oc-periwinkle/40 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xs">
                 {/* Metric 1: Valid Rows */}
-                <div className="flex-1 flex items-center justify-between sm:justify-start gap-3">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center justify-between gap-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
-                      Identifiable Rows (MSSV or Email)
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap truncate" title="Identifiable Rows (MSSV or Email)">
+                      IDENTIFIABLE (MSSV / EMAIL)
                     </span>
                   </div>
-                  <span className="num font-mono text-xl font-extrabold text-emerald-700 tracking-tight ml-auto sm:ml-4">
+                  <span className="num font-mono text-xl font-extrabold text-emerald-700 tracking-tight shrink-0 ml-2">
                     {validRowsCount}
                   </span>
                 </div>
 
                 {/* Vertical hairline divider */}
-                <div className="hidden sm:block h-7 w-[1px] bg-oc-periwinkle/40" />
+                <div className="hidden sm:block h-7 w-[1px] bg-oc-periwinkle/40 shrink-0" />
 
                 {/* Metric 2: Invalid Rows */}
-                <div className="flex-1 flex items-center justify-between sm:justify-start gap-3">
-                  <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center justify-between gap-3 min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
-                      Unidentifiable Rows (No MSSV & No Email)
+                    <span className="text-[10px] sm:text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap truncate" title="Unidentifiable Rows (No MSSV & No Email)">
+                      UNIDENTIFIABLE (NO DATA)
                     </span>
                   </div>
-                  <span className="num font-mono text-xl font-extrabold text-amber-700 tracking-tight ml-auto sm:ml-4">
+                  <span className="num font-mono text-xl font-extrabold text-amber-700 tracking-tight shrink-0 ml-2">
                     {invalidRowsCount}
                   </span>
                 </div>
