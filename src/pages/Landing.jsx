@@ -66,9 +66,9 @@ export function Landing() {
               </div>
 
               {/* Headline */}
-              <h1 className="reveal reveal-delay-1 text-4xl font-black leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="reveal reveal-delay-1 text-4xl font-black leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Campus Events.{' '}
-                <span className="text-oc-turquoise block sm:inline">
+                <span className="text-oc-turquoise block mt-2 sm:mt-3">
                   Verified on Chain.
                 </span>
               </h1>
