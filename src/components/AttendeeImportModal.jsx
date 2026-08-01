@@ -379,21 +379,35 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                 </button>
               </div>
 
-              {/* Clean Borderless Metrics */}
-              <div className="grid grid-cols-2 gap-6 text-xs font-mono">
-                <div className="flex justify-between items-center py-1 px-0.5">
-                  <span className="text-emerald-800 font-extrabold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Valid Identifiable Rows:</span>
+              {/* Taste Skill Unified Metric Bar Frame */}
+              <div className="bg-slate-50/90 border border-oc-periwinkle/40 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xs">
+                {/* Metric 1: Valid Rows */}
+                <div className="flex-1 flex items-center justify-between sm:justify-start gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
+                      Valid Identifiable Rows
+                    </span>
+                  </div>
+                  <span className="num font-mono text-xl font-extrabold text-emerald-700 tracking-tight ml-auto sm:ml-4">
+                    {validRowsCount}
                   </span>
-                  <span className="font-extrabold text-emerald-700 text-base num">{validRowsCount}</span>
                 </div>
-                <div className="flex justify-between items-center py-1 px-0.5">
-                  <span className="text-amber-800 font-extrabold flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                    <span>Missing MSSV & Email:</span>
+
+                {/* Vertical hairline divider */}
+                <div className="hidden sm:block h-7 w-[1px] bg-oc-periwinkle/40" />
+
+                {/* Metric 2: Invalid Rows */}
+                <div className="flex-1 flex items-center justify-between sm:justify-start gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
+                      Missing MSSV & Email
+                    </span>
+                  </div>
+                  <span className="num font-mono text-xl font-extrabold text-amber-700 tracking-tight ml-auto sm:ml-4">
+                    {invalidRowsCount}
                   </span>
-                  <span className="font-extrabold text-amber-700 text-base num">{invalidRowsCount}</span>
                 </div>
               </div>
 
