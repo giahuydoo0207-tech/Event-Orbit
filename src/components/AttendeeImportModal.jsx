@@ -386,7 +386,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                     <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
-                      Valid Identifiable Rows
+                      Identifiable Rows (MSSV or Email)
                     </span>
                   </div>
                   <span className="num font-mono text-xl font-extrabold text-emerald-700 tracking-tight ml-auto sm:ml-4">
@@ -402,7 +402,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                     <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-600">
-                      Missing MSSV & Email
+                      Unidentifiable Rows (No MSSV & No Email)
                     </span>
                   </div>
                   <span className="num font-mono text-xl font-extrabold text-amber-700 tracking-tight ml-auto sm:ml-4">
@@ -432,7 +432,14 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="p-3 text-text-secondary font-mono text-[10px]">{idx + 1}</td>
                           <td className="p-3 font-mono font-semibold text-navy">
-                            {row.mssv ? row.mssv : <span className="text-slate-400 italic">Unset</span>}
+                            {row.mssv ? (
+                              row.mssv
+                            ) : (
+                              <span className="inline-flex items-center gap-1 font-mono text-[10px] font-extrabold text-amber-700 uppercase tracking-wider">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                                <span>Unset (Email Match Only)</span>
+                              </span>
+                            )}
                           </td>
                           <td className="p-3 text-text-secondary">
                             {row.email ? row.email : <span className="text-slate-400 italic">Unset</span>}
