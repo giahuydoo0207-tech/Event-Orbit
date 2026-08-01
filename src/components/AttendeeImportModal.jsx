@@ -379,15 +379,21 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                 </button>
               </div>
 
-              {/* Status Pills */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex justify-between items-center">
-                  <span className="text-emerald-800 font-semibold">Valid Identifiable Rows:</span>
-                  <span className="font-bold text-emerald-700 text-sm">{validRowsCount}</span>
+              {/* Clean Borderless Metrics */}
+              <div className="grid grid-cols-2 gap-6 text-xs font-mono">
+                <div className="flex justify-between items-center py-1 px-0.5">
+                  <span className="text-emerald-800 font-extrabold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Valid Identifiable Rows:</span>
+                  </span>
+                  <span className="font-extrabold text-emerald-700 text-base num">{validRowsCount}</span>
                 </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex justify-between items-center">
-                  <span className="text-amber-800 font-semibold">Missing MSSV & Email:</span>
-                  <span className="font-bold text-amber-700 text-sm">{invalidRowsCount}</span>
+                <div className="flex justify-between items-center py-1 px-0.5">
+                  <span className="text-amber-800 font-extrabold flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                    <span>Missing MSSV & Email:</span>
+                  </span>
+                  <span className="font-extrabold text-amber-700 text-base num">{invalidRowsCount}</span>
                 </div>
               </div>
 

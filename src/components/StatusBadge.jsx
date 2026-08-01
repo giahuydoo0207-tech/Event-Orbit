@@ -1,43 +1,41 @@
 import React from 'react';
 
 /**
- * StatusBadge Component — Open Campus Dark Theme System Badge
- * Styled exactly like "POWERED BY OPEN CAMPUS ID" (Dark Navy BG + Vibrant Neon Text + Space Mono Font + Status Indicator Dot).
+ * StatusBadge Component — Borderless Pure Text Status System
+ * Renders high-contrast bold text with status indicator dot (No background pill, No border frame).
  */
 export function StatusBadge({ status, label, className = '' }) {
-  // Normalize status key
   const key = (status || '').toLowerCase().trim();
 
-  // Variant mappings
-  let bgClass = 'bg-[#07094D] border-slate-700/80 text-slate-400';
-  let dotClass = 'bg-slate-500';
+  let textClass = 'text-slate-500 font-semibold';
+  let dotClass = 'bg-slate-400';
   let displayLabel = label || status;
 
   if (['checked-in', 'checkedin', 'success', 'sbt minted', 'minted_onchain', 'active', 'completed'].includes(key)) {
-    bgClass = 'bg-[#07094D] border-[#00EDBE]/40 text-[#00EDBE] shadow-[0_0_12px_rgba(0,237,190,0.15)]';
-    dotClass = 'bg-[#00EDBE] shadow-[0_0_6px_#00EDBE] animate-pulse';
+    textClass = 'text-emerald-700 font-extrabold';
+    dotClass = 'bg-emerald-500 animate-pulse';
     displayLabel = label || (key === 'active' ? 'ACTIVE' : key === 'completed' ? 'COMPLETED' : 'CHECKED-IN');
   } else if (['off-chain (no wallet)', 'off_chain', 'skipped_no_wallet', 'warning', 'already_issued', 'unmatched'].includes(key)) {
-    bgClass = 'bg-[#07094D] border-amber-500/40 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.12)]';
-    dotClass = 'bg-amber-400 shadow-[0_0_6px_#FBBF24]';
+    textClass = 'text-amber-700 font-extrabold';
+    dotClass = 'bg-amber-500';
     displayLabel = label || 'OFF-CHAIN (NO WALLET)';
   } else if (['qr check-in', 'qr_checkin', 'excel import', 'import_excel', 'source'].includes(key)) {
-    bgClass = 'bg-[#07094D] border-indigo-500/40 text-indigo-300 shadow-[0_0_12px_rgba(99,102,241,0.12)]';
-    dotClass = 'bg-indigo-400 shadow-[0_0_6px_#818CF8]';
+    textClass = 'text-oc-blue font-extrabold';
+    dotClass = 'bg-oc-blue';
     displayLabel = label || (key.includes('excel') ? 'EXCEL IMPORT' : 'QR CHECK-IN');
   } else if (['deleted', 'soft deleted', 'archived'].includes(key)) {
-    bgClass = 'bg-[#07094D] border-rose-500/40 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.12)]';
-    dotClass = 'bg-rose-500 shadow-[0_0_6px_#F43F5E]';
+    textClass = 'text-rose-700 font-extrabold';
+    dotClass = 'bg-rose-600';
     displayLabel = label || 'SOFT DELETED';
   } else if (['pending', 'minting'].includes(key)) {
-    bgClass = 'bg-[#07094D] border-sky-500/40 text-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.12)]';
-    dotClass = 'bg-sky-400 animate-ping';
+    textClass = 'text-sky-700 font-extrabold';
+    dotClass = 'bg-sky-500 animate-ping';
     displayLabel = label || 'MINTING...';
   }
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border font-mono text-[10px] font-bold tracking-wider uppercase select-none transition-all ${bgClass} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider select-none bg-transparent ${textClass} ${className}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotClass}`} />
       <span>{displayLabel}</span>
