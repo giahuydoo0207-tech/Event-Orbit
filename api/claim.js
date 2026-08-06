@@ -5,6 +5,7 @@ import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -25,7 +26,15 @@ export default async function handler(req, res) {
 
   // ─── GET: Fetch claim info (public, no session required) ──────────
   if (req.method === 'GET') {
-    return handleGetClaimInfo(req, res);
+    if (req.query?.token) {
+      return handleGetClaimInfo(req, res);
+    }
+
+    if (req.query?.eventId) {
+      return handleGetPendingClaims(req, res);
+    }
+
+    return res.status(400).json({ error: 'Missing token or eventId query parameter.' });
   }
 
   // ─── POST: Execute the claim (session required) ───────────────────
@@ -110,6 +119,71 @@ async function handleGetClaimInfo(req, res) {
     });
   } catch (error) {
     console.error('[Claim GET] Error:', error);
+    return res.status(500).json({ error: error.message || 'Internal Server Error' });
+  }
+}
+
+/**
+ * GET /api/claim?eventId=<uuid>
+ * Returns the event's pending claims for an authenticated organizer.
+ */
+async function handleGetPendingClaims(req, res) {
+  const session = await verifySession(req);
+  if (!session) {
+    return res.status(401).json({ error: 'Authentication required.' });
+  }
+
+  if (session.role !== 'organizer') {
+    return res.status(403).json({ error: 'Forbidden. Only organizers can view pending claims.' });
+  }
+
+  try {
+    const { eventId } = req.query;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!uuidRegex.test(eventId)) {
+      return res.status(400).json({ error: 'Invalid eventId format. Must be a valid UUID.' });
+    }
+
+    const { data: claims, error: queryErr } = await supabase
+      .from('pending_claims')
+      .select('id, event_id, import_mssv, import_email, import_name, claim_token, status, claimed_by_ocid, claimed_by_eth_address, claimed_at, created_at, expires_at')
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: true });
+
+    if (queryErr) {
+      console.error('[PendingClaims] Query error:', queryErr);
+      return res.status(500).json({ error: 'Failed to fetch pending claims.' });
+    }
+
+    const enrichedClaims = (claims || []).map(c => ({
+      id: c.id,
+      importMssv: c.import_mssv || null,
+      importEmail: c.import_email || null,
+      importName: c.import_name || 'Unknown',
+      status: c.status,
+      claimToken: c.claim_token,
+      claimUrl: `${CLAIM_BASE_URL}/claim/${c.claim_token}`,
+      claimedByOcid: c.claimed_by_ocid || null,
+      claimedByEthAddress: c.claimed_by_eth_address || null,
+      claimedAt: c.claimed_at || null,
+      createdAt: c.created_at,
+      expiresAt: c.expires_at
+    }));
+
+    const pendingCount = enrichedClaims.filter(c => c.status === 'pending').length;
+    const claimedCount = enrichedClaims.filter(c => c.status === 'claimed').length;
+
+    return res.status(200).json({
+      ok: true,
+      eventId,
+      totalClaims: enrichedClaims.length,
+      pendingCount,
+      claimedCount,
+      claims: enrichedClaims
+    });
+  } catch (error) {
+    console.error('[PendingClaims] Error:', error);
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }

@@ -79,12 +79,14 @@ async function runTests() {
     ocid: 'org-admin.edu'
   })).toString('base64');
 
-  // Student (Alex) session header
+  const testStudentId = `claim-test-${Date.now()}.edu`;
+
+  // Student session header
   const studentAlexHeader = Buffer.from(JSON.stringify({
     isAuthenticated: true,
     role: 'student',
-    user_id: 'alex.edu',
-    ocid: 'alex.edu',
+    user_id: testStudentId,
+    ocid: testStudentId,
     fullName: 'Alex Student',
     ethAddress: '0x1111111111111111111111111111111111111111'
   })).toString('base64');
@@ -197,14 +199,14 @@ async function runTests() {
         .from('registrations')
         .select('*')
         .eq('event_id', event.id)
-        .eq('user_id', 'alex.edu')
+        .eq('user_id', testStudentId)
         .maybeSingle();
 
       const { data: dbAch } = await supabase
         .from('achievements')
         .select('*')
         .eq('event_id', event.id)
-        .eq('user_id', 'alex.edu')
+        .eq('user_id', testStudentId)
         .maybeSingle();
 
       if (dbClaim?.status === 'claimed' && dbReg && dbAch) {
