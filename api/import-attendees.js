@@ -1,8 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
+
+const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -156,13 +159,65 @@ export default async function handler(req, res) {
         }
       }
 
-      // If still unmatched
+      // If still unmatched → create pending_claim for Claim Badge Flow
       if (!matchedStudent) {
+        const matchFilter = rawMssv
+          ? { event_id: event.id, import_mssv: rawMssv }
+          : { event_id: event.id, import_email: rawEmail };
+
+        const { data: existing, error: existingErr } = await supabase
+          .from('pending_claims')
+          .select('claim_token, status')
+          .match(matchFilter)
+          .maybeSingle();
+
+        if (existingErr) {
+          console.error('[Import] Failed to query pending_claim:', existingErr);
+          throw new Error(`Failed to query pending claim: ${existingErr.message}`);
+        }
+
+        if (existing?.status === 'claimed') {
+          alreadyIssuedList.push({
+            mssv: rawMssv || 'N/A',
+            email: rawEmail || 'N/A',
+            name: rawName || 'Unknown',
+            reason: 'Badge already claimed via Claim Badge link'
+          });
+          continue;
+        }
+
+        let finalClaimToken = existing?.claim_token;
+
+        if (!finalClaimToken) {
+          finalClaimToken = crypto.randomBytes(32).toString('hex');
+          const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+          const { error: insertErr } = await supabase
+            .from('pending_claims')
+            .insert({
+              event_id: event.id,
+              import_mssv: rawMssv || null,
+              import_email: rawEmail || null,
+              import_name: rawName || null,
+              claim_token: finalClaimToken,
+              status: 'pending',
+              expires_at: expiresAt.toISOString()
+            });
+
+          if (insertErr) {
+            console.error('[Import] Failed to create pending_claim:', insertErr);
+            throw new Error(`Failed to create pending claim: ${insertErr.message}`);
+          }
+        }
+
+        const claimUrl = `${CLAIM_BASE_URL}/claim/${finalClaimToken}`;
         unmatchedList.push({
           mssv: rawMssv || 'N/A',
           email: rawEmail || 'N/A',
           name: rawName || 'Unknown',
-          reason: 'No matching student account found in system'
+          reason: 'No matching student account found in system',
+          claimToken: finalClaimToken,
+          claimUrl
         });
         continue;
       }
@@ -260,6 +315,11 @@ export default async function handler(req, res) {
       });
     }
 
+    // Build batch claim URL for organizer to share (links to event-scoped claim page)
+    const batchClaimUrl = unmatchedList.some(u => u.claimToken)
+      ? `${CLAIM_BASE_URL}/claim?event=${event.id}`
+      : null;
+
     return res.status(200).json({
       ok: true,
       processedCount: attendees.length,
@@ -268,7 +328,8 @@ export default async function handler(req, res) {
       unmatchedCount: unmatchedList.length,
       issuedList,
       alreadyIssuedList,
-      unmatchedList
+      unmatchedList,
+      batchClaimUrl
     });
   } catch (error) {
     console.error('Import Attendees API Error:', error);
