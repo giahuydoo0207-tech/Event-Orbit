@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:claim": "node scratch/test_5_claim_cases.js"
   },
   "dependencies": {
     "@opencampus/ocid-connect-js": "^2.0.0-alpha.7",
@@ -22,6 +23,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.1",
+    "three": "0.128.0",
     "xlsx": "^0.18.5",
     "zustand": "^4.5.4"
   },

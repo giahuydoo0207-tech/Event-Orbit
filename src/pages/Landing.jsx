@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
-import { OrbitAvatar } from '../components/OrbitAvatar';
+import { ParticleGlobe } from '../components/ParticleGlobe';
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -58,7 +58,7 @@ export function Landing() {
             {/* Left Column: Copy & CTA */}
             <div className="lg:col-span-7 text-center lg:text-left space-y-6">
               {/* Kicker Badge */}
-              <div className="reveal inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20">
+              <div className="hero-enter hero-enter-badge inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20">
                 <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
                 <span className="badge-kicker text-oc-turquoise text-[11px] font-mono tracking-wider uppercase">
                   POWERED BY OPEN CAMPUS ID
@@ -66,20 +66,20 @@ export function Landing() {
               </div>
 
               {/* Headline */}
-              <h1 className="reveal reveal-delay-1 text-4xl font-black leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Campus Events.{' '}
-                <span className="text-oc-turquoise block mt-2 sm:mt-3">
+              <h1 className="text-3xl font-black leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                <span className="hero-enter hero-enter-line-one block">Campus Events.</span>
+                <span className="hero-enter hero-enter-line-two text-oc-turquoise block mt-2 sm:mt-3">
                   Verified on Chain.
                 </span>
               </h1>
 
               {/* Subtitle */}
-              <p className="reveal reveal-delay-2 mx-auto lg:mx-0 max-w-xl text-base leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
-                Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles &mdash; all powered by Open Campus.
+              <p className="hero-enter hero-enter-subtitle mx-auto lg:mx-0 max-w-xl text-sm leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
+                Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles, all powered by Open Campus.
               </p>
 
               {/* CTA Buttons */}
-              <div className="reveal reveal-delay-3 pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+              <div className="hero-enter hero-enter-buttons pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <Link
                   to="/login"
                   className="hover-lift w-full sm:w-auto inline-flex h-12 items-center justify-center rounded-xl bg-oc-blue px-8 text-xs font-bold text-white shadow-lg hover:bg-oc-indigo transition-all active:scale-95"
@@ -95,9 +95,9 @@ export function Landing() {
               </div>
             </div>
 
-            {/* Right Column: Hero Centerpiece Animated Orbit Avatar */}
-            <div className="reveal reveal-delay-2 lg:col-span-5 flex justify-center lg:justify-end py-4 lg:py-0">
-              <OrbitAvatar size="hero" className="scale-90 sm:scale-100 transition-all duration-300" />
+            {/* Right Column: Three.js Particle Globe */}
+            <div className="hero-enter hero-enter-globe hidden md:flex lg:col-span-5 h-[360px] lg:h-[470px] justify-center lg:justify-end py-4 lg:py-0 lg:pr-6 xl:pr-10">
+              <ParticleGlobe className="max-w-[480px] xl:max-w-[500px]" />
             </div>
 
           </div>
