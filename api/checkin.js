@@ -92,7 +92,24 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Event not found.' });
     }
 
-    // 5. Mint SBT (On-chain via Relayer if eth_address is present)
+    // 5. Ensure the successful check-in has a matching registration record.
+    const { error: registrationError } = await supabase
+      .from('registrations')
+      .upsert({
+        event_id: eventId,
+        user_id: session.user_id,
+        student_name: session.full_name,
+        ocid: session.ocid || null,
+        mssv: session.mssv || null,
+        eth_address: session.eth_address || null,
+      }, { onConflict: 'event_id,user_id' });
+
+    if (registrationError) {
+      console.error('Registration persistence error:', registrationError);
+      return res.status(500).json({ error: 'Failed to save check-in registration.' });
+    }
+
+    // 6. Mint SBT (On-chain via Relayer if eth_address is present)
     let txHash = null;
     let mintStatus = 'skipped_no_wallet';
     let mocked = false;
@@ -114,7 +131,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6. Record attendance / achievement in DB
+    // 7. Record attendance / achievement in DB
     const { error: achError } = await supabase
       .from('achievements')
       .insert({
@@ -134,18 +151,6 @@ export default async function handler(req, res) {
       console.error('Achievement recording error:', achError);
       return res.status(500).json({ error: 'Failed to save attendance badge.' });
     }
-
-    // Update registration checked_in status if it exists
-    await supabase
-      .from('registrations')
-      .update({ checked_in: true }) // Wait, registrations table doesn't have checked_in? Let's check schema!
-      // Ah! Let's check the schema in schema.sql:
-      // table registrations has: id, event_id, user_id, registered_at. It doesn't have checked_in!
-      // Wait, is checked_in status only tracked in achievements table?
-      // Yes! In achievements table we have user_id, event_id, points, checked_in_at.
-      // So checking in means adding a record in achievements table!
-      .eq('event_id', eventId)
-      .eq('user_id', session.user_id);
 
     return res.status(200).json({ ok: true, txHash, mocked, points: event.points });
   } catch (error) {

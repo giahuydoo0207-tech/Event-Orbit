@@ -133,14 +133,10 @@ export async function checkInStudent(qrData, student) {
 // ── Student Achievement Endpoints ──
 
 export async function fetchStudentAchievements(student) {
-  let url = '/api/achievements';
-  if (student.ocid) {
-    url += `?ocid=${encodeURIComponent(student.ocid)}`;
-  } else if (student.ethAddress) {
-    url += `?wallet=${encodeURIComponent(student.ethAddress)}`;
-  }
-
-  const res = await fetch(url);
+  const res = await fetch('/api/achievements', {
+    headers: getAuthHeaders(),
+    credentials: 'same-origin'
+  });
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
   }
@@ -151,7 +147,7 @@ export async function fetchStudentAchievements(student) {
 }
 
 export async function fetchStudentAchievementsByOcid(ocid) {
-  const res = await fetch(`/api/achievements?ocid=${encodeURIComponent(ocid)}`);
+  const res = await fetch(`/api/public-achievements?ocid=${encodeURIComponent(ocid)}`);
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
   }
