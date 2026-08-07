@@ -115,6 +115,28 @@ try {
   }, forgedHeaderResponse);
   assert.equal(forgedHeaderResponse.statusCode, 401);
 
+  const publicWithoutOcidResponse = responseCapture();
+  await achievementsHandler({
+    method: 'GET',
+    headers: {},
+    query: { public: '1' },
+  }, publicWithoutOcidResponse);
+  assert.equal(publicWithoutOcidResponse.statusCode, 400);
+
+  const publicResponse = responseCapture();
+  await achievementsHandler({
+    method: 'GET',
+    headers: {},
+    query: { public: '1', ocid: testUserId },
+  }, publicResponse);
+  assert.equal(publicResponse.statusCode, 200, JSON.stringify(publicResponse.body));
+  assert.equal(publicResponse.body.achievements.length, 1);
+  assert.equal(publicResponse.body.achievements[0].eventName, event.name);
+  assert.equal(publicResponse.body.achievements[0].points, event.points);
+  assert.equal(publicResponse.body.totalPoints, event.points);
+  assert.equal('ocid' in publicResponse.body.achievements[0], false);
+  assert.equal('userId' in publicResponse.body.achievements[0], false);
+
   const duplicateResponse = responseCapture();
   await checkinHandler(checkinRequest(event.id), duplicateResponse);
   assert.equal(duplicateResponse.statusCode, 409, JSON.stringify(duplicateResponse.body));

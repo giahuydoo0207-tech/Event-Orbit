@@ -4,6 +4,20 @@ import { verifySession } from '../lib/verifySession.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
+function toPublicAchievement(achievement) {
+  return {
+    id: achievement.id,
+    credentialId: achievement.credentialId,
+    eventId: achievement.eventId,
+    eventName: achievement.eventName,
+    points: achievement.points,
+    earnedAt: achievement.earnedAt,
+    txHash: achievement.txHash,
+    mintStatus: achievement.mintStatus,
+    badgeImage: achievement.badgeImage,
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
@@ -16,6 +30,19 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
+      if (req.query?.public === '1') {
+        const ocid = req.query.ocid;
+        if (typeof ocid !== 'string' || !ocid.trim()) {
+          return res.status(400).json({ error: 'Missing public profile OCID.' });
+        }
+
+        const result = await queryAchievements(supabase, 'ocid', ocid.trim());
+        return res.status(200).json({
+          achievements: result.achievements.map(toPublicAchievement),
+          totalPoints: result.totalPoints,
+        });
+      }
+
       const session = await verifySession(req, { allowHeaderFallback: false });
       if (!session) {
         return res.status(401).json({ error: 'You must be logged in to view achievements.' });

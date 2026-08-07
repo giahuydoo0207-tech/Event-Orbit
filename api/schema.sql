@@ -96,13 +96,42 @@ create table qr_nonces (
   created_at timestamptz default now()
 );
 
+-- 8. Bảng Pending Claims (Claim Badge Flow — cho sinh viên chưa có tài khoản trên Event Orbit)
+create table pending_claims (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid references events(id) on delete restrict not null,
+  import_mssv text,
+  import_email text,
+  import_name text,
+  claim_token text unique not null,
+  status text default 'pending' not null check (status in ('pending', 'claimed')),
+  claimed_by_ocid text,
+  claimed_by_eth_address text,
+  claimed_at timestamptz,
+  created_at timestamptz default now(),
+  expires_at timestamptz not null
+);
+
+-- Partial unique indexes (cho phép NULL)
+create unique index idx_pending_claims_event_mssv
+  on pending_claims (event_id, import_mssv)
+  where import_mssv is not null and import_mssv != '';
+
+create unique index idx_pending_claims_event_email
+  on pending_claims (event_id, import_email)
+  where import_email is not null and import_email != '';
+
 -- Kích hoạt Row Level Security (RLS)
 alter table events enable row level security;
 alter table chapters enable row level security;
 alter table registrations enable row level security;
 alter table achievements enable row level security;
 alter table chapter_follows enable row level security;
+alter table pending_claims enable row level security;
 
--- Thêm quyền select công khai cho Events và Chapters
+-- Quyền select công khai chỉ cho Events và Chapters (không chứa dữ liệu nhạy cảm)
 create policy "Public read events" on events for select using (true);
 create policy "Public read chapters" on chapters for select using (true);
+
+-- KHÔNG tạo policy cho pending_claims — chỉ service_role (bypass RLS) mới truy cập được.
+-- Bảng này chứa claim_token nhạy cảm, anon/authenticated bị khoá hoàn toàn.

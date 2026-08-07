@@ -147,7 +147,7 @@ export async function fetchStudentAchievements(student) {
 }
 
 export async function fetchStudentAchievementsByOcid(ocid) {
-  const res = await fetch(`/api/public-achievements?ocid=${encodeURIComponent(ocid)}`);
+  const res = await fetch(`/api/achievements?public=1&ocid=${encodeURIComponent(ocid)}`);
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
   }

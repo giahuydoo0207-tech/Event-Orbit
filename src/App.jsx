@@ -27,6 +27,7 @@ const EventCreate = lazy(() => import('./pages/EventCreate'));
 const EventManage = lazy(() => import('./pages/EventManage'));
 const EventHistory = lazy(() => import('./pages/EventHistory'));
 const StudentCheckin = lazy(() => import('./pages/StudentCheckin'));
+const ClaimBadge = lazy(() => import('./pages/ClaimBadge'));
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
           <Route path="/chapters" element={<PublicLayout><ChapterList /></PublicLayout>} />
           <Route path="/chapters/:slug" element={<PublicLayout><ChapterProfile /></PublicLayout>} />
           <Route path="/u/:ocid" element={<PublicLayout><PublicProfile /></PublicLayout>} />
+          <Route path="/claim/:token" element={<ClaimBadge />} />
 
           {/* Student Self-check-in screen (standalone, no layout) */}
           <Route path="/student-checkin.html" element={<StudentCheckin />} />

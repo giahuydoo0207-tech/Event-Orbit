@@ -29,6 +29,10 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
 
   const fileInputRef = useRef(null);
   const showToast = useToastStore((state) => state.showToast);
+  const copyToClipboard = async (text, successMessage = 'Copied to clipboard.') => {
+    try { await navigator.clipboard.writeText(text); showToast(successMessage, 'success'); }
+    catch (err) { console.error('Clipboard copy failed:', err); showToast('Failed to copy link.', 'error'); }
+  };
 
   // Sync selectedEventId when modal opens or eventId/events change
   useEffect(() => {
@@ -285,6 +289,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
         <div className="p-6 overflow-y-auto space-y-6 flex-1">
 
           {/* Event Selector */}
+          {step !== 'results' && (
           <div className="bg-surface border border-border rounded-xl p-4 space-y-2">
             <label className="block text-xs font-bold text-navy uppercase tracking-wider">
               1. Select Target Event *
@@ -306,6 +311,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
               )}
             </select>
           </div>
+          )}
 
           {/* STEP 1: Upload Step */}
           {step === 'upload' && (
@@ -482,96 +488,50 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
 
           {/* STEP 4: Results Dashboard */}
           {step === 'results' && (
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
               <div className="border-b border-border pb-4">
                 <h3 className="text-lg font-extrabold text-navy">Import & Badge Issuance Summary</h3>
                 <p className="text-xs text-text-secondary">
-                  Processed <span className="num font-bold text-oc-blue">{results.totalProcessed}</span> records. Badges issued and on-chain SBTs dispatched.
+                  Processed <span className="num font-bold text-oc-blue">{results.totalProcessed}</span> records from the uploaded file.
                 </p>
+                <p className="mt-2 text-xs text-text-secondary">{results.unmatchedList.some((item) => item.claimUrl) ? 'Send claim links to unmatched students so they can verify with Open Campus ID.' : 'No claim links were needed for this import.'}</p>
               </div>
 
-              {/* Results Stat Cards with Taste Skill Vector Status Icons & Space Mono Nums */}
-              <div className="grid grid-cols-3 gap-4">
-                {/* Card 1: Issued */}
-                <div className="bg-emerald-50/70 border border-emerald-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-                    <svg className="w-3.5 h-3.5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Badges Issued</span>
-                  </div>
-                  <div className="num text-3xl font-extrabold text-emerald-700 tracking-tight mt-3">
-                    {results.issuedList.length}
-                  </div>
-                </div>
-
-                {/* Card 2: Dupes */}
-                <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
-                    <svg className="w-3.5 h-3.5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                    </svg>
-                    <span>Already Issued</span>
-                  </div>
-                  <div className="num text-3xl font-extrabold text-amber-700 tracking-tight mt-3">
-                    {results.alreadyIssuedList.length}
-                  </div>
-                </div>
-
-                {/* Card 3: Unmatched */}
-                <div className="bg-rose-50/70 border border-rose-200/60 rounded-xl p-4 flex flex-col justify-between transition-all hover:shadow-sm">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-800">
-                    <svg className="w-3.5 h-3.5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <span>Unmatched Rows</span>
-                  </div>
-                  <div className="num text-3xl font-extrabold text-rose-700 tracking-tight mt-3">
-                    {results.unmatchedList.length}
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-oc-periwinkle bg-oc-mist sm:grid-cols-3 sm:divide-x sm:divide-oc-periwinkle">
+                {[['ISSUED', results.issuedList.length], ['ALREADY ISSUED', results.alreadyIssuedList.length], ['CLAIM LINKS', results.unmatchedList.filter((item) => item.claimUrl).length]].map(([label, value]) => <div key={label} className="flex items-center justify-between px-4 py-2.5"><span className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">{label}</span><span className="font-mono text-xl font-extrabold text-oc-blue">{value}</span></div>)}
               </div>
+
+              {results.alreadyIssuedList.length > 0 && <section className="space-y-3"><h4 className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">ALREADY ISSUED</h4><div className="overflow-x-auto rounded-lg border border-oc-periwinkle"><table className="w-full text-left text-xs"><thead className="bg-oc-mist"><tr><th className="p-2.5">Name</th><th className="p-2.5">MSSV</th><th className="p-2.5">Email</th><th className="p-2.5">Reason</th></tr></thead><tbody>{results.alreadyIssuedList.map((item, idx) => <tr key={idx} className="border-t border-oc-periwinkle"><td className="p-2.5 font-semibold text-oc-navy">{item.name}</td><td className="p-2.5 font-mono">{item.mssv}</td><td className="p-2.5">{item.email}</td><td className="p-2.5 text-text-secondary">{item.reason}</td></tr>)}</tbody></table></div></section>}
 
               {/* Unmatched List Breakdown Table */}
               {results.unmatchedList.length > 0 && (
-                <div className="bg-rose-50/40 border border-rose-200/70 rounded-xl p-4 space-y-3">
+                <div className="bg-oc-mist border border-oc-periwinkle rounded-xl p-4 space-y-3">
                   <div className="flex justify-between items-center">
-                    <h4 className="badge-kicker text-[10px] font-bold text-rose-900 tracking-wider">
+                    <h4 className="badge-kicker text-[10px] font-bold text-oc-navy tracking-wider">
                       Unmatched Attendees (<span className="num">{results.unmatchedList.length}</span>)
                     </h4>
-                    <span className="text-[10px] text-rose-700 font-medium">
-                      Remind these students to register an OCID account to claim badges.
-                    </span>
+                    <div className="flex items-center gap-3"><span className="text-[10px] text-text-secondary font-medium">Send the claim link to each student so they can self-claim their badge.</span>{results.unmatchedList.some((item) => item.claimUrl) && <button onClick={() => copyToClipboard(results.unmatchedList.filter((item) => item.claimUrl).map((item) => `${item.name}: ${item.claimUrl}`).join('\n'), 'Claim links copied to clipboard.')} className="shrink-0 rounded-md border border-oc-blue/30 px-2 py-1 text-[10px] font-bold text-oc-blue">Copy All</button>}</div>
                   </div>
 
-                  <div className="bg-white border border-rose-100 rounded-lg overflow-x-auto max-h-44 shadow-xs">
+                  <div className={`bg-white border border-oc-periwinkle rounded-lg overflow-x-auto ${results.unmatchedList.length > 6 ? 'max-h-64 overflow-y-auto' : ''}`}>
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-rose-100/40 border-b border-rose-100">
-                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">MSSV</th>
-                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Email</th>
-                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Name</th>
-                          <th className="p-2.5 badge-kicker text-[9px] text-rose-900">Reason</th>
+                        <tr className="bg-oc-mist border-b border-oc-periwinkle">
+                          <th className="p-2.5 badge-kicker min-w-32 whitespace-nowrap text-[9px] text-oc-navy">MSSV</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-oc-navy">Email</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-oc-navy">Name</th>
+                          <th className="p-2.5 badge-kicker text-[9px] text-oc-navy">Reason</th>
+                          <th className="p-2.5 badge-kicker whitespace-nowrap text-right text-[9px] text-oc-navy">Claim Link</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-rose-50/80">
+                      <tbody className="divide-y divide-oc-periwinkle">
                         {results.unmatchedList.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-rose-50/40 transition-colors">
-                            <td className="p-2.5 font-mono text-xs font-semibold text-oc-ink">{item.mssv}</td>
+                          <tr key={idx} className="hover:bg-oc-mist transition-colors">
+                            <td className="p-2.5 whitespace-nowrap font-mono text-xs font-semibold text-oc-ink">{item.mssv}</td>
                             <td className="p-2.5 text-slate-600 text-xs">{item.email}</td>
                             <td className="p-2.5 font-medium text-oc-ink text-xs">{item.name}</td>
-                            <td className="p-2.5">
-                              <StatusBadge
-                                status="unmatched"
-                                label={
-                                  item.reason.includes('both MSSV and Email')
-                                    ? 'MISSING INFO'
-                                    : item.reason.includes('Duplicate')
-                                    ? 'DUPLICATE ROW'
-                                    : 'NO OCID ACCOUNT'
-                                }
-                              />
-                            </td>
+                            <td className="p-2.5"><span className="whitespace-nowrap rounded-sm bg-oc-navy px-2 py-1 font-mono text-[9px] font-bold text-white/80">{item.reason.includes('both MSSV and Email') ? 'MISSING INFO' : item.reason.includes('Duplicate') ? 'DUPLICATE ROW' : 'NO OCID ACCOUNT'}</span></td>
+                            <td className="p-2.5 text-right">{item.claimUrl ? <button onClick={() => copyToClipboard(item.claimUrl)} title="Copy claim link" aria-label="Copy claim link" className="rounded-md border border-oc-blue/30 px-2 py-1 text-[10px] font-bold text-oc-blue">Copy</button> : <span className="text-slate-400">N/A</span>}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -579,7 +539,6 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                   </div>
                 </div>
               )}
-
             </div>
           )}
 
@@ -592,7 +551,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
             onClick={onClose}
             className="px-4 py-2 border border-border text-navy bg-white hover:bg-slate-100 text-xs font-semibold rounded-lg"
           >
-            {step === 'results' ? 'Close Window' : 'Cancel'}
+            {step === 'results' ? 'Close' : 'Cancel'}
           </button>
 
           {step === 'preview' && (

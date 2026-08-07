@@ -20,6 +20,8 @@ export function EventManage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pendingClaims, setPendingClaims] = useState([]);
+  const [loadingClaims, setLoadingClaims] = useState(false);
   const qrCanvasRef = useRef(null);
 
   const fetchQRData = async () => {
@@ -55,9 +57,25 @@ export function EventManage() {
       setLoading(false);
     }
   };
+  const loadPendingClaims = async () => {
+    if (!id) return;
+    setLoadingClaims(true);
+    try {
+      const res = await fetch(`/api/claim?eventId=${encodeURIComponent(id)}`, { headers: getAuthHeaders(), credentials: 'same-origin' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load pending claims.');
+      setPendingClaims(data.claims || []);
+    } catch (err) { console.error('[EventManage] Failed to load pending claims:', err); showToast(err.message || 'Failed to load pending claims.', 'error'); }
+    finally { setLoadingClaims(false); }
+  };
+  const copyClaimText = async (text, message = 'Copied to clipboard.') => {
+    try { await navigator.clipboard.writeText(text); showToast(message, 'success'); }
+    catch (err) { console.error('Clipboard copy failed:', err); showToast('Failed to copy link.', 'error'); }
+  };
 
   useEffect(() => {
     loadData();
+    loadPendingClaims();
 
     // Refresh QR token every 4.5 minutes
     const qrInterval = setInterval(fetchQRData, 270000);
@@ -77,8 +95,8 @@ export function EventManage() {
   useEffect(() => {
     if (qrCanvasRef.current && (event || id)) {
       const checkinUrl = qrData 
-        ? `${window.location.origin}/student-checkin?qrData=${qrData}`
-        : `${window.location.origin}/student-checkin?eventId=${id}`;
+        ? `${window.location.origin}/student-checkin?qrData=${encodeURIComponent(qrData)}`
+        : `${window.location.origin}/student-checkin?eventId=${event?.id || id}`;
 
       QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
         width: 240,
@@ -187,35 +205,59 @@ export function EventManage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* QR Code projector card */}
-        <div className="lg:col-span-1 bg-surface border border-border rounded-xl p-6 text-center space-y-4 flex flex-col items-center">
-          <div>
-            <h2 className="text-sm font-bold text-navy uppercase tracking-wider">Venue Check-in QR</h2>
-            <p className="text-[11px] text-text-secondary mt-1">Project this screen on display. Students scan to self check-in.</p>
-          </div>
-          
-          <div className="bg-white border border-border p-3 rounded shadow-sm relative min-w-[240px] min-h-[240px] flex items-center justify-center">
-            {isQrLoading && (
-              <div className="absolute inset-0 bg-white/95 backdrop-blur-[2px] flex flex-col items-center justify-center space-y-3 z-10 rounded">
-                <div className="relative w-10 h-10 flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-2 border-oc-blue/20" />
-                  <div className="absolute inset-0 rounded-full border-2 border-t-oc-turquoise border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                </div>
-                <span className="badge-kicker text-[9px] text-slate-400">Generating Venue QR...</span>
+      <div className="space-y-10">
+        {/* Open Campus check-in station */}
+        <section className="overflow-hidden rounded-2xl bg-oc-navy text-white shadow-oc-lg">
+          <div className="grid grid-cols-1 items-center gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(288px,0.8fr)_1.2fr] lg:gap-14 lg:p-12">
+            <div className="flex flex-col items-center lg:items-start">
+              <div className="relative flex min-h-[272px] min-w-[272px] items-center justify-center rounded-xl border border-oc-turquoise/30 bg-white p-4 shadow-[0_18px_50px_rgba(0,237,190,0.08)]">
+                {isQrLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 rounded-xl bg-white/95">
+                    <div className="relative flex h-10 w-10 items-center justify-center">
+                      <div className="absolute inset-0 rounded-full border-2 border-oc-blue/20" />
+                      <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-oc-turquoise" />
+                    </div>
+                    <span className="badge-kicker text-[9px] text-slate-500">Generating check-in QR</span>
+                  </div>
+                )}
+                <canvas
+                  ref={qrCanvasRef}
+                  className={`block h-auto max-w-full ${isQrLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'}`}
+                />
               </div>
-            )}
-            <canvas ref={qrCanvasRef} className={isQrLoading ? 'opacity-0' : 'opacity-100 transition-opacity duration-200'} />
-          </div>
 
-          <div className="bg-white border border-border rounded p-2 w-full text-[9px] font-mono select-all truncate text-text-secondary">
-            {qrData || 'Generating venue check-in token...'}
+              <div className="mt-5 w-full max-w-[320px]">
+                <div className="badge-kicker mb-2 text-[9px] text-oc-turquoise">Session token</div>
+                <div className="select-all truncate border-t border-oc-turquoise/25 pt-3 font-mono text-[9px] leading-relaxed text-oc-periwinkle/80">
+                  {qrData || 'Generating venue check-in token...'}
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-xl text-center lg:text-left">
+              <div className="badge-kicker text-[10px] text-oc-turquoise">Open Campus Check-in</div>
+              <h2 className="mt-4 text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl">
+                Scan to verify attendance
+              </h2>
+              <p className="mt-4 max-w-lg text-sm font-medium leading-relaxed text-oc-periwinkle sm:text-base">
+                Use Open Campus ID to check in and receive your event credential.
+              </p>
+
+              <div className="mt-8 border-t border-oc-turquoise/25 pt-6">
+                <p className="text-lg font-bold leading-snug text-white">{event.name}</p>
+                <p className="mt-2 font-mono text-xs text-oc-turquoise">{event.points} points</p>
+              </div>
+
+              <div className="mt-7 flex flex-wrap justify-center gap-x-5 gap-y-2 font-mono text-[10px] font-bold uppercase tracking-wider text-oc-turquoise lg:justify-start">
+                <span>Live check-in</span>
+                <span>OCID required</span>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* Attendees Manager list */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-navy uppercase tracking-wider">
               Registrations ({attendees.length})
@@ -267,6 +309,11 @@ export function EventManage() {
         </div>
       </div>
 
+      <section className="border border-border bg-white rounded-xl p-5 space-y-3">
+        <div className="flex items-center justify-between gap-3"><div><h2 className="text-sm font-bold text-navy">Pending Claim Links</h2><p className="text-xs text-text-secondary">{pendingClaims.filter((claim) => claim.status === 'pending').length} pending / {pendingClaims.filter((claim) => claim.status === 'claimed').length} claimed</p></div>{pendingClaims.some((claim) => claim.claimUrl) && <button onClick={() => copyClaimText(pendingClaims.filter((claim) => claim.claimUrl).map((claim) => `${claim.importName}: ${claim.claimUrl}`).join('\n'))} className="rounded-md border border-oc-blue/30 px-3 py-2 text-xs font-bold text-oc-blue">Copy All</button>}</div>
+        {loadingClaims ? <p className="text-xs text-text-secondary">Loading claim links...</p> : <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr><th className="p-2">Name</th><th className="p-2">MSSV</th><th className="p-2">Email</th><th className="p-2">Status</th><th className="p-2 text-right">Claim Link</th></tr></thead><tbody>{pendingClaims.map((claim) => <tr key={claim.id}><td className="p-2">{claim.importName}</td><td className="p-2">{claim.importMssv || 'N/A'}</td><td className="p-2">{claim.importEmail || 'N/A'}</td><td className="p-2"><span className={claim.status === 'claimed' ? 'bg-oc-navy px-2 py-1 font-mono text-[10px] font-bold text-oc-turquoise' : 'bg-oc-navy px-2 py-1 font-mono text-[10px] font-bold text-white/80'}>{claim.status === 'claimed' ? 'CLAIMED' : 'PENDING'}</span></td><td className="p-2 text-right"><button onClick={() => copyClaimText(claim.claimUrl)} title="Copy claim link" aria-label="Copy claim link" className="rounded-md border border-oc-blue/30 px-2 py-1 text-[10px] font-bold text-oc-blue">Copy</button></td></tr>)}</tbody></table></div>}
+      </section>
+
       {/* Attendee Import Modal */}
       <AttendeeImportModal
         isOpen={isImportModalOpen}
@@ -275,6 +322,7 @@ export function EventManage() {
         onSuccess={() => {
           showToast('Imported attendees successfully!', 'success');
           loadData();
+          loadPendingClaims();
         }}
       />
 

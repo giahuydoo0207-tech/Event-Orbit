@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
-import { ParticleGlobe } from '../components/ParticleGlobe';
+import { CredentialOrb } from '../components/CredentialOrb';
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -95,9 +95,9 @@ export function Landing() {
               </div>
             </div>
 
-            {/* Right Column: Three.js Particle Globe */}
-            <div className="hero-enter hero-enter-globe hidden md:flex lg:col-span-5 h-[360px] lg:h-[470px] justify-center lg:justify-end py-4 lg:py-0 lg:pr-6 xl:pr-10">
-              <ParticleGlobe className="max-w-[480px] xl:max-w-[500px]" />
+            {/* Right Column: Three.js Credential Orb */}
+            <div className="hero-enter hero-enter-globe hidden md:flex lg:col-span-5 h-[340px] lg:h-[440px] justify-center lg:justify-end py-4 lg:py-0 lg:pr-8 xl:pr-12">
+              <CredentialOrb className="max-w-[430px] xl:max-w-[460px]" />
             </div>
 
           </div>

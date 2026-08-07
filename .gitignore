@@ -9,3 +9,4 @@ search.py
 Thumbs.db
 **/.env
 contracts/.env
+.env*

@@ -163,8 +163,16 @@ export function StudentCheckin() {
         setStatusState('success');
         showToast('Attendance confirmed! Badge issued.', 'success');
       } else {
-        setStatusState('error');
         let formattedError = res.error || 'Check-in failed.';
+        const isDuplicateAttendance = /you have already checked in (?:to|for) this event/i.test(formattedError);
+
+        if (isDuplicateAttendance) {
+          setStatusState('already');
+          setErrorMessage('');
+          return;
+        }
+
+        setStatusState('error');
         if (formattedError.includes('Invalid QR format') || formattedError.includes('signature') || formattedError.includes('Missing QR data')) {
           formattedError = 'Mã QR chưa sẵn sàng hoặc đã hết hạn. Vui lòng quét lại mã QR trên màn hình sự kiện.';
         }
@@ -387,16 +395,16 @@ export function StudentCheckin() {
         {/* 4. Already State */}
         {statusState === 'already' && (
           <div className="text-center py-10 space-y-6">
-            <div className="text-warning text-4xl font-extrabold">&bull; Info &bull;</div>
-            <div className="space-y-2">
-              <h2 className="text-lg font-bold text-navy">Already Checked In</h2>
-              <p className="text-xs text-text-secondary">
-                You have already confirmed attendance and claimed your SBT badge for this event.
+            <div className="mx-auto max-w-xs border-y border-oc-turquoise/40 py-6">
+              <div className="badge-kicker text-[10px] text-oc-blue">Open Campus ID</div>
+              <h2 className="mt-3 text-xl font-bold text-navy">Already checked in</h2>
+              <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                You have already checked in to this event.
               </p>
             </div>
             <Link
               to="/dashboard"
-              className="w-full py-2.5 bg-surface border border-border text-navy text-xs font-semibold rounded block text-center hover:bg-slate-100"
+              className="block w-full rounded bg-oc-blue py-2.5 text-center text-xs font-semibold text-white transition-colors hover:bg-oc-indigo"
             >
               Go to Dashboard
             </Link>
