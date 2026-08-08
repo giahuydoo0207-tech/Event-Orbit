@@ -18,11 +18,13 @@ const opts = {
   redirectUri: redirectUri,
 };
 
+const sandboxMode = import.meta.env.VITE_OCID_ENVIRONMENT === 'sandbox';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <ToastContainer />
-      <OCConnect opts={opts} sandboxMode={true}>
+      <OCConnect opts={opts} sandboxMode={sandboxMode}>
         <App />
       </OCConnect>
     </ErrorBoundary>

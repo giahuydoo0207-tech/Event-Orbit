@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
-import { resolveChapterUuid } from '../lib/resolveChapter.js';
+import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
 
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
 
@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -36,8 +36,13 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
-  if (session.role !== 'organizer') {
-    return res.status(403).json({ error: 'Forbidden. Only organizers can import attendees and issue badges.' });
+  try {
+    assertOrganizer(session);
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return res.status(403).json({ error: error.message });
+    }
+    throw error;
   }
 
   try {
@@ -45,6 +50,9 @@ export default async function handler(req, res) {
 
     if (!eventId || !Array.isArray(attendees)) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
+    }
+    if (attendees.length === 0 || attendees.length > 500) {
+      return res.status(400).json({ error: 'Each import batch must contain between 1 and 500 attendees.' });
     }
 
     // 3. Verify target event by exact Postgres UUID or exact slug
@@ -73,11 +81,13 @@ export default async function handler(req, res) {
 
     const event = targetEvent;
 
-    if (session.chapter_id) {
-      const sessionChapterUuid = await resolveChapterUuid(supabase, session.chapter_id);
-      if (sessionChapterUuid && sessionChapterUuid !== event.chapter_id) {
-        return res.status(403).json({ error: 'Unauthorized. You can only manage events for your own chapter.' });
+    try {
+      assertEventOwnership(session, event);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        return res.status(403).json({ error: error.message });
       }
+      throw error;
     }
 
     const issuedList = [];
@@ -91,6 +101,11 @@ export default async function handler(req, res) {
       const rawMssv = (attendee.mssv || attendee.student_id || '').toString().trim();
       const rawEmail = (attendee.email || '').toString().trim().toLowerCase();
       const rawName = (attendee.name || attendee.ten || attendee.fullName || '').toString().trim();
+
+      if (rawMssv.length > 64 || rawEmail.length > 320 || rawName.length > 200) {
+        unmatchedList.push({ mssv: rawMssv, email: rawEmail, name: rawName, reason: 'Invalid field length' });
+        continue;
+      }
 
       if (!rawMssv && !rawEmail) {
         unmatchedList.push({
@@ -275,7 +290,7 @@ export default async function handler(req, res) {
           });
           txHash = relayerResult.txHash;
           mocked = relayerResult.mocked;
-          mintStatus = mocked ? 'success' : 'minting';
+          mintStatus = 'success';
         } catch (mintErr) {
           console.error(`Relayer minting failed for ${userId}:`, mintErr);
           txHash = null;

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { mapEventDbToClient, mapEventClientToDb } from '../lib/mappers.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
+import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -25,8 +26,18 @@ export default async function handler(req, res) {
         .from('events')
         .select('*, chapters(*)');
 
-      // Filter out soft-deleted events unless includeDeleted === 'true'
-      if (includeDeleted !== 'true') {
+      if (includeDeleted === 'true') {
+        const session = await verifySession(req);
+        try {
+          assertOrganizer(session);
+        } catch (error) {
+          if (error instanceof AuthorizationError) {
+            return res.status(403).json({ error: error.message });
+          }
+          throw error;
+        }
+        query = query.eq('chapter_id', session.chapter_id);
+      } else {
         query = query.is('deleted_at', null);
       }
 
@@ -58,8 +69,13 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Authentication required.' });
       }
 
-      if (session.role !== 'organizer') {
-        return res.status(403).json({ error: 'Access forbidden. Only organizers can create events.' });
+      try {
+        assertOrganizer(session);
+      } catch (error) {
+        if (error instanceof AuthorizationError) {
+          return res.status(403).json({ error: error.message });
+        }
+        throw error;
       }
 
       const clientEvent = req.body;
@@ -68,10 +84,8 @@ export default async function handler(req, res) {
       }
 
       // Ensure valid chapter_id resolution for Postgres foreign key
-      const validChapterId = await resolveChapterUuid(supabase, clientEvent.chapterId || session.chapter_id);
-
       const dbEvent = mapEventClientToDb(clientEvent);
-      dbEvent.chapter_id = validChapterId;
+      dbEvent.chapter_id = session.chapter_id;
       
       // Auto-generate slug if not provided
       if (!dbEvent.slug) {
@@ -105,8 +119,13 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'Authentication required.' });
       }
 
-      if (session.role !== 'organizer') {
-        return res.status(403).json({ error: 'Access forbidden. Only organizers can delete events.' });
+      try {
+        assertOrganizer(session);
+      } catch (error) {
+        if (error instanceof AuthorizationError) {
+          return res.status(403).json({ error: error.message });
+        }
+        throw error;
       }
 
       const eventId = req.query.id || req.body?.id;
@@ -139,28 +158,17 @@ export default async function handler(req, res) {
         targetEvent = data;
       }
 
-      // Fallback for locally generated numeric IDs (like '106'): grab latest un-deleted event
-      if (!targetEvent && !uuidRegex.test(eventId)) {
-        const { data } = await supabase
-          .from('events')
-          .select('id, chapter_id')
-          .is('deleted_at', null)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        targetEvent = data;
-      }
-
       if (!targetEvent) {
         return res.status(404).json({ error: 'Event not found.' });
       }
 
-      // 2. Validate organizer chapter ownership (resolve both IDs to valid UUIDs)
-      if (session.chapter_id) {
-        const sessionChapterUuid = await resolveChapterUuid(supabase, session.chapter_id);
-        if (sessionChapterUuid && sessionChapterUuid !== targetEvent.chapter_id) {
-          return res.status(403).json({ error: 'Unauthorized. You can only delete events for your own chapter.' });
+      try {
+        assertEventOwnership(session, targetEvent);
+      } catch (error) {
+        if (error instanceof AuthorizationError) {
+          return res.status(403).json({ error: error.message });
         }
+        throw error;
       }
 
       // 3. Perform Soft Delete (UPDATE deleted_at = now())

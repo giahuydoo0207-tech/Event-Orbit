@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
+import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -133,16 +134,29 @@ async function handleGetPendingClaims(req, res) {
     return res.status(401).json({ error: 'Authentication required.' });
   }
 
-  if (session.role !== 'organizer') {
-    return res.status(403).json({ error: 'Forbidden. Only organizers can view pending claims.' });
-  }
-
   try {
     const { eventId } = req.query;
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     if (!uuidRegex.test(eventId)) {
       return res.status(400).json({ error: 'Invalid eventId format. Must be a valid UUID.' });
+    }
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('id, chapter_id')
+      .eq('id', eventId)
+      .maybeSingle();
+
+    if (eventError) throw eventError;
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    try {
+      assertEventOwnership(session, event);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        return res.status(403).json({ error: error.message });
+      }
+      throw error;
     }
 
     const { data: claims, error: queryErr } = await supabase
@@ -230,6 +244,9 @@ async function handlePostClaim(req, res) {
     if (!session) {
       return res.status(401).json({ error: 'You must be logged in with Open Campus ID to claim this badge.' });
     }
+    if (session.role !== 'student' || !session.ocid) {
+      return res.status(403).json({ error: 'Badge claims require a verified student Open Campus ID.' });
+    }
 
     const userId = session.user_id || session.ocid || session.mssv;
     const studentOcid = session.ocid || null;
@@ -241,53 +258,30 @@ async function handlePostClaim(req, res) {
       return res.status(401).json({ error: 'Invalid session: no user identity found.' });
     }
 
-    // 3. Fetch event details
-    const { data: event } = await supabase
-      .from('events')
-      .select('id, name, points')
-      .eq('id', claim.event_id)
-      .maybeSingle();
+    const { data: reservationRows, error: reservationError } = await supabase.rpc('reserve_badge_claim', {
+      p_claim_token: claimToken,
+      p_user_id: userId,
+      p_full_name: studentName,
+      p_ocid: studentOcid,
+      p_mssv: studentMssv,
+      p_eth_address: ethAddress,
+    });
 
-    if (!event) {
-      return res.status(404).json({ error: 'The event associated with this claim no longer exists.' });
+    if (reservationError) {
+      if (reservationError.code === 'P0002') {
+        return res.status(404).json({ error: 'The event associated with this claim no longer exists.' });
+      }
+      console.error('[Claim] Atomic reservation failed:', reservationError);
+      return res.status(500).json({ error: 'Failed to reserve this badge claim.' });
     }
 
-    // 4. Check if badge already exists for this user + event
-    const { data: existingAch } = await supabase
-      .from('achievements')
-      .select('id')
-      .eq('event_id', event.id)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (existingAch) {
-      // Mark the pending_claim as claimed even if badge already exists (idempotent)
-      await supabase
-        .from('pending_claims')
-        .update({
-          status: 'claimed',
-          claimed_by_ocid: studentOcid,
-          claimed_by_eth_address: ethAddress,
-          claimed_at: new Date().toISOString()
-        })
-        .eq('id', claim.id);
-
+    const reservation = reservationRows?.[0];
+    if (!reservation) {
+      return res.status(409).json({ error: 'This badge has already been claimed or the link has expired.' });
+    }
+    if (reservation.already_owned) {
       return res.status(409).json({ error: 'You already have a badge for this event.' });
     }
-
-    // 5. Record registration (source: claim_badge)
-    await supabase
-      .from('registrations')
-      .upsert({
-        event_id: event.id,
-        user_id: userId,
-        student_name: studentName,
-        ocid: studentOcid,
-        mssv: studentMssv,
-        eth_address: ethAddress,
-        source: 'claim_badge',
-        registered_at: new Date().toISOString()
-      }, { onConflict: 'event_id,user_id' });
 
     // 6. Mint SBT on-chain / issue off-chain achievement
     let txHash = null;
@@ -298,12 +292,12 @@ async function handlePostClaim(req, res) {
       try {
         const relayerResult = await mintBadge({
           recipientAddress: ethAddress,
-          eventId: event.id,
-          points: event.points
+          eventId: reservation.event_id,
+          points: reservation.event_points
         });
         txHash = relayerResult.txHash;
         mocked = relayerResult.mocked;
-        mintStatus = mocked ? 'success' : 'minting';
+        mintStatus = 'success';
       } catch (mintErr) {
         console.error(`[Claim] Relayer minting failed for ${userId}:`, mintErr);
         txHash = null;
@@ -314,42 +308,19 @@ async function handlePostClaim(req, res) {
     // 7. Record achievement
     const { error: achErr } = await supabase
       .from('achievements')
-      .insert({
-        event_id: event.id,
-        user_id: userId,
-        ocid: studentOcid,
-        credential_id: `cred-claim-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        points: event.points,
+      .update({
         tx_hash: txHash,
         mint_status: mintStatus
-      });
+      })
+      .eq('id', reservation.achievement_id);
 
-    if (achErr && achErr.code === '23505') {
+    if (achErr) {
       // Unique constraint — badge already issued (race condition safety)
-      await supabase
-        .from('pending_claims')
-        .update({
-          status: 'claimed',
-          claimed_by_ocid: studentOcid,
-          claimed_by_eth_address: ethAddress,
-          claimed_at: new Date().toISOString()
-        })
-        .eq('id', claim.id);
-
-      return res.status(409).json({ error: 'Badge already issued for this event.' });
+      console.error('[Claim] Achievement mint-status update failed:', achErr);
+      return res.status(500).json({ error: 'Badge was reserved, but mint status could not be updated.' });
     }
 
     // 8. Update pending_claim to 'claimed'
-    await supabase
-      .from('pending_claims')
-      .update({
-        status: 'claimed',
-        claimed_by_ocid: studentOcid,
-        claimed_by_eth_address: ethAddress,
-        claimed_at: new Date().toISOString()
-      })
-      .eq('id', claim.id);
-
     // 9. Persist session for future auto-matching (reuse auth/login.js pattern)
     try {
       const sessionToken = crypto.randomBytes(32).toString('hex');
@@ -377,12 +348,12 @@ async function handlePostClaim(req, res) {
       console.error('[Claim] Session persist failed (non-blocking):', sessionErr);
     }
 
-    console.log(`[Claim] Badge claimed successfully: user=${userId}, event=${event.id}, txHash=${txHash}`);
+    console.log(`[Claim] Badge claimed successfully: user=${userId}, event=${reservation.event_id}, txHash=${txHash}`);
 
     return res.status(200).json({
       ok: true,
-      eventName: event.name,
-      points: event.points,
+      eventName: reservation.event_name,
+      points: reservation.event_points,
       txHash,
       mocked,
       mintStatus,

@@ -1,11 +1,15 @@
 import { createHmac, randomUUID } from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../../../lib/verifySession.js';
+import { AuthorizationError, assertEventOwnership } from '../../../lib/authorization.js';
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -18,13 +22,32 @@ export default async function handler(req, res) {
 
   try {
     const session = await verifySession(req);
-    if (!session || session.role !== 'organizer') {
-      return res.status(403).json({ error: 'Not authorized. Organizer access required.' });
-    }
-
     const { id: eventId } = req.query;
     if (!eventId) {
       return res.status(400).json({ error: 'Missing event ID.' });
+    }
+
+    const { data: event, error: eventError } = await supabase
+      .from('events')
+      .select('id, chapter_id')
+      .eq('id', eventId)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (eventError) throw eventError;
+    if (!event) return res.status(404).json({ error: 'Event not found.' });
+    try {
+      assertEventOwnership(session, event);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        return res.status(403).json({ error: error.message });
+      }
+      throw error;
+    }
+
+    if (!process.env.QR_SECRET) {
+      console.error('QR_SECRET is not configured.');
+      return res.status(503).json({ error: 'QR generation is temporarily unavailable.' });
     }
 
     const nonce = randomUUID();

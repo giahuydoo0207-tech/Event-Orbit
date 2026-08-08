@@ -96,8 +96,8 @@ export function Landing() {
             </div>
 
             {/* Right Column: Three.js Credential Orb */}
-            <div className="hero-enter hero-enter-globe hidden md:flex lg:col-span-5 h-[340px] lg:h-[440px] justify-center lg:justify-end py-4 lg:py-0 lg:pr-8 xl:pr-12">
-              <CredentialOrb className="max-w-[430px] xl:max-w-[460px]" />
+            <div className="hero-enter hero-enter-globe hidden h-[420px] items-center justify-center py-4 md:flex lg:col-span-5 lg:h-[500px] lg:px-4 lg:py-0">
+              <CredentialOrb className="relative max-w-[400px] lg:-translate-x-4 lg:-translate-y-4 xl:max-w-[430px]" />
             </div>
 
           </div>

@@ -26,7 +26,7 @@ export function CredentialOrb({ className = '' }) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.z = 8.6;
+    camera.position.z = 9.8;
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setClearColor(0x000000, 0);
@@ -34,67 +34,66 @@ export function CredentialOrb({ className = '' }) {
     renderer.outputEncoding = THREE.sRGBEncoding;
     mount.appendChild(renderer.domElement);
 
-    const credential = new THREE.Group();
-    credential.rotation.x = -0.08;
-    credential.rotation.z = -0.08;
-    scene.add(credential);
+const visualRoot = new THREE.Group();
+visualRoot.position.set(-0.55, 0.45, 0);
+scene.add(visualRoot);
 
-    const coreGeometry = new THREE.SphereGeometry(1.48, 64, 64);
+const credential = new THREE.Group();
+credential.rotation.x = -0.08;
+credential.rotation.z = -0.08;
+visualRoot.add(credential);
+
+    const coreGeometry = new THREE.SphereGeometry(0.88, 64, 64);
     const coreMaterial = new THREE.MeshStandardMaterial({
       color: 0x00edbe,
       emissive: 0x00edbe,
-      emissiveIntensity: 0.2,
-      metalness: 0.08,
-      roughness: 0.26,
+      emissiveIntensity: 0.06,
+      metalness: 0.02,
+      roughness: 0.82,
     });
     const core = new THREE.Mesh(coreGeometry, coreMaterial);
     credential.add(core);
 
-    const glowGeometry = new THREE.SphereGeometry(1.7, 48, 48);
+    const glowGeometry = new THREE.SphereGeometry(1, 48, 48);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: 0x00edbe,
       transparent: true,
-      opacity: 0.07,
+      opacity: 0.015,
       side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
     credential.add(new THREE.Mesh(glowGeometry, glowMaterial));
 
-    const innerOrbitGeometry = createOrbitGeometry(2.3, 0.72);
-    const outerOrbitGeometry = createOrbitGeometry(2.72, 0.88);
-    const innerOrbitMaterial = new THREE.LineBasicMaterial({
-      color: 0x00edbe,
-      transparent: true,
-      opacity: 0.42,
-    });
-    const outerOrbitMaterial = new THREE.LineBasicMaterial({
+    const orbitGeometry = createOrbitGeometry(2.15, 1.55);
+    const orbitMaterial = new THREE.LineBasicMaterial({
       color: 0x141beb,
       transparent: true,
-      opacity: 0.58,
+      opacity: 0.48,
     });
 
-    const innerOrbit = new THREE.LineLoop(innerOrbitGeometry, innerOrbitMaterial);
-    innerOrbit.rotation.x = Math.PI * 0.42;
-    innerOrbit.rotation.z = Math.PI * 0.08;
-    credential.add(innerOrbit);
+    const orbit = new THREE.LineLoop(orbitGeometry, orbitMaterial);
+    orbit.rotation.z = -Math.PI * 0.13;
+    credential.add(orbit);
 
-    const outerOrbit = new THREE.LineLoop(outerOrbitGeometry, outerOrbitMaterial);
-    outerOrbit.rotation.x = -Math.PI * 0.34;
-    outerOrbit.rotation.z = -Math.PI * 0.13;
-    credential.add(outerOrbit);
-
-    const nodeGeometry = new THREE.SphereGeometry(0.105, 24, 24);
+    const nodeGeometry = new THREE.SphereGeometry(0.09, 24, 24);
     const nodeMaterial = new THREE.MeshBasicMaterial({ color: 0x00edbe });
     const orbitNode = new THREE.Mesh(nodeGeometry, nodeMaterial);
-    outerOrbit.add(orbitNode);
+    const nodeGlowGeometry = new THREE.SphereGeometry(0.14, 20, 20);
+    const nodeGlowMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00edbe,
+      transparent: true,
+      opacity: 0.12,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    orbitNode.add(new THREE.Mesh(nodeGlowGeometry, nodeGlowMaterial));
+    orbit.add(orbitNode);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.72));
-    const keyLight = new THREE.PointLight(0xffffff, 1.35, 20);
-    keyLight.position.set(-3, 4, 6);
-    scene.add(keyLight);
-    const edgeLight = new THREE.PointLight(0x141beb, 1.2, 16);
-    edgeLight.position.set(4, -2, 3);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.78));
+    const edgeLight = new THREE.PointLight(0x00edbe, 0.28, 16);
+    edgeLight.position.set(-3, 3, 4);
     scene.add(edgeLight);
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -114,14 +113,12 @@ export function CredentialOrb({ className = '' }) {
     const render = () => {
       if (!prefersReducedMotion) {
         orbitAngle += 0.006;
-        credential.rotation.y += 0.0012;
-        innerOrbit.rotation.z += 0.00045;
-        outerOrbit.rotation.z -= 0.0003;
+        orbit.rotation.z -= 0.00018;
       }
 
       orbitNode.position.set(
-        Math.cos(orbitAngle) * 2.72,
-        Math.sin(orbitAngle) * 0.88,
+        Math.cos(orbitAngle) * 2.15,
+        Math.sin(orbitAngle) * 1.55,
         0,
       );
       renderer.render(scene, camera);
@@ -139,12 +136,12 @@ export function CredentialOrb({ className = '' }) {
       coreMaterial.dispose();
       glowGeometry.dispose();
       glowMaterial.dispose();
-      innerOrbitGeometry.dispose();
-      outerOrbitGeometry.dispose();
-      innerOrbitMaterial.dispose();
-      outerOrbitMaterial.dispose();
+      orbitGeometry.dispose();
+      orbitMaterial.dispose();
       nodeGeometry.dispose();
       nodeMaterial.dispose();
+      nodeGlowGeometry.dispose();
+      nodeGlowMaterial.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);

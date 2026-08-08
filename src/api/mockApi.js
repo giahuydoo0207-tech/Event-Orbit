@@ -1,20 +1,7 @@
 import { CHAPTERS } from './mockData';
 
 export function getAuthHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  try {
-    const raw = localStorage.getItem('orbit_user_session');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const u = parsed?.state?.user || parsed?.user || parsed;
-      if (u && (u.isAuthenticated || u.role)) {
-        headers['x-user-session'] = btoa(unescape(encodeURIComponent(JSON.stringify(u))));
-      }
-    }
-  } catch (e) {
-    console.error('Error generating auth headers:', e);
-  }
-  return headers;
+  return { 'Content-Type': 'application/json' };
 }
 
 async function parseErrorMessage(res, fallback) {

@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         });
       }
 
-      const session = await verifySession(req, { allowHeaderFallback: false });
+      const session = await verifySession(req);
       if (!session) {
         return res.status(401).json({ error: 'You must be logged in to view achievements.' });
       }

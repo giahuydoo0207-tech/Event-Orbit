@@ -11,39 +11,44 @@ export function Redirect() {
   const isProcessed = useRef(false);
   const [authError, setAuthError] = useState(null);
 
-  const syncOcidSession = (userData) => {
+  const syncOcidSession = async (idToken) => {
     if (isProcessed.current) return;
     isProcessed.current = true;
 
-    // Save session in store immediately
-    setUser(userData);
-
-    // Sync session with backend database
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ocid: userData.ocid,
-        fullName: userData.fullName,
-        role: userData.role,
-        ethAddress: userData.ethAddress
-      })
-    })
-      .then((res) => {
-        if (!res.ok) {
-          console.warn('Backend session endpoint returned non-200 status');
-        }
-        navigate('/home', { replace: true });
-      })
-      .catch((err) => {
-        console.error('Backend session sync error:', err);
-        navigate('/home', { replace: true });
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ idToken }),
       });
+
+      if (!response.ok) throw new Error('Backend rejected the OCID identity token.');
+
+      const { user: verifiedUser } = await response.json();
+      setUser({
+        isAuthenticated: true,
+        method: 'ocid',
+        ocid: verifiedUser.ocid,
+        ethAddress: verifiedUser.ethAddress,
+        mssv: null,
+        fullName: verifiedUser.fullName,
+        role: verifiedUser.role,
+        chapterId: verifiedUser.chapterId,
+        email: `${verifiedUser.ocid.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()}@opencampus.xyz`,
+      });
+      navigate(verifiedUser.role === 'organizer' ? '/manage' : '/home', { replace: true });
+    } catch (error) {
+      isProcessed.current = false;
+      console.error('Backend session sync error:', error);
+      setAuthError('Open Campus ID was verified in the browser, but the server could not verify the session.');
+    }
   };
 
   const handleSuccess = () => {
     let eduUsername = null;
     let ethAddress = null;
+    let idToken = null;
 
     try {
       if (ocAuth) {
@@ -62,7 +67,10 @@ export function Redirect() {
           if (state) {
             eduUsername = state.OCId || null;
             ethAddress = ethAddress || state.ethAddress || null;
+            idToken = state.idToken || null;
           }
+        } else if (typeof ocAuth.getAuthState === 'function') {
+          idToken = ocAuth.getAuthState()?.idToken || null;
         }
       }
     } catch (e) {
@@ -70,26 +78,13 @@ export function Redirect() {
     }
 
     // STRICT SECURITY: If neither eduUsername nor ethAddress is present, REJECT authentication!
-    if (!eduUsername && !ethAddress) {
+    if (!eduUsername || !idToken) {
       console.error('OCID authentication failed: No valid identity claims found in token.');
       setAuthError('Unable to verify identity claims from Open Campus ID. Please sign in again.');
       return;
     }
 
-    const realOcid = eduUsername || `ocid-${ethAddress.slice(2, 8)}`;
-    const realEthAddress = ethAddress || null;
-    const displayName = eduUsername || `OCID Student (${ethAddress.slice(0, 6)}...)`;
-
-    syncOcidSession({
-      isAuthenticated: true,
-      method: 'ocid',
-      ocid: realOcid,
-      ethAddress: realEthAddress,
-      mssv: null,
-      fullName: displayName,
-      email: `${realOcid.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()}@opencampus.xyz`,
-      role: 'student',
-    });
+    syncOcidSession(idToken);
   };
 
   const handleError = (error) => {

@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -49,12 +49,26 @@ export default async function handler(req, res) {
 
     const { eventId, nonce, expiresAt, signature } = decoded;
 
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(eventId) || typeof nonce !== 'string' || nonce.length > 128
+      || !Number.isSafeInteger(expiresAt) || typeof signature !== 'string') {
+      return res.status(400).json({ error: 'Invalid QR payload.' });
+    }
+
+    if (!process.env.QR_SECRET) {
+      console.error('QR_SECRET is not configured.');
+      return res.status(503).json({ error: 'QR check-in is temporarily unavailable.' });
+    }
+
     // Validate Signature
     const expectedSig = createHmac('sha256', process.env.QR_SECRET)
       .update(JSON.stringify({ eventId, nonce, expiresAt }))
       .digest('hex');
       
-    if (signature !== expectedSig) {
+    const providedSignature = Buffer.from(signature, 'hex');
+    const expectedSignature = Buffer.from(expectedSig, 'hex');
+    if (providedSignature.length !== expectedSignature.length
+      || !timingSafeEqual(providedSignature, expectedSignature)) {
       return res.status(400).json({ error: 'Invalid QR code signature.' });
     }
 
@@ -63,51 +77,30 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'QR code expired. Ask the organizer to refresh it.' });
     }
 
-    // 3. Replay Attack Prevention (using unique nonce constraint in DB)
-    const { error: nonceError } = await supabase
-      .from('qr_nonces')
-      .insert({ 
-        nonce, 
-        event_id: eventId, 
-        expires_at: new Date(expiresAt) 
-      });
+    const { data: reservationRows, error: reservationError } = await supabase.rpc('record_qr_checkin', {
+      p_nonce: nonce,
+      p_event_id: eventId,
+      p_user_id: session.user_id,
+      p_full_name: session.full_name || 'Student',
+      p_ocid: session.ocid || null,
+      p_mssv: session.mssv || null,
+      p_eth_address: session.eth_address || null,
+      p_expires_at: new Date(expiresAt).toISOString(),
+    });
 
-    if (nonceError) {
-      // Postgres unique constraint violation code is 23505
-      if (nonceError.code === '23505') {
-        return res.status(409).json({ error: 'This QR code has already been used.' });
+    if (reservationError) {
+      if (reservationError.code === '23505') {
+        return res.status(409).json({ error: 'You have already checked in to this event.' });
       }
-      console.error('Nonce Insertion Error:', nonceError);
-      return res.status(500).json({ error: 'Failed to record QR code verification.' });
+      if (reservationError.code === 'P0002') {
+        return res.status(404).json({ error: 'Event not found.' });
+      }
+      console.error('Atomic check-in reservation failed:', reservationError);
+      return res.status(500).json({ error: 'Failed to reserve attendance badge.' });
     }
 
-    // 4. Retrieve event details (points)
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('name, points')
-      .eq('id', eventId)
-      .single();
-
-    if (eventError || !event) {
-      return res.status(404).json({ error: 'Event not found.' });
-    }
-
-    // 5. Ensure the successful check-in has a matching registration record.
-    const { error: registrationError } = await supabase
-      .from('registrations')
-      .upsert({
-        event_id: eventId,
-        user_id: session.user_id,
-        student_name: session.full_name,
-        ocid: session.ocid || null,
-        mssv: session.mssv || null,
-        eth_address: session.eth_address || null,
-      }, { onConflict: 'event_id,user_id' });
-
-    if (registrationError) {
-      console.error('Registration persistence error:', registrationError);
-      return res.status(500).json({ error: 'Failed to save check-in registration.' });
-    }
+    const reservation = reservationRows?.[0];
+    if (!reservation) return res.status(409).json({ error: 'Unable to reserve this check-in.' });
 
     // 6. Mint SBT (On-chain via Relayer if eth_address is present)
     let txHash = null;
@@ -119,11 +112,11 @@ export default async function handler(req, res) {
         const relayerResult = await mintBadge({ 
           recipientAddress: session.eth_address,
           eventId,
-          points: event.points
+          points: reservation.event_points
         });
         txHash = relayerResult.txHash;
         mocked = relayerResult.mocked;
-        mintStatus = mocked ? 'success' : 'minting';
+        mintStatus = 'success';
       } catch (err) {
         console.error('Relayer minting failed:', err);
         txHash = null;
@@ -131,28 +124,20 @@ export default async function handler(req, res) {
       }
     }
 
-    // 7. Record attendance / achievement in DB
     const { error: achError } = await supabase
       .from('achievements')
-      .insert({
-        event_id: eventId,
-        user_id: session.user_id,
-        ocid: session.ocid || null,
-        credential_id: `cred-${Date.now()}`,
-        points: event.points,
+      .update({
         tx_hash: txHash,
         mint_status: mintStatus
-      });
+      })
+      .eq('id', reservation.achievement_id);
 
     if (achError) {
-      if (achError.code === '23505') {
-        return res.status(409).json({ error: 'You have already checked in to this event.' });
-      }
       console.error('Achievement recording error:', achError);
-      return res.status(500).json({ error: 'Failed to save attendance badge.' });
+      return res.status(500).json({ error: 'Attendance was recorded, but mint status could not be updated.' });
     }
 
-    return res.status(200).json({ ok: true, txHash, mocked, points: event.points });
+    return res.status(200).json({ ok: true, txHash, mocked, points: reservation.event_points });
   } catch (error) {
     console.error('Checkin handler error:', error);
     return res.status(500).json({ error: error.message || 'Internal Server Error' });

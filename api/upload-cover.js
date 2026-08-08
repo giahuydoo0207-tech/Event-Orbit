@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
+import { AuthorizationError, assertOrganizer } from '../lib/authorization.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -21,8 +22,13 @@ export default async function handler(req, res) {
   try {
     // 1. Session verification
     const session = await verifySession(req);
-    if (!session || session.role !== 'organizer') {
-      return res.status(403).json({ error: 'Forbidden. Only organizers can upload cover images.' });
+    try {
+      assertOrganizer(session);
+    } catch (error) {
+      if (error instanceof AuthorizationError) {
+        return res.status(403).json({ error: error.message });
+      }
+      throw error;
     }
 
     const { image } = req.body;

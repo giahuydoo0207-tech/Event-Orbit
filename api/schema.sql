@@ -89,11 +89,13 @@ create table sessions (
 
 -- 7. Bảng QR Nonces (Ngăn chặn replay attack khi check-in)
 create table qr_nonces (
-  nonce text primary key,
+  nonce text not null,
+  user_id text not null,
   event_id uuid references events(id) not null,
   expires_at timestamptz not null,
   used_at timestamptz,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  primary key (nonce, user_id)
 );
 
 -- 8. Bảng Pending Claims (Claim Badge Flow — cho sinh viên chưa có tài khoản trên Event Orbit)
@@ -135,3 +137,181 @@ create policy "Public read chapters" on chapters for select using (true);
 
 -- KHÔNG tạo policy cho pending_claims — chỉ service_role (bypass RLS) mới truy cập được.
 -- Bảng này chứa claim_token nhạy cảm, anon/authenticated bị khoá hoàn toàn.
+
+-- Atomic QR reservation: nonce consumption, registration, and the pending
+-- achievement either all commit or all roll back. Minting happens afterwards.
+create or replace function record_qr_checkin(
+  p_nonce text,
+  p_event_id uuid,
+  p_user_id text,
+  p_full_name text,
+  p_ocid text,
+  p_mssv text,
+  p_eth_address text,
+  p_expires_at timestamptz
+) returns table (achievement_id uuid, event_name text, event_points int)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_event events%rowtype;
+  v_achievement_id uuid;
+begin
+  select * into v_event
+  from events
+  where id = p_event_id and deleted_at is null;
+
+  if not found then
+    raise exception 'event_not_found' using errcode = 'P0002';
+  end if;
+
+  insert into qr_nonces (nonce, user_id, event_id, expires_at, used_at)
+  values (p_nonce, p_user_id, p_event_id, p_expires_at, now());
+
+  insert into registrations (
+    event_id, user_id, student_name, ocid, mssv, eth_address, source
+  ) values (
+    p_event_id, p_user_id, p_full_name, p_ocid, p_mssv, p_eth_address, 'qr_checkin'
+  ) on conflict (event_id, user_id) do update set
+    student_name = excluded.student_name,
+    ocid = excluded.ocid,
+    mssv = excluded.mssv,
+    eth_address = excluded.eth_address;
+
+  insert into achievements (
+    event_id, user_id, ocid, credential_id, points, mint_status
+  ) values (
+    p_event_id,
+    p_user_id,
+    p_ocid,
+    'cred-' || gen_random_uuid()::text,
+    v_event.points,
+    'pending'
+  ) returning id into v_achievement_id;
+
+  return query select v_achievement_id, v_event.name, v_event.points;
+end;
+$$;
+
+create or replace function reserve_badge_claim(
+  p_claim_token text,
+  p_user_id text,
+  p_full_name text,
+  p_ocid text,
+  p_mssv text,
+  p_eth_address text
+) returns table (achievement_id uuid, event_id uuid, event_name text, event_points int, already_owned boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_claim pending_claims%rowtype;
+  v_event events%rowtype;
+  v_achievement_id uuid;
+begin
+  select * into v_claim
+  from pending_claims
+  where claim_token = p_claim_token
+    and status = 'pending'
+    and expires_at >= now()
+  for update;
+
+  if not found then return; end if;
+
+  select * into v_event from events where id = v_claim.event_id and deleted_at is null;
+  if not found then
+    raise exception 'event_not_found' using errcode = 'P0002';
+  end if;
+
+  select id into v_achievement_id
+  from achievements
+  where achievements.event_id = v_event.id and achievements.user_id = p_user_id;
+
+  if found then
+    update pending_claims set
+      status = 'claimed',
+      claimed_by_ocid = p_ocid,
+      claimed_by_eth_address = p_eth_address,
+      claimed_at = now()
+    where id = v_claim.id;
+    return query select v_achievement_id, v_event.id, v_event.name, v_event.points, true;
+    return;
+  end if;
+
+  insert into registrations (
+    event_id, user_id, student_name, ocid, mssv, eth_address, source
+  ) values (
+    v_event.id, p_user_id, p_full_name, p_ocid, p_mssv, p_eth_address, 'claim_badge'
+  ) on conflict (event_id, user_id) do update set
+    student_name = excluded.student_name,
+    ocid = excluded.ocid,
+    mssv = excluded.mssv,
+    eth_address = excluded.eth_address;
+
+  insert into achievements (
+    event_id, user_id, ocid, credential_id, points, mint_status
+  ) values (
+    v_event.id,
+    p_user_id,
+    p_ocid,
+    'cred-claim-' || gen_random_uuid()::text,
+    v_event.points,
+    'pending'
+  ) returning id into v_achievement_id;
+
+  update pending_claims set
+    status = 'claimed',
+    claimed_by_ocid = p_ocid,
+    claimed_by_eth_address = p_eth_address,
+    claimed_at = now()
+  where id = v_claim.id;
+
+  return query select v_achievement_id, v_event.id, v_event.name, v_event.points, false;
+end;
+$$;
+
+revoke all on function record_qr_checkin(text, uuid, text, text, text, text, text, timestamptz) from public, anon, authenticated;
+revoke all on function reserve_badge_claim(text, text, text, text, text, text) from public, anon, authenticated;
+grant execute on function record_qr_checkin(text, uuid, text, text, text, text, text, timestamptz) to service_role;
+grant execute on function reserve_badge_claim(text, text, text, text, text, text) to service_role;
+
+create or replace function register_for_event(
+  p_event_id uuid,
+  p_user_id text,
+  p_full_name text,
+  p_ocid text,
+  p_mssv text,
+  p_eth_address text
+) returns table (registration_id uuid, registration_created_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_capacity int;
+  v_count bigint;
+  v_registration_id uuid;
+  v_registered_at timestamptz;
+begin
+  select capacity into v_capacity from events
+  where id = p_event_id and deleted_at is null
+  for update;
+  if not found then raise exception 'event_not_found' using errcode = 'P0002'; end if;
+
+  select count(*) into v_count from registrations where event_id = p_event_id;
+  if v_count >= v_capacity then
+    raise exception 'event_full' using errcode = 'P0001';
+  end if;
+
+  insert into registrations (event_id,user_id,student_name,ocid,mssv,eth_address,source)
+  values (p_event_id,p_user_id,p_full_name,p_ocid,p_mssv,p_eth_address,'event_registration')
+  returning id, registered_at into v_registration_id, v_registered_at;
+
+  return query select v_registration_id, v_registered_at;
+end;
+$$;
+
+revoke all on function register_for_event(uuid,text,text,text,text,text) from public,anon,authenticated;
+grant execute on function register_for_event(uuid,text,text,text,text,text) to service_role;

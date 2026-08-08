@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
+import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-user-session');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
@@ -38,6 +39,10 @@ export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
       const { eventId, userId } = req.query;
+      const session = await verifySession(req);
+      if (!session) {
+        return res.status(401).json({ error: 'Authentication required.' });
+      }
 
       // --- Case 1: filter by event ---
       if (eventId) {
@@ -47,6 +52,23 @@ export default async function handler(req, res) {
         // or should exist here anymore.
         if (!uuidRegex.test(eventId)) {
           return res.status(400).json({ error: 'Invalid event ID format.' });
+        }
+
+        const { data: event, error: eventError } = await supabase
+          .from('events')
+          .select('id, chapter_id')
+          .eq('id', eventId)
+          .maybeSingle();
+
+        if (eventError) throw eventError;
+        if (!event) return res.status(404).json({ error: 'Event not found.' });
+        try {
+          assertEventOwnership(session, event);
+        } catch (error) {
+          if (error instanceof AuthorizationError) {
+            return res.status(403).json({ error: error.message });
+          }
+          throw error;
         }
 
         // Single source of truth — no fallback. If the view errors, the
@@ -67,6 +89,9 @@ export default async function handler(req, res) {
 
       // --- Case 2: filter by user ---
       if (userId) {
+        if (session.role !== 'student' || session.user_id !== userId) {
+          return res.status(403).json({ error: 'You can only view your own registrations.' });
+        }
         const { data: viewData, error: viewError } = await supabase
           .from('badge_recipients_view')
           .select('*')
@@ -81,16 +106,7 @@ export default async function handler(req, res) {
       }
 
       // --- Case 3: no filter — full admin fetch ---
-      const { data: viewData, error: viewError } = await supabase
-        .from('badge_recipients_view')
-        .select('*');
-
-      if (viewError) {
-        console.error('badge_recipients_view query error:', viewError);
-        return res.status(500).json({ error: 'Failed to load badge recipients.' });
-      }
-
-      return res.status(200).json((viewData || []).map(mapViewRow));
+      return res.status(400).json({ error: 'An eventId or userId filter is required.' });
     }
 
     if (req.method === 'POST') {
@@ -100,7 +116,7 @@ export default async function handler(req, res) {
         return res.status(401).json({ error: 'You must be logged in to register.' });
       }
 
-      const { eventId, capacity } = req.body;
+      const { eventId } = req.body;
       if (!eventId) {
         return res.status(400).json({ error: 'Missing event ID.' });
       }
@@ -111,34 +127,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid event ID format.' });
       }
 
-      // 2. Capacity Check
-      if (capacity !== undefined) {
-        const { count, error: countError } = await supabase
-          .from('registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId);
-
-        if (countError) throw countError;
-
-        if (count >= capacity) {
-          return res.status(400).json({ error: 'This event is full. Registration is closed.' });
-        }
-      }
-
-      // 3. Insert Registration using Session verified metadata
-      const { data, error } = await supabase
-        .from('registrations')
-        .insert({
-          event_id: eventId,
-          user_id: session.user_id,
-          student_name: session.full_name || 'Anonymous Student',
-          ocid: session.ocid || null,
-          mssv: session.mssv || null,
-          eth_address: session.eth_address || null,
-          source: 'qr_checkin'
-        })
-        .select()
-        .single();
+      const { data: registrationRows, error } = await supabase.rpc('register_for_event', {
+        p_event_id: eventId,
+        p_user_id: session.user_id,
+        p_full_name: session.full_name || 'Student',
+        p_ocid: session.ocid || null,
+        p_mssv: session.mssv || null,
+        p_eth_address: session.eth_address || null,
+      });
 
       if (error) {
         if (error.code === '23505') {
@@ -147,22 +143,32 @@ export default async function handler(req, res) {
         if (error.code === '23503') {
           return res.status(404).json({ error: 'Target event not found.' });
         }
+        if (error.code === 'P0002') {
+          return res.status(404).json({ error: 'Target event not found.' });
+        }
+        if (error.code === 'P0001' && error.message === 'event_full') {
+          return res.status(409).json({ error: 'This event is full. Registration is closed.' });
+        }
         console.error('Registration Insertion Error:', error);
         return res.status(500).json({ error: 'Failed to complete registration.' });
       }
 
+      const registration = registrationRows?.[0];
+      if (!registration) {
+        return res.status(500).json({ error: 'Registration completed without a result row.' });
+      }
       return res.status(201).json({
-        id: data.id,
-        eventId: data.event_id,
-        studentName: data.student_name,
-        ocid: data.ocid,
-        mssv: data.mssv,
-        ethAddress: data.eth_address,
-        registeredAt: data.registered_at,
+        id: registration.registration_id,
+        eventId,
+        studentName: session.full_name || 'Student',
+        ocid: session.ocid || null,
+        mssv: session.mssv || null,
+        ethAddress: session.eth_address || null,
+        registeredAt: registration.registration_created_at,
         checkedIn: false,
         checkedInAt: null,
         mintStatus: 'not_issued',
-        source: 'qr_checkin'
+        source: 'event_registration'
       });
     }
 

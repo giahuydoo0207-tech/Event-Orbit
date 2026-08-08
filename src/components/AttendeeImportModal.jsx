@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import readXlsxFile from 'read-excel-file/browser';
 import Papa from 'papaparse';
 import { StatusBadge } from './StatusBadge';
 import { importAttendeesBatchApi } from '../api/mockApi';
@@ -101,6 +101,11 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
 
     const ext = fileObj.name.split('.').pop().toLowerCase();
 
+    if (fileObj.size > 5 * 1024 * 1024) {
+      setParsingError('The attendee file must be 5MB or smaller.');
+      return;
+    }
+
     if (ext === 'csv') {
       Papa.parse(fileObj, {
         header: true,
@@ -119,29 +124,26 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
           setParsingError(`CSV parsing error: ${err.message}`);
         }
       });
-    } else if (ext === 'xlsx' || ext === 'xls') {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-          if (!json || json.length === 0) {
+    } else if (ext === 'xlsx') {
+      readXlsxFile(fileObj)
+        .then((rows) => {
+          if (!rows || rows.length < 2) {
             setParsingError('The uploaded Excel worksheet is empty.');
             return;
           }
+
+          const headers = rows[0].map((value) => String(value ?? '').trim());
+          const json = rows.slice(1, 5001).map((row) => Object.fromEntries(
+            headers.map((header, index) => [header, row[index] ?? '']),
+          ));
           const normalized = json.map(normalizeRow);
           setParsedRows(json);
           setMappedData(normalized);
           setStep('preview');
-        } catch (err) {
+        })
+        .catch((err) => {
           setParsingError(`Excel file error: ${err.message}`);
-        }
-      };
-      reader.readAsArrayBuffer(fileObj);
+        });
     } else {
       setParsingError('Unsupported file format. Please upload a .csv or .xlsx file.');
     }
