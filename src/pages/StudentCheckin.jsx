@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { fetchEventById, checkInStudent, fetchEventAttendees } from '../api/mockApi';
+import { fetchEventById, checkInStudent } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { useOCAuth } from '@opencampus/ocid-connect-js';
 import useToastStore from '../store/useToastStore';
+import { getCheckinLookupFailureState } from '../lib/checkinState';
 
 export function StudentCheckin() {
   const [searchParams] = useSearchParams();
@@ -16,7 +17,7 @@ export function StudentCheckin() {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [statusState, setStatusState] = useState('ready'); // 'ready' | 'processing' | 'success' | 'already' | 'error'
+  const [statusState, setStatusState] = useState('ready'); // 'connect' | 'ready' | 'processing' | 'success' | 'already' | 'error'
   const [txHash, setTxHash] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
@@ -36,6 +37,10 @@ export function StudentCheckin() {
         setEventId(currentEventId);
       } catch (e) {
         console.error('Failed to decode qrData payload:', e);
+        setStatusState('error');
+        setErrorMessage('The QR code is invalid or has expired. Please scan the event QR code again.');
+        setLoading(false);
+        return;
       }
     }
 
@@ -56,23 +61,17 @@ export function StudentCheckin() {
       }
       setEvent(ev);
 
-      // If already logged in, check duplication status
-      if (user.isAuthenticated) {
-        const attendees = await fetchEventAttendees(currentEventId);
-        const alreadyChecked = attendees.some(r => r.checkedIn && (
-          (user.ethAddress && r.ethAddress?.toLowerCase() === user.ethAddress.toLowerCase()) ||
-          (user.mssv && r.mssv === user.mssv)
-        ));
-        if (alreadyChecked) {
-          setStatusState('already');
-        } else {
-          setStatusState('ready');
-        }
+      if (!user.isAuthenticated) {
+        setStatusState('connect');
+      } else {
+        // Duplicate attendance is reported authoritatively by the check-in API.
+        setStatusState('ready');
       }
     } catch (e) {
       console.error(e);
-      setStatusState('error');
-      setErrorMessage('Failed to query event records.');
+      const nextState = getCheckinLookupFailureState(e, user.isAuthenticated);
+      setStatusState(nextState);
+      setErrorMessage(nextState === 'error' ? 'Failed to query event records.' : '');
     } finally {
       setLoading(false);
     }
@@ -84,6 +83,7 @@ export function StudentCheckin() {
 
   const handleOCIDLogin = () => {
     try {
+      sessionStorage.setItem('ocidReturnTo', `${window.location.pathname}${window.location.search}`);
       ocAuth.signInWithRedirect({ state: 'opencampus' });
     } catch (err) {
       // Sandbox fallback mock session
@@ -165,6 +165,12 @@ export function StudentCheckin() {
         setStatusState('success');
         showToast('Attendance confirmed! Badge issued.', 'success');
       } else {
+        if (getCheckinLookupFailureState({ status: res.status }, true) === 'connect') {
+          setStatusState('connect');
+          setErrorMessage('');
+          return;
+        }
+
         let formattedError = res.error || 'Check-in failed.';
         const isDuplicateAttendance = /you have already checked in (?:to|for) this event/i.test(formattedError);
 
@@ -212,6 +218,36 @@ export function StudentCheckin() {
         </div>
 
         {/* States Switcher */}
+
+        {/* Authentication CTA */}
+        {statusState === 'connect' && (
+          <div className="space-y-6 py-4">
+            {event && (
+              <div className="border-b border-oc-blue/20 pb-5">
+                <div className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-oc-blue">
+                  Student Check-in
+                </div>
+                <h1 className="mt-2 text-xl font-bold text-oc-navy">{event.name}</h1>
+                <p className="mt-1 font-mono text-xs font-bold text-oc-blue">+{event.points} points</p>
+              </div>
+            )}
+            <div className="rounded-xl bg-oc-navy px-5 py-6 text-center">
+              <h2 className="text-xl font-bold leading-snug text-white">
+                Connect with Open Campus ID to continue
+              </h2>
+              <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/70">
+                Use your verified Open Campus ID to confirm attendance for this event.
+              </p>
+              <button
+                type="button"
+                onClick={handleOCIDLogin}
+                className="mt-6 w-full rounded-md bg-oc-turquoise px-4 py-3 text-sm font-extrabold text-oc-navy transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-oc-turquoise focus-visible:ring-offset-2 focus-visible:ring-offset-oc-navy"
+              >
+                Connect with Open Campus ID
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 1. Ready State */}
         {statusState === 'ready' && (

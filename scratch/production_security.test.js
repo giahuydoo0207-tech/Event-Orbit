@@ -24,6 +24,7 @@ import {
 } from '../lib/sessionCookie.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
 import { resolveChapterFromEvents } from '../src/lib/chapterResolution.js';
+import { getCheckinLookupFailureState } from '../src/lib/checkinState.js';
 import {
   getOrganizerChapterRedirect,
   getOrganizerManagePath,
@@ -177,6 +178,20 @@ test('OCID callback and protected frontend requests include credentials', async 
   assert.doesNotMatch(apiSource, /credentials:\s*'same-origin'/);
   assert.match(apiSource, /fetch\(`\/api\/events[\s\S]*?credentials:\s*'include'/);
   assert.match(apiSource, /fetch\(`\/api\/registrations\?eventId=[\s\S]*?credentials:\s*'include'/);
+});
+
+test('unauthenticated check-in lookup failures render a connect state, not a QR rejection', async () => {
+  assert.equal(getCheckinLookupFailureState({ status: 401 }, true), 'connect');
+  assert.equal(getCheckinLookupFailureState({ status: 403 }, true), 'connect');
+  assert.equal(getCheckinLookupFailureState(new Error('Failed to query event records.'), false), 'connect');
+  assert.equal(getCheckinLookupFailureState(new Error('Network failed'), true), 'error');
+
+  const checkinSource = await readFile(new URL('../src/pages/StudentCheckin.jsx', import.meta.url), 'utf8');
+  const redirectSource = await readFile(new URL('../src/pages/Redirect.jsx', import.meta.url), 'utf8');
+  assert.match(checkinSource, /Connect with Open Campus ID to continue/);
+  assert.match(checkinSource, /Use your verified Open Campus ID to confirm attendance for this event\./);
+  assert.match(checkinSource, /sessionStorage\.setItem\('ocidReturnTo'/);
+  assert.match(redirectSource, /sessionStorage\.getItem\('ocidReturnTo'\)/);
 });
 
 test('organizer navigation is derived from the verified server session', async () => {

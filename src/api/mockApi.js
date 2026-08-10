@@ -49,7 +49,9 @@ export async function fetchEvents(options = {}) {
   });
 
   if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, 'Failed to load events.'));
+    const error = new Error(await parseErrorMessage(res, 'Failed to load events.'));
+    error.status = res.status;
+    throw error;
   }
 
   return await res.json();
@@ -132,7 +134,7 @@ export async function checkInStudent(qrData, student) {
       return { success: true, txHash: data.txHash, points: data.points };
     } else {
       const errorData = await res.json().catch(() => ({}));
-      return { success: false, error: errorData.error || 'Check-in failed.' };
+      return { success: false, error: errorData.error || 'Check-in failed.', status: res.status };
     }
   } catch (e) {
     return { success: false, error: e.message || 'Network error during check-in.' };
@@ -195,7 +197,9 @@ export async function fetchEventAttendees(eventId) {
     credentials: 'include'
   });
   if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, 'Failed to load attendees.'));
+    const error = new Error(await parseErrorMessage(res, 'Failed to load attendees.'));
+    error.status = res.status;
+    throw error;
   }
   return await res.json();
 }

@@ -37,7 +37,12 @@ export function Redirect() {
         chapterId: verifiedUser.chapterId,
         email: `${verifiedUser.ocid.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()}@opencampus.xyz`,
       });
-      navigate(verifiedUser.role === 'organizer' ? '/manage' : '/home', { replace: true });
+      const returnTo = sessionStorage.getItem('ocidReturnTo');
+      sessionStorage.removeItem('ocidReturnTo');
+      const safeReturnTo = /^\/student-checkin(?:\?|$)/.test(returnTo || '')
+        ? returnTo
+        : null;
+      navigate(safeReturnTo || (verifiedUser.role === 'organizer' ? '/manage' : '/home'), { replace: true });
     } catch (error) {
       isProcessed.current = false;
       console.error('Backend session sync error:', error);
