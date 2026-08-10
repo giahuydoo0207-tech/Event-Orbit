@@ -24,7 +24,10 @@ import {
 } from '../lib/sessionCookie.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
 import { resolveChapterFromEvents } from '../src/lib/chapterResolution.js';
-import { getOrganizerChapterRedirect } from '../src/lib/organizerNavigation.js';
+import {
+  getOrganizerChapterRedirect,
+  getOrganizerManagePath,
+} from '../src/lib/organizerNavigation.js';
 
 test('login identity is derived from verified OCID claims and server chapter data', () => {
   const identity = deriveSessionIdentity(
@@ -188,18 +191,34 @@ test('organizer navigation is derived from the verified server session', async (
   assert.match(manageHubSource, /useOrganizerSession\(\)/);
   assert.doesNotMatch(manageHubSource, /state\.user\.chapterId/);
   assert.match(chapterManageSource, /getOrganizerChapterRedirect\(chapterId, organizerSession\)/);
-  assert.match(dashboardSource, /`\/manage\/\$\{organizerSession\.chapterId\}`/);
+  assert.match(dashboardSource, /label: 'Manage Chapters', path: '\/manage'/);
 });
 
-test('invalid organizer chapter routes recover to the server-owned chapter', () => {
+test('organizer portal reads can select a chapter while sensitive writes retain ownership checks', async () => {
+  const eventsSource = await readFile(new URL('../api/events.js', import.meta.url), 'utf8');
+
+  assert.match(eventsSource, /includeDeleted === 'true'[\s\S]*?assertOrganizer\(session\)/);
+  assert.doesNotMatch(eventsSource, /includeDeleted === 'true'[\s\S]*?query = query\.eq\('chapter_id', session\.chapter_id\)/);
+  assert.match(eventsSource, /req\.method === 'POST'[\s\S]*?dbEvent\.chapter_id\s*=\s*session\.chapter_id/);
+  assert.match(eventsSource, /req\.method === 'DELETE'[\s\S]*?assertEventOwnership\(session, targetEvent\)/);
+});
+
+test('organizer navigation preserves the hub and chapter route parameters', () => {
   const session = { chapterId: 'ab5a59cc-bfb2-43dc-af19-faaa79b732cd' };
 
-  assert.equal(
-    getOrganizerChapterRedirect('bad-id', session),
-    '/manage/ab5a59cc-bfb2-43dc-af19-faaa79b732cd',
-  );
+  assert.equal(getOrganizerManagePath(session), '/manage');
+  assert.equal(getOrganizerChapterRedirect('another-valid-chapter', session), null);
   assert.equal(getOrganizerChapterRedirect(session.chapterId, session), null);
   assert.equal(getOrganizerChapterRedirect('bad-id', null), '/login');
+});
+
+test('chapter management loads the chapter selected by the route', async () => {
+  const source = await readFile(new URL('../src/pages/ChapterManage.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /fetchOrganizerEvents\(chapterId/);
+  assert.match(source, /fetchChapterById\(chapterId\)/);
+  assert.match(source, /to="\/manage"/);
+  assert.doesNotMatch(source, /fetchOrganizerEvents\(ownedChapterId/);
 });
 
 test('production organizer navigation never emits legacy demo identities', async () => {

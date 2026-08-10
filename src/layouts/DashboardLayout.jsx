@@ -20,7 +20,7 @@ export function DashboardLayout({ children }) {
 
   // Navigation Links definition
   const navLinks = isOrganizer ? [
-    { label: 'Manage Chapters', path: `/manage/${organizerSession.chapterId}` },
+    { label: 'Manage Chapters', path: '/manage' },
     { label: 'Explore Events', path: '/events' }
   ] : [
     { label: 'Home', path: '/home' },

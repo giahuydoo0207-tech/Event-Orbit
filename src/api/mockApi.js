@@ -168,10 +168,12 @@ export async function fetchStudentAchievementsByOcid(ocid) {
 
 // ── Organizer Endpoints ──
 
-export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
+export async function fetchOrganizerEvents(chapterId, includeDeleted = false, options = {}) {
   const events = await fetchEvents({ includeDeleted, chapterId });
 
   const activeEvents = includeDeleted ? events : events.filter(e => !e.deletedAt);
+
+  if (options.includeAttendees === false) return activeEvents;
 
   return Promise.all(activeEvents.map(async event => {
     // The hardened registrations API requires an event scope and verifies

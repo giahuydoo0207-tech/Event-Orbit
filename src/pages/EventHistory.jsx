@@ -5,14 +5,15 @@ import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { StatusBadge } from '../components/StatusBadge';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
-import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
+import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
 
 export function EventHistory() {
   const { chapterId, eventId: paramEventId } = useParams();
   const navigate = useNavigate();
   const organizerSession = useOrganizerSession();
-  const ownedChapterId = organizerSession?.chapterId;
-  const managePath = getOrganizerManagePath(organizerSession);
+  const ownedChapterId = organizerSession?.chapterId || organizerSession?.chapter_id;
+  const isOwnedChapter = chapterId === ownedChapterId;
+  const managePath = `/manage/${encodeURIComponent(chapterId || '')}`;
   const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const showToast = useToastStore((state) => state.showToast);
 
@@ -33,9 +34,9 @@ export function EventHistory() {
       setLoading(true);
       try {
         const [chapterData, eventData] = await Promise.all([
-          fetchChapterById(ownedChapterId),
+          fetchChapterById(chapterId),
           // Fetch events including soft-deleted events for historical records
-          fetchOrganizerEvents(ownedChapterId, true),
+          fetchOrganizerEvents(chapterId, true, { includeAttendees: isOwnedChapter }),
         ]);
 
         setChapter(chapterData);
@@ -55,7 +56,7 @@ export function EventHistory() {
       }
     }
     loadData();
-  }, [ownedChapterId, paramEventId, redirectPath]);
+  }, [chapterId, isOwnedChapter, paramEventId, redirectPath]);
 
   // Load Attendees when an event is selected
   useEffect(() => {

@@ -21,8 +21,6 @@ export default async function handler(req, res) {
     // ── GET: Fetch events list ──
     if (req.method === 'GET') {
       const { includeDeleted, chapterId } = req.query;
-      let organizerSession = null;
-
       let query = supabase
         .from('events')
         .select('*, chapters(*)');
@@ -37,8 +35,6 @@ export default async function handler(req, res) {
           }
           throw error;
         }
-        organizerSession = session;
-        query = query.eq('chapter_id', session.chapter_id);
       } else {
         query = query.is('deleted_at', null);
       }
@@ -48,9 +44,6 @@ export default async function handler(req, res) {
         const validChapterUuid = await resolveChapterUuid(supabase, chapterId);
         if (!validChapterUuid) {
           return res.status(404).json({ error: 'Chapter not found.' });
-        }
-        if (organizerSession && validChapterUuid !== organizerSession.chapter_id) {
-          return res.status(403).json({ error: 'You can only manage events for your own chapter.' });
         }
         query = query.eq('chapter_id', validChapterUuid);
       }

@@ -6,13 +6,13 @@ import { CategoryIcon } from '../components/CategoryIcon';
 import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
-import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
+import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
 
 export function ChapterManage() {
   const { chapterId } = useParams();
   const organizerSession = useOrganizerSession();
- const ownedChapterId = organizerSession?.chapterId || organizerSession?.chapter_id;
-  const managePath = getOrganizerManagePath(organizerSession);
+  const ownedChapterId = organizerSession?.chapterId || organizerSession?.chapter_id;
+  const isOwnedChapter = chapterId === ownedChapterId;
   const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const [chapter, setChapter] = useState(null);
   const [allEvents, setAllEvents] = useState([]);
@@ -31,9 +31,11 @@ export function ChapterManage() {
     setLoading(true);
     try {
       // Include deleted events so filter tabs can calculate complete stats (Bizcafe style)
-      const eventData = await fetchOrganizerEvents(ownedChapterId, true);
-      const chapterData = resolveChapterFromEvents(ownedChapterId, eventData)
-        || await fetchChapterById(ownedChapterId);
+      const eventData = await fetchOrganizerEvents(chapterId, true, {
+        includeAttendees: isOwnedChapter,
+      });
+      const chapterData = resolveChapterFromEvents(chapterId, eventData)
+        || await fetchChapterById(chapterId);
 
       setChapter(chapterData);
       setAllEvents(eventData);
@@ -59,8 +61,8 @@ export function ChapterManage() {
   };
 
   useEffect(() => {
-    if (chapterId === ownedChapterId) loadData();
-  }, [chapterId, ownedChapterId]);
+    if (chapterId) loadData();
+  }, [chapterId, isOwnedChapter]);
 
   // Helper to categorize event status (Bizcafe 4-state classifier)
   const getEventStatus = (event) => {
@@ -153,14 +155,22 @@ export function ChapterManage() {
   }
 
   if (!chapter) {
-    return <Navigate to={managePath} replace />;
+    return (
+      <div className="text-center py-24">
+        <h2 className="text-lg font-bold text-oc-ink">Chapter Not Found</h2>
+        <p className="text-sm text-slate-500 mt-2">The requested chapter does not exist.</p>
+        <Link to="/manage" className="text-sm text-oc-blue hover:underline font-bold inline-block mt-4">
+          &larr; Return to Manage Hub
+        </Link>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-12 font-sans max-w-4xl">
       {/* ── Navigation Breadcrumb ── */}
       <Link
-        to={managePath}
+        to="/manage"
         className="text-xs font-semibold text-slate-400 hover:text-oc-blue transition-colors uppercase tracking-widest"
       >
         &larr; Manage Hub
@@ -201,24 +211,28 @@ export function ChapterManage() {
       {/* ── Actions — text links for secondary, solid button for primary CTA ── */}
       <div className="hairline pb-6">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-6">
-          <Link
-            to={`/manage/${ownedChapterId}/events/create`}
-            className="px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
-          >
-            Create New Event
-          </Link>
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="text-xs font-bold text-oc-blue hover:underline transition-colors"
-          >
-            Import &amp; Issue Badges
-          </button>
-          <Link
-            to={`/manage/${ownedChapterId}/history`}
-            className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
-          >
-            Event History
-          </Link>
+          {isOwnedChapter && (
+            <>
+              <Link
+                to={`/manage/${encodeURIComponent(chapterId)}/events/create`}
+                className="px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
+              >
+                Create New Event
+              </Link>
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="text-xs font-bold text-oc-blue hover:underline transition-colors"
+              >
+                Import &amp; Issue Badges
+              </button>
+              <Link
+                to={`/manage/${encodeURIComponent(chapterId)}/history`}
+                className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
+              >
+                Event History
+              </Link>
+            </>
+          )}
           <button
             onClick={handleExportCSV}
             className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
@@ -348,16 +362,16 @@ export function ChapterManage() {
                       </td>
 
                       <td className="py-4 text-right whitespace-nowrap">
-                        {status !== 'deleted' ? (
+                        {status !== 'deleted' && isOwnedChapter ? (
                           <Link
-                            to={`/manage/${ownedChapterId}/events/${event.id}`}
+                            to={`/manage/${encodeURIComponent(chapterId)}/events/${event.id}`}
                             className="text-xs font-bold text-oc-blue hover:underline"
                           >
                             Manage &rarr;
                           </Link>
                         ) : (
                           <span className="text-[11px] text-slate-400 italic">
-                            Archived
+                            {status === 'deleted' ? 'Archived' : 'View only'}
                           </span>
                         )}
                       </td>
@@ -371,13 +385,15 @@ export function ChapterManage() {
       </div>
 
       {/* Attendee Import Modal */}
-      <AttendeeImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        events={allEvents.filter(e => !e.deletedAt)}
-        chapterId={ownedChapterId}
-        onImportSuccess={() => loadData()}
-      />
+      {isOwnedChapter && (
+        <AttendeeImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          events={allEvents.filter(e => !e.deletedAt)}
+          chapterId={ownedChapterId}
+          onImportSuccess={() => loadData()}
+        />
+      )}
     </div>
   );
 }

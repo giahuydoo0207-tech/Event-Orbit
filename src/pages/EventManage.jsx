@@ -7,13 +7,13 @@ import { StatusBadge } from '../components/StatusBadge';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
-import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
+import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
 
 export function EventManage() {
   const { id, chapterId } = useParams();
   const navigate = useNavigate();
   const organizerSession = useOrganizerSession();
-  const managePath = getOrganizerManagePath(organizerSession);
+  const managePath = `/manage/${encodeURIComponent(chapterId || '')}`;
   const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const showToast = useToastStore((state) => state.showToast);
 
