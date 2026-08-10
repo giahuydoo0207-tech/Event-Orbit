@@ -1,6 +1,6 @@
 export const CHAPTERS = [
   { 
-    id: 'org-001', 
+    id: 'ab5a59cc-bfb2-43dc-af19-faaa79b732cd',
     slug: 'fit',
     name: 'IT Department', 
     ocid: 'fit.opencampus.edu', 
@@ -11,7 +11,7 @@ export const CHAPTERS = [
     category: 'Tech' 
   },
   { 
-    id: 'org-002', 
+    id: 'arts',
     slug: 'arts',
     name: 'Creative Arts Club', 
     ocid: 'arts.opencampus.edu', 
@@ -22,7 +22,7 @@ export const CHAPTERS = [
     category: 'Design' 
   },
   { 
-    id: 'org-003', 
+    id: 'hub',
     slug: 'hub',
     name: 'Entrepreneurship Hub', 
     ocid: 'hub.opencampus.edu', 
@@ -33,7 +33,7 @@ export const CHAPTERS = [
     category: 'Business' 
   },
   { 
-    id: 'org-004', 
+    id: 'youth',
     slug: 'youth',
     name: 'Youth Union Board', 
     ocid: 'youth.opencampus.edu', 

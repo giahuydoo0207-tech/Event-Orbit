@@ -59,7 +59,9 @@ export const useStore = create(
           email: `${account.mssv.toLowerCase()}@opencampus.org`,
           ethAddress: account.ethAddress || null,
           // Reset followedChapterIds on role switch to avoid mixing demo data
-          followedChapterIds: account.role === 'student' ? ['org-001'] : [],
+          followedChapterIds: account.role === 'student'
+            ? ['ab5a59cc-bfb2-43dc-af19-faaa79b732cd']
+            : [],
         };
 
         // Call backend to establish session cookie in background

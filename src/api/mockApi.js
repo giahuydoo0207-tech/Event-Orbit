@@ -217,17 +217,6 @@ export async function fetchRegistrationsByUser(user) {
 export function isEventInChapter(event, chapter) {
   if (!event || !chapter) return false;
 
-  const legacyMap = {
-    'org-001': 'fit',
-    'org-002': 'arts',
-    'org-003': 'hub',
-    'org-004': 'youth',
-    'fit': 'org-001',
-    'arts': 'org-002',
-    'hub': 'org-003',
-    'youth': 'org-004'
-  };
-
   const eChId = String(event.chapterId || '').trim();
   const eChSlug = String(event.chapter?.slug || '').trim();
   const cId = String(chapter.id || '').trim();
@@ -235,8 +224,6 @@ export function isEventInChapter(event, chapter) {
 
   if (eChId && (eChId === cId || eChId === cSlug)) return true;
   if (eChSlug && (eChSlug === cSlug || eChSlug === cId)) return true;
-  if (legacyMap[eChId] && (legacyMap[eChId] === cId || legacyMap[eChId] === cSlug)) return true;
-  if (legacyMap[cId] && (legacyMap[cId] === eChId || legacyMap[cId] === eChSlug)) return true;
 
   return false;
 }

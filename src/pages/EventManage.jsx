@@ -1,15 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { fetchEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
 import QRCode from 'qrcode';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
 import { StatusBadge } from '../components/StatusBadge';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
+import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
 
 export function EventManage() {
   const { id, chapterId } = useParams();
   const navigate = useNavigate();
+  const organizerSession = useOrganizerSession();
+  const managePath = getOrganizerManagePath(organizerSession);
+  const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const showToast = useToastStore((state) => state.showToast);
 
   const [event, setEvent] = useState(null);
@@ -74,6 +79,7 @@ export function EventManage() {
   };
 
   useEffect(() => {
+    if (redirectPath) return undefined;
     loadData();
     loadPendingClaims();
 
@@ -89,7 +95,7 @@ export function EventManage() {
       clearInterval(qrInterval);
       clearInterval(attendeeInterval);
     };
-  }, [id]);
+  }, [id, redirectPath]);
 
   // Generate QR Canvas with instant fallback and clean loading state
   useEffect(() => {
@@ -139,7 +145,7 @@ export function EventManage() {
     try {
       await deleteEventApi(event.id);
       showToast('Event soft deleted successfully. Recorded in Event History.', 'success');
-      navigate(`/manage/${chapterId}`);
+      navigate(managePath);
     } catch (err) {
       console.error('Failed to delete event:', err);
       showToast(err.message || 'Failed to delete event.', 'error');
@@ -148,6 +154,10 @@ export function EventManage() {
       setShowDeleteModal(false);
     }
   };
+
+  if (redirectPath) {
+    return <Navigate to={redirectPath} replace />;
+  }
 
   if (loading) {
     return (
@@ -162,7 +172,7 @@ export function EventManage() {
     return (
       <div className="py-20 text-center max-w-sm mx-auto">
         <h2 className="text-lg font-bold text-navy">Event Not Found</h2>
-        <Link to={`/manage/${chapterId}`} className="text-xs text-accent-blue underline">
+        <Link to={managePath} className="text-xs text-accent-blue underline">
           Back to Chapter Management
         </Link>
       </div>
@@ -175,7 +185,7 @@ export function EventManage() {
     <div className="space-y-8">
       {/* Header breadcrumb */}
       <div>
-        <Link to={`/manage/${chapterId}`} className="text-xs font-bold text-text-secondary hover:text-navy uppercase tracking-wider">
+        <Link to={managePath} className="text-xs font-bold text-text-secondary hover:text-navy uppercase tracking-wider">
           &larr; Back to Chapter Management
         </Link>
         

@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { fetchOrganizerEvents, fetchChapterById, fetchEventAttendees } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { StatusBadge } from '../components/StatusBadge';
+import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
+import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
 
 export function EventHistory() {
   const { chapterId, eventId: paramEventId } = useParams();
   const navigate = useNavigate();
+  const organizerSession = useOrganizerSession();
+  const ownedChapterId = organizerSession?.chapterId;
+  const managePath = getOrganizerManagePath(organizerSession);
+  const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const showToast = useToastStore((state) => state.showToast);
 
   const [chapter, setChapter] = useState(null);
@@ -23,12 +29,13 @@ export function EventHistory() {
 
   useEffect(() => {
     async function loadData() {
+      if (redirectPath) return;
       setLoading(true);
       try {
         const [chapterData, eventData] = await Promise.all([
-          fetchChapterById(chapterId),
+          fetchChapterById(ownedChapterId),
           // Fetch events including soft-deleted events for historical records
-          fetchOrganizerEvents(chapterId, true),
+          fetchOrganizerEvents(ownedChapterId, true),
         ]);
 
         setChapter(chapterData);
@@ -48,7 +55,7 @@ export function EventHistory() {
       }
     }
     loadData();
-  }, [chapterId, paramEventId]);
+  }, [ownedChapterId, paramEventId, redirectPath]);
 
   // Load Attendees when an event is selected
   useEffect(() => {
@@ -81,14 +88,14 @@ export function EventHistory() {
 
   const handleSelectEvent = (evId) => {
     setSelectedEventId(evId);
-    navigate(`/manage/${chapterId}/history/${evId}`, { replace: true });
+    navigate(`${managePath}/history/${evId}`, { replace: true });
   };
 
   const handleClearSelectedEvent = () => {
     setSelectedEventId(null);
     setSelectedEvent(null);
     setSearchTerm('');
-    navigate(`/manage/${chapterId}/history`, { replace: true });
+    navigate(`${managePath}/history`, { replace: true });
   };
 
   // CSV Export for Attendee List
@@ -144,6 +151,10 @@ export function EventHistory() {
     return nameMatch || mssvMatch || ocidMatch;
   });
 
+  if (redirectPath) {
+    return <Navigate to={redirectPath} replace />;
+  }
+
   if (loading) {
     return (
       <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
@@ -157,7 +168,7 @@ export function EventHistory() {
     <div className="space-y-8">
       {/* Header breadcrumbs */}
       <div>
-        <Link to={`/manage/${chapterId}`} className="text-xs font-bold text-accent-blue hover:underline uppercase tracking-wider">
+        <Link to={managePath} className="text-xs font-bold text-accent-blue hover:underline uppercase tracking-wider">
           &larr; Back to Chapter Management Console
         </Link>
 

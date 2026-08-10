@@ -6,11 +6,14 @@ import { CategoryIcon } from '../components/CategoryIcon';
 import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
+import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/organizerNavigation';
 
 export function ChapterManage() {
   const { chapterId } = useParams();
   const organizerSession = useOrganizerSession();
   const ownedChapterId = organizerSession?.chapterId;
+  const managePath = getOrganizerManagePath(organizerSession);
+  const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const [chapter, setChapter] = useState(null);
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,12 +139,8 @@ export function ChapterManage() {
     document.body.removeChild(link);
   };
 
-  if (!ownedChapterId) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (chapterId !== organizerSession.chapterId) {
-    return <Navigate to={`/manage/${encodeURIComponent(organizerSession.chapterId)}`} replace />;
+  if (redirectPath) {
+    return <Navigate to={redirectPath} replace />;
   }
 
   if (loading) {
@@ -154,27 +153,14 @@ export function ChapterManage() {
   }
 
   if (!chapter) {
-    return (
-      <div className="text-center py-24">
-        <h2 className="text-lg font-bold text-oc-ink">Chapter Not Found</h2>
-        <p className="text-sm text-slate-500 mt-2">
-          The requested chapter does not exist or has been removed.
-        </p>
-        <Link
-          to={`/manage/${ownedChapterId}`}
-          className="text-sm text-oc-blue hover:underline font-bold inline-block mt-4"
-        >
-          &larr; Return to Manage Hub
-        </Link>
-      </div>
-    );
+    return <Navigate to={managePath} replace />;
   }
 
   return (
     <div className="space-y-12 font-sans max-w-4xl">
       {/* ── Navigation Breadcrumb ── */}
       <Link
-        to={`/manage/${ownedChapterId}`}
+        to={managePath}
         className="text-xs font-semibold text-slate-400 hover:text-oc-blue transition-colors uppercase tracking-widest"
       >
         &larr; Manage Hub
