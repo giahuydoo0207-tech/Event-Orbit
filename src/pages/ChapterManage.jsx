@@ -4,6 +4,7 @@ import { fetchOrganizerEvents, fetchChapterById } from '../api/mockApi';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { LoadingBar } from '../components/LoadingBar';
+import { resolveChapterFromEvents } from '../lib/chapterResolution';
 
 export function ChapterManage() {
   const { chapterId } = useParams();
@@ -24,10 +25,9 @@ export function ChapterManage() {
     setLoading(true);
     try {
       // Include deleted events so filter tabs can calculate complete stats (Bizcafe style)
-      const [chapterData, eventData] = await Promise.all([
-        fetchChapterById(chapterId),
-        fetchOrganizerEvents(chapterId, true),
-      ]);
+      const eventData = await fetchOrganizerEvents(chapterId, true);
+      const chapterData = resolveChapterFromEvents(chapterId, eventData)
+        || await fetchChapterById(chapterId);
 
       setChapter(chapterData);
       setAllEvents(eventData);

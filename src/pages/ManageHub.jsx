@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Navigate } from 'react-router-dom';
 import { fetchChapters } from '../api/mockApi';
 import { ChapterCard } from '../components/ChapterCard';
 import { LoadingBar } from '../components/LoadingBar';
+import { useStore } from '../store/useStore';
 
 const CATEGORY_ORDER = ['Tech', 'Design', 'Business', 'Social'];
 
 export function ManageHub() {
+  const chapterId = useStore((state) => state.user.chapterId);
   const [chapters, setChapters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +61,12 @@ export function ManageHub() {
     });
     return ordered;
   }, [filteredChapters, shouldGroup]);
+
+  // Organizer ownership comes from the verified server session and is mirrored
+  // into this state at login. The API remains the authorization boundary.
+  if (chapterId) {
+    return <Navigate to={`/manage/${encodeURIComponent(chapterId)}`} replace />;
+  }
 
   if (loading) {
     return (

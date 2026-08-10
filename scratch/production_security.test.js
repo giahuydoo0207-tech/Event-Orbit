@@ -14,6 +14,8 @@ import {
   verifySession,
 } from '../lib/verifySession.js';
 import { mintBadge } from '../lib/relayer.js';
+import { resolveChapterUuid } from '../lib/resolveChapter.js';
+import { resolveChapterFromEvents } from '../src/lib/chapterResolution.js';
 
 test('login identity is derived from verified OCID claims and server chapter data', () => {
   const identity = deriveSessionIdentity(
@@ -39,11 +41,32 @@ test('login identity is derived from verified OCID claims and server chapter dat
 test('matching chapter account is the only path that derives organizer authority', () => {
   const identity = deriveSessionIdentity(
     { sub: 'chapter-subject', edu_username: 'fit.opencampus.edu' },
-    { id: '3f74e7d4-06b1-47cf-a9dc-eb7d52b0c531' },
+    { id: 'ab5a59cc-bfb2-43dc-af19-faaa79b732cd' },
   );
 
   assert.equal(identity.role, 'organizer');
-  assert.equal(identity.chapter_id, '3f74e7d4-06b1-47cf-a9dc-eb7d52b0c531');
+  assert.equal(identity.chapter_id, 'ab5a59cc-bfb2-43dc-af19-faaa79b732cd');
+});
+
+test('auth uses chapters as organizer authority and never depends on a users table', async () => {
+  const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
+  const sessionSource = await readFile(new URL('../lib/verifySession.js', import.meta.url), 'utf8');
+
+  assert.match(loginSource, /\.from\('chapters'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
+  assert.match(sessionSource, /\.from\('sessions'\)/);
+  assert.doesNotMatch(`${loginSource}\n${sessionSource}`, /\.from\('users'\)/);
+});
+
+test('production migration creates sessions and seeds the canonical FIT chapter idempotently', async () => {
+  const migration = await readFile(
+    new URL('../api/production-blockers-migration.sql', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(migration, /create table if not exists sessions/i);
+  assert.match(migration, /ab5a59cc-bfb2-43dc-af19-faaa79b732cd/i);
+  assert.match(migration, /fit\.opencampus\.edu/i);
+  assert.match(migration, /on conflict\s*\(slug\)\s*do update/i);
 });
 
 test('unverified or incomplete OCID claims cannot create an identity', () => {
@@ -111,6 +134,41 @@ test('event ownership accepts the event chapter organizer', () => {
       { chapter_id: 'chapter-a' },
     ),
   );
+});
+
+test('organizer chapter is resolved from the database chapter joined to its events', () => {
+  const chapterId = '3f74e7d4-06b1-47cf-a9dc-eb7d52b0c531';
+  const chapter = resolveChapterFromEvents(chapterId, [
+    {
+      chapterId,
+      chapter: {
+        id: chapterId,
+        slug: 'fit',
+        ocid: 'fit.opencampus.edu',
+        name: 'IT Department',
+      },
+    },
+  ]);
+
+  assert.equal(chapter?.id, chapterId);
+  assert.equal(chapter?.name, 'IT Department');
+});
+
+test('unknown chapter input never falls back to another chapter', async () => {
+  const query = {
+    select() { return this; },
+    eq() { return this; },
+    maybeSingle: async () => ({ data: null }),
+  };
+  const fakeSupabase = { from: () => query };
+
+  assert.equal(await resolveChapterUuid(fakeSupabase, 'wrong-chapter'), null);
+});
+
+test('organizer event loading never requests an unscoped attendee list', async () => {
+  const source = await readFile(new URL('../src/api/mockApi.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /fetch\(['"]\/api\/registrations['"]\)/);
+  assert.match(source, /fetchEventAttendees\(event\.id\)/);
 });
 
 test('QR nonce uniqueness is scoped to each authenticated student', async () => {

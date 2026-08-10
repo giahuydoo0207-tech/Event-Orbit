@@ -1,5 +1,47 @@
--- Apply once to an existing Event Orbit database before deploying this patch.
+-- Apply to an existing Event Orbit database before deploying this patch.
+-- The DDL and seed operations are safe to rerun.
 -- A displayed QR nonce may be consumed once per authenticated student.
+-- Canonical identity model:
+--   * chapters.ocid grants organizer authority to a verified OCID identity.
+--   * all other verified OCID identities are students.
+--   * sessions stores the server-derived role/chapter snapshot.
+-- No users table is required or queried by the application.
+
+insert into chapters (
+  id, slug, name, ocid, description, category, avatar_gradient, follower_count
+) values (
+  'ab5a59cc-bfb2-43dc-af19-faaa79b732cd',
+  'fit',
+  'IT Department',
+  'fit.opencampus.edu',
+  'AI workshops, Blockchain hackathons, and software engineering meetups for tech students.',
+  'Tech',
+  'from-blue-600 to-indigo-900',
+  142
+)
+on conflict (slug) do update set
+  name = excluded.name,
+  ocid = excluded.ocid,
+  description = excluded.description,
+  category = excluded.category,
+  avatar_gradient = excluded.avatar_gradient,
+  follower_count = excluded.follower_count;
+
+create table if not exists sessions (
+  token text primary key,
+  user_id text not null,
+  role text not null check (role in ('student', 'organizer')),
+  chapter_id uuid references chapters(id),
+  ocid text,
+  mssv text,
+  full_name text,
+  eth_address text,
+  expires_at timestamptz not null,
+  created_at timestamptz default now()
+);
+
+alter table sessions enable row level security;
+
 -- Existing sessions were issued by the previous client-trusting login flow and
 -- cannot be distinguished from legitimate sessions, so revoke all of them.
 delete from sessions;

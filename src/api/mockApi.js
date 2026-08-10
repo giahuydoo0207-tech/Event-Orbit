@@ -1,4 +1,5 @@
 import { CHAPTERS } from './mockData';
+import { resolveChapterFromEvents } from '../lib/chapterResolution';
 
 export function getAuthHeaders() {
   return { 'Content-Type': 'application/json' };
@@ -149,25 +150,21 @@ export async function fetchStudentAchievementsByOcid(ocid) {
 export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
   const events = await fetchEvents({ includeDeleted, chapterId });
 
-  const res = await fetch('/api/registrations');
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, 'Failed to load registrations.'));
-  }
-  const regs = await res.json();
-
   const activeEvents = includeDeleted ? events : events.filter(e => !e.deletedAt);
 
-  return activeEvents.map(event => {
+  return Promise.all(activeEvents.map(async event => {
+    // The hardened registrations API requires an event scope and verifies
+    // ownership before returning attendee data.
+    const eventRegs = await fetchEventAttendees(event.id);
     // Events only ever carry a real Postgres UUID now (see the long-term
     // stability plan) — no slug/legacyId fallback needed here.
-    const eventRegs = regs.filter(r => r.eventId === event.id);
     const attendedCount = eventRegs.filter(r => r.checkedIn).length;
     return {
       ...event,
       registeredCount: eventRegs.length,
       attendedCount
     };
-  });
+  }));
 }
 
 export async function fetchEventAttendees(eventId) {
@@ -246,7 +243,11 @@ export async function fetchChapters() {
 
 export async function fetchChapterById(id) {
   const chapters = await fetchChapters();
-  return chapters.find(c => c.id === id || c.slug === id) || null;
+  const knownChapter = chapters.find(c => c.id === id || c.slug === id || c.ocid === id);
+  if (knownChapter) return knownChapter;
+
+  const events = await fetchEvents({ chapterId: id });
+  return resolveChapterFromEvents(id, events);
 }
 
 export async function fetchChapterBySlug(slug) {

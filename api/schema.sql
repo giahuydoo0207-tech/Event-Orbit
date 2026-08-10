@@ -74,10 +74,12 @@ create table chapter_follows (
 );
 
 -- 6. Bảng Sessions (Quản lý phiên đăng nhập, hỗ trợ lưu eth_address để relayer mint SBT)
+-- Organizer authority is derived server-side from chapters.ocid. Unmatched
+-- verified OCID identities are students; no users table is required.
 create table sessions (
   token text primary key,
   user_id text not null,
-  role text not null, -- 'student' | 'organizer'
+  role text not null check (role in ('student', 'organizer')),
   chapter_id uuid references chapters(id),
   ocid text,
   mssv text,
@@ -130,6 +132,7 @@ alter table registrations enable row level security;
 alter table achievements enable row level security;
 alter table chapter_follows enable row level security;
 alter table pending_claims enable row level security;
+alter table sessions enable row level security;
 
 -- Quyền select công khai chỉ cho Events và Chapters (không chứa dữ liệu nhạy cảm)
 create policy "Public read events" on events for select using (true);

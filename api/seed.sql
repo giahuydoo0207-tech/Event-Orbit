@@ -2,12 +2,12 @@
 -- Run this script in your Supabase SQL Editor (Dashboard -> SQL Editor)
 
 -- 1. Seed Chapters
-INSERT INTO chapters (slug, name, ocid, description, category, avatar_gradient, follower_count)
+INSERT INTO chapters (id, slug, name, ocid, description, category, avatar_gradient, follower_count)
 VALUES 
-  ('fit', 'IT Department', 'fit.opencampus.edu', 'AI workshops, Blockchain hackathons, and software engineering meetups for tech students.', 'Tech', 'from-blue-600 to-indigo-900', 142),
-  ('arts', 'Creative Arts Club', 'arts.opencampus.edu', 'Design sprints, wireframing bootcamps, and creative UI/UX showcase seminars.', 'Design', 'from-purple-600 to-pink-900', 64),
-  ('hub', 'Entrepreneurship Hub', 'hub.opencampus.edu', 'Startup incubation meetups, pitching guidelines, and VC networking sessions.', 'Business', 'from-amber-600 to-red-900', 95),
-  ('youth', 'Youth Union Board', 'youth.opencampus.edu', 'Campus social activities, community service runs, and student sports events.', 'Social', 'from-green-600 to-teal-900', 310)
+  ('ab5a59cc-bfb2-43dc-af19-faaa79b732cd', 'fit', 'IT Department', 'fit.opencampus.edu', 'AI workshops, Blockchain hackathons, and software engineering meetups for tech students.', 'Tech', 'from-blue-600 to-indigo-900', 142),
+  (gen_random_uuid(), 'arts', 'Creative Arts Club', 'arts.opencampus.edu', 'Design sprints, wireframing bootcamps, and creative UI/UX showcase seminars.', 'Design', 'from-purple-600 to-pink-900', 64),
+  (gen_random_uuid(), 'hub', 'Entrepreneurship Hub', 'hub.opencampus.edu', 'Startup incubation meetups, pitching guidelines, and VC networking sessions.', 'Business', 'from-amber-600 to-red-900', 95),
+  (gen_random_uuid(), 'youth', 'Youth Union Board', 'youth.opencampus.edu', 'Campus social activities, community service runs, and student sports events.', 'Social', 'from-green-600 to-teal-900', 310)
 ON CONFLICT (slug) DO UPDATE 
 SET 
   name = EXCLUDED.name, 
