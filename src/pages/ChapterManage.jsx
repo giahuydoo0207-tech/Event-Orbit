@@ -11,7 +11,7 @@ import { getOrganizerChapterRedirect, getOrganizerManagePath } from '../lib/orga
 export function ChapterManage() {
   const { chapterId } = useParams();
   const organizerSession = useOrganizerSession();
-  const ownedChapterId = organizerSession?.chapterId;
+ const ownedChapterId = organizerSession?.chapterId || organizerSession?.chapter_id;
   const managePath = getOrganizerManagePath(organizerSession);
   const redirectPath = getOrganizerChapterRedirect(chapterId, organizerSession);
   const [chapter, setChapter] = useState(null);
