@@ -28,7 +28,7 @@ export function EventManage() {
     try {
       const res = await fetch(`/api/events/${id}/qr`, {
         headers: getAuthHeaders(),
-        credentials: 'same-origin'
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -61,7 +61,7 @@ export function EventManage() {
     if (!id) return;
     setLoadingClaims(true);
     try {
-      const res = await fetch(`/api/claim?eventId=${encodeURIComponent(id)}`, { headers: getAuthHeaders(), credentials: 'same-origin' });
+      const res = await fetch(`/api/claim?eventId=${encodeURIComponent(id)}`, { headers: getAuthHeaders(), credentials: 'include' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load pending claims.');
       setPendingClaims(data.claims || []);

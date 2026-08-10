@@ -32,7 +32,7 @@ export default function ClaimBadge() {
     setClaiming(true);
     setError('');
     try {
-      const res = await fetch('/api/claim', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'same-origin', body: JSON.stringify({ claimToken: token }) });
+      const res = await fetch('/api/claim', { method: 'POST', headers: { 'Content-Type': 'application/json', ...getAuthHeaders() }, credentials: 'include', body: JSON.stringify({ claimToken: token }) });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Unable to claim this badge.');
       setSuccess(body);

@@ -96,6 +96,7 @@ export function StudentCheckin() {
       fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload)
       }).then(res => {
         if (res.ok) {
@@ -128,6 +129,7 @@ export function StudentCheckin() {
     fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(payload)
     }).then(res => {
       if (res.ok) {

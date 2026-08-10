@@ -19,7 +19,7 @@ export function Redirect() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
+        credentials: 'include',
         body: JSON.stringify({ idToken }),
       });
 

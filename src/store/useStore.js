@@ -66,6 +66,7 @@ export const useStore = create(
         fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             ocid: account.ocid || null,
             mssv: account.mssv,
@@ -82,7 +83,7 @@ export const useStore = create(
 
       logout: () => {
         // Clear session on backend in background
-        fetch('/api/auth/logout', { method: 'POST' }).catch(err => console.error('Backend logout failed:', err));
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(err => console.error('Backend logout failed:', err));
 
         set(() => {
           localStorage.removeItem(LOCAL_USER_KEY);

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { checkRateLimit } from '../../lib/rateLimit.js';
 import { OcidConfigurationError, deriveSessionIdentity, verifyOcidIdToken } from '../../lib/authentication.js';
+import { setSessionCookieHeader } from '../../lib/sessionCookie.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -72,10 +73,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Database session storage failed.' });
     }
 
-    res.setHeader(
-      'Set-Cookie',
-      `session=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
-    );
+    setSessionCookieHeader(res, token, 604800);
     return res.status(200).json({
       ok: true,
       user: {

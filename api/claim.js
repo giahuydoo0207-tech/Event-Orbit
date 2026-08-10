@@ -4,6 +4,7 @@ import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { mintBadge } from '../lib/relayer.js';
 import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
+import { serializeSessionCookie } from '../lib/sessionCookie.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
@@ -341,7 +342,7 @@ async function handlePostClaim(req, res) {
       // Set session cookie so the student stays logged in
       res.setHeader(
         'Set-Cookie',
-        `session=${sessionToken}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`
+        serializeSessionCookie(sessionToken, 604800)
       );
     } catch (sessionErr) {
       // Non-blocking — claim succeeded even if session creation fails

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { clearSessionCookieHeader, readSessionToken } from '../../lib/sessionCookie.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -17,17 +18,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const cookie = req.headers.cookie || '';
-    const token = cookie.split('; ').find((c) => c.startsWith('session='))?.split('=')[1];
+    const token = readSessionToken(req.headers.cookie);
     
     if (token) {
       await supabase.from('sessions').delete().eq('token', token);
     }
 
-    res.setHeader(
-      'Set-Cookie',
-      'session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT'
-    );
+    clearSessionCookieHeader(res);
     return res.status(200).json({ ok: true });
   } catch (error) {
     console.error('Logout Endpoint Error:', error);

@@ -24,7 +24,7 @@ export async function fetchEvents(options = {}) {
   const queryString = params.toString() ? `?${params.toString()}` : '';
   const res = await fetch(`/api/events${queryString}`, {
     headers: getAuthHeaders(),
-    credentials: 'same-origin'
+    credentials: 'include'
   });
 
   if (!res.ok) {
@@ -38,7 +38,7 @@ export async function deleteEventApi(eventId) {
   const res = await fetch(`/api/events?id=${eventId}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
-    credentials: 'same-origin'
+    credentials: 'include'
   });
 
   if (!res.ok) {
@@ -62,7 +62,7 @@ export async function createEventApi(eventData) {
   const res = await fetch('/api/events', {
     method: 'POST',
     headers: getAuthHeaders(),
-    credentials: 'same-origin',
+    credentials: 'include',
     body: JSON.stringify(eventData)
   });
 
@@ -83,7 +83,7 @@ export async function registerForEvent(eventId, student) {
     const res = await fetch('/api/registrations', {
       method: 'POST',
       headers: getAuthHeaders(),
-      credentials: 'same-origin',
+      credentials: 'include',
       body: JSON.stringify({ eventId, student, capacity })
     });
     if (res.ok) {
@@ -103,7 +103,7 @@ export async function checkInStudent(qrData, student) {
     const res = await fetch('/api/checkin', {
       method: 'POST',
       headers: getAuthHeaders(),
-      credentials: 'same-origin',
+      credentials: 'include',
       body: JSON.stringify({ qrData })
     });
     if (res.ok) {
@@ -123,7 +123,7 @@ export async function checkInStudent(qrData, student) {
 export async function fetchStudentAchievements(student) {
   const res = await fetch('/api/achievements', {
     headers: getAuthHeaders(),
-    credentials: 'same-origin'
+    credentials: 'include'
   });
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load achievements.'));
@@ -168,7 +168,9 @@ export async function fetchOrganizerEvents(chapterId, includeDeleted = false) {
 }
 
 export async function fetchEventAttendees(eventId) {
-  const res = await fetch(`/api/registrations?eventId=${encodeURIComponent(eventId)}`);
+  const res = await fetch(`/api/registrations?eventId=${encodeURIComponent(eventId)}`, {
+    credentials: 'include'
+  });
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load attendees.'));
   }
@@ -179,7 +181,9 @@ export async function fetchRegistrationsByUser(user) {
   if (!user) return [];
   const userId = user.ocid || user.mssv || user.ethAddress;
 
-  const res = await fetch(`/api/registrations?userId=${encodeURIComponent(userId)}`);
+  const res = await fetch(`/api/registrations?userId=${encodeURIComponent(userId)}`, {
+    credentials: 'include'
+  });
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to load your registrations.'));
   }
@@ -259,7 +263,7 @@ export async function toggleFollowChapter(id, isFollow) {
   const res = await fetch('/api/chapters-follow', {
     method: 'POST',
     headers: getAuthHeaders(),
-    credentials: 'same-origin',
+    credentials: 'include',
     body: JSON.stringify({
       chapterId: id,
       action: isFollow ? 'follow' : 'unfollow'
@@ -280,7 +284,7 @@ export async function importAttendeesBatchApi(eventId, attendeesBatch) {
   const res = await fetch('/api/import-attendees', {
     method: 'POST',
     headers: getAuthHeaders(),
-    credentials: 'same-origin',
+    credentials: 'include',
     body: JSON.stringify({
       eventId,
       attendees: attendeesBatch

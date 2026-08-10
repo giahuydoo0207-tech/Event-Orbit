@@ -14,6 +14,14 @@ import {
   verifySession,
 } from '../lib/verifySession.js';
 import { mintBadge } from '../lib/relayer.js';
+import {
+  SESSION_COOKIE_NAME,
+  clearSessionCookie,
+  readSessionToken,
+  serializeSessionCookie,
+  setSessionCookieHeader,
+  clearSessionCookieHeader,
+} from '../lib/sessionCookie.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
 import { resolveChapterFromEvents } from '../src/lib/chapterResolution.js';
 
@@ -111,6 +119,60 @@ test('x-user-session is never accepted as authentication', async () => {
 
   assert.equal(session, null);
   assert.equal(databaseCalled, false);
+});
+
+test('login session cookie is secure and uses the verifier cookie name', () => {
+  const token = 'a'.repeat(64);
+  const cookie = serializeSessionCookie(token, 604800);
+
+  assert.equal(SESSION_COOKIE_NAME, 'session');
+  assert.match(cookie, /^session=a{64};/);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.match(cookie, /Path=\//);
+  assert.match(cookie, /Max-Age=604800/);
+  assert.equal(readSessionToken(`other=x; ${SESSION_COOKIE_NAME}=${token}`), token);
+
+  let responseHeader;
+  setSessionCookieHeader({
+    setHeader(name, value) { responseHeader = [name, value]; },
+  }, token, 604800);
+  assert.deepEqual(responseHeader, ['Set-Cookie', cookie]);
+});
+
+test('logout clears the same root-scoped session cookie', () => {
+  const cookie = clearSessionCookie();
+  assert.match(cookie, /^session=;/);
+  assert.match(cookie, /Path=\//);
+  assert.match(cookie, /Max-Age=0/);
+  assert.match(cookie, /Expires=Thu, 01 Jan 1970 00:00:00 GMT/);
+
+  let responseHeader;
+  clearSessionCookieHeader({
+    setHeader(name, value) { responseHeader = [name, value]; },
+  });
+  assert.deepEqual(responseHeader, ['Set-Cookie', cookie]);
+});
+
+test('login and logout handlers apply the shared cookie response contract', async () => {
+  const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
+  const logoutSource = await readFile(new URL('../api/auth/logout.js', import.meta.url), 'utf8');
+  const verifierSource = await readFile(new URL('../lib/verifySession.js', import.meta.url), 'utf8');
+
+  assert.match(loginSource, /setSessionCookieHeader\(res, token, 604800\)/);
+  assert.match(logoutSource, /clearSessionCookieHeader\(res\)/);
+  assert.match(verifierSource, /readSessionToken\(req\.headers\.cookie\)/);
+});
+
+test('OCID callback and protected frontend requests include credentials', async () => {
+  const redirectSource = await readFile(new URL('../src/pages/Redirect.jsx', import.meta.url), 'utf8');
+  const apiSource = await readFile(new URL('../src/api/mockApi.js', import.meta.url), 'utf8');
+
+  assert.match(redirectSource, /fetch\('\/api\/auth\/login',[\s\S]*?credentials:\s*'include'/);
+  assert.doesNotMatch(apiSource, /credentials:\s*'same-origin'/);
+  assert.match(apiSource, /fetch\(`\/api\/events[\s\S]*?credentials:\s*'include'/);
+  assert.match(apiSource, /fetch\(`\/api\/registrations\?eventId=[\s\S]*?credentials:\s*'include'/);
 });
 
 test('event ownership rejects organizers without a chapter', () => {
