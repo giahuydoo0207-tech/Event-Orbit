@@ -14,6 +14,27 @@ async function parseErrorMessage(res, fallback) {
   }
 }
 
+export async function fetchServerSession() {
+  const res = await fetch('/api/auth/login', {
+    method: 'GET',
+    credentials: 'include'
+  });
+  if (!res.ok) {
+    const error = new Error(await parseErrorMessage(res, 'Authentication required.'));
+    error.status = res.status;
+    throw error;
+  }
+
+  const { user } = await res.json();
+  if (!user || !['student', 'organizer'].includes(user.role)) {
+    throw new Error('Server returned an invalid session identity.');
+  }
+  if (user.role === 'organizer' && !/^[0-9a-f-]{36}$/i.test(user.chapterId || '')) {
+    throw new Error('Organizer session is not assigned to a valid chapter.');
+  }
+  return user;
+}
+
 // ── Event Endpoints ──
 
 export async function fetchEvents(options = {}) {

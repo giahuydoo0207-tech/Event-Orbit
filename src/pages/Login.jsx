@@ -205,12 +205,6 @@ export function Login() {
               >
                 Log in as Student
               </button>
-              <button
-                onClick={() => handleDemoLogin('organizer')}
-                className="flex-1 py-2 border border-border rounded-md text-xs font-semibold text-navy bg-white hover:bg-slate-50 transition-colors"
-              >
-                Log in as Chapter Organizer
-              </button>
             </div>
           </div>
 

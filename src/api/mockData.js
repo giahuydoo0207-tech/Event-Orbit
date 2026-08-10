@@ -143,12 +143,4 @@ export const DEMO_ACCOUNTS = {
     ocid: 'alex.edu', // Matches OCID used in PublicProfile
     role: 'student',
   },
-  organizer: {
-    mssv: 'DEMO-ORG-001',
-    fullName: 'FIT Chapter Admin',
-    ocid: 'fit.opencampus.edu', // Matches OCID of Chapter 'fit'
-    role: 'organizer',
-    chapterId: 'org-001', // Targets 'IT Department'
-  },
 };
-

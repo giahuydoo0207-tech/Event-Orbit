@@ -3,18 +3,36 @@ import crypto from 'crypto';
 import { checkRateLimit } from '../../lib/rateLimit.js';
 import { OcidConfigurationError, deriveSessionIdentity, verifyOcidIdToken } from '../../lib/authentication.js';
 import { setSessionCookieHeader } from '../../lib/sessionCookie.js';
+import { verifySession } from '../../lib/verifySession.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  if (req.method === 'GET') {
+    const session = await verifySession(req);
+    if (!session) {
+      return res.status(401).json({ error: 'Authentication required.' });
+    }
+    return res.status(200).json({
+      ok: true,
+      user: {
+        ocid: session.ocid,
+        fullName: session.full_name,
+        ethAddress: session.eth_address,
+        role: session.role,
+        chapterId: session.chapter_id,
+      },
+    });
   }
 
   if (req.method !== 'POST') {

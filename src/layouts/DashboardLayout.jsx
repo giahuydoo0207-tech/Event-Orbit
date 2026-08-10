@@ -2,23 +2,25 @@ import React, { useState, Suspense } from 'react';
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 
 export function DashboardLayout({ children }) {
   const { user, logout } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const organizerSession = useOrganizerSession();
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const isOrganizer = user.role === 'organizer';
+  const isOrganizer = organizerSession?.role === 'organizer';
 
   // Navigation Links definition
   const navLinks = isOrganizer ? [
-    { label: 'Manage Chapters', path: '/manage' },
+    { label: 'Manage Chapters', path: `/manage/${organizerSession.chapterId}` },
     { label: 'Explore Events', path: '/events' }
   ] : [
     { label: 'Home', path: '/home' },
@@ -71,7 +73,7 @@ export function DashboardLayout({ children }) {
           <nav className="flex flex-col space-y-2">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path ||
-                (link.path === '/manage' && location.pathname.startsWith('/manage'));
+                (isOrganizer && link.label === 'Manage Chapters' && location.pathname.startsWith('/manage'));
               return (
                 <Link
                   key={link.path}

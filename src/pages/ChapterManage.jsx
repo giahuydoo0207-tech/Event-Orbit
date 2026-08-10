@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import { fetchOrganizerEvents, fetchChapterById } from '../api/mockApi';
 import { AttendeeImportModal } from '../components/AttendeeImportModal';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
+import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 
 export function ChapterManage() {
   const { chapterId } = useParams();
+  const organizerSession = useOrganizerSession();
+  const ownedChapterId = organizerSession?.chapterId;
   const [chapter, setChapter] = useState(null);
   const [allEvents, setAllEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,9 +28,9 @@ export function ChapterManage() {
     setLoading(true);
     try {
       // Include deleted events so filter tabs can calculate complete stats (Bizcafe style)
-      const eventData = await fetchOrganizerEvents(chapterId, true);
-      const chapterData = resolveChapterFromEvents(chapterId, eventData)
-        || await fetchChapterById(chapterId);
+      const eventData = await fetchOrganizerEvents(ownedChapterId, true);
+      const chapterData = resolveChapterFromEvents(ownedChapterId, eventData)
+        || await fetchChapterById(ownedChapterId);
 
       setChapter(chapterData);
       setAllEvents(eventData);
@@ -53,8 +56,8 @@ export function ChapterManage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, [chapterId]);
+    if (chapterId === ownedChapterId) loadData();
+  }, [chapterId, ownedChapterId]);
 
   // Helper to categorize event status (Bizcafe 4-state classifier)
   const getEventStatus = (event) => {
@@ -133,6 +136,14 @@ export function ChapterManage() {
     document.body.removeChild(link);
   };
 
+  if (!ownedChapterId) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (chapterId !== organizerSession.chapterId) {
+    return <Navigate to={`/manage/${encodeURIComponent(organizerSession.chapterId)}`} replace />;
+  }
+
   if (loading) {
     return (
       <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
@@ -150,7 +161,7 @@ export function ChapterManage() {
           The requested chapter does not exist or has been removed.
         </p>
         <Link
-          to="/manage"
+          to={`/manage/${ownedChapterId}`}
           className="text-sm text-oc-blue hover:underline font-bold inline-block mt-4"
         >
           &larr; Return to Manage Hub
@@ -163,7 +174,7 @@ export function ChapterManage() {
     <div className="space-y-12 font-sans max-w-4xl">
       {/* ── Navigation Breadcrumb ── */}
       <Link
-        to="/manage"
+        to={`/manage/${ownedChapterId}`}
         className="text-xs font-semibold text-slate-400 hover:text-oc-blue transition-colors uppercase tracking-widest"
       >
         &larr; Manage Hub
@@ -205,7 +216,7 @@ export function ChapterManage() {
       <div className="hairline pb-6">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-6">
           <Link
-            to={`/manage/${chapterId}/events/create`}
+            to={`/manage/${ownedChapterId}/events/create`}
             className="px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
           >
             Create New Event
@@ -217,7 +228,7 @@ export function ChapterManage() {
             Import &amp; Issue Badges
           </button>
           <Link
-            to={`/manage/${chapterId}/history`}
+            to={`/manage/${ownedChapterId}/history`}
             className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
           >
             Event History
@@ -353,7 +364,7 @@ export function ChapterManage() {
                       <td className="py-4 text-right whitespace-nowrap">
                         {status !== 'deleted' ? (
                           <Link
-                            to={`/manage/${chapterId}/events/${event.id}`}
+                            to={`/manage/${ownedChapterId}/events/${event.id}`}
                             className="text-xs font-bold text-oc-blue hover:underline"
                           >
                             Manage &rarr;
@@ -378,7 +389,7 @@ export function ChapterManage() {
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
         events={allEvents.filter(e => !e.deletedAt)}
-        chapterId={chapterId}
+        chapterId={ownedChapterId}
         onImportSuccess={() => loadData()}
       />
     </div>

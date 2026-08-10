@@ -175,6 +175,36 @@ test('OCID callback and protected frontend requests include credentials', async 
   assert.match(apiSource, /fetch\(`\/api\/registrations\?eventId=[\s\S]*?credentials:\s*'include'/);
 });
 
+test('organizer navigation is derived from the verified server session', async () => {
+  const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
+  const protectedRouteSource = await readFile(new URL('../src/components/ProtectedRoute.jsx', import.meta.url), 'utf8');
+  const manageHubSource = await readFile(new URL('../src/pages/ManageHub.jsx', import.meta.url), 'utf8');
+  const chapterManageSource = await readFile(new URL('../src/pages/ChapterManage.jsx', import.meta.url), 'utf8');
+  const dashboardSource = await readFile(new URL('../src/layouts/DashboardLayout.jsx', import.meta.url), 'utf8');
+
+  assert.match(loginSource, /req\.method === 'GET'[\s\S]*?verifySession\(req\)/);
+  assert.match(protectedRouteSource, /fetchServerSession\(\)/);
+  assert.match(manageHubSource, /useOrganizerSession\(\)/);
+  assert.doesNotMatch(manageHubSource, /state\.user\.chapterId/);
+  assert.match(chapterManageSource, /chapterId !== organizerSession\.chapterId/);
+  assert.match(dashboardSource, /`\/manage\/\$\{organizerSession\.chapterId\}`/);
+});
+
+test('production organizer navigation never emits legacy demo identities', async () => {
+  const navigationSources = await Promise.all([
+    '../src/pages/ChapterManage.jsx',
+    '../src/pages/ManageHub.jsx',
+    '../src/layouts/DashboardLayout.jsx',
+    '../src/components/ProtectedRoute.jsx',
+    '../src/pages/Login.jsx',
+  ].map((path) => readFile(new URL(path, import.meta.url), 'utf8')));
+  const source = navigationSources.join('\n');
+  const mockData = await readFile(new URL('../src/api/mockData.js', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /org-001/);
+  assert.doesNotMatch(`${source}\n${mockData}`, /DEMO-ORG-001/);
+});
+
 test('event ownership rejects organizers without a chapter', () => {
   assert.throws(
     () => assertEventOwnership({ role: 'organizer', chapter_id: null }, { chapter_id: 'chapter-a' }),
