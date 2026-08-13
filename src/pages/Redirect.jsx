@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { getPostLoginDestination } from '../lib/authNavigation';
 
 export function Redirect() {
   const navigate = useNavigate();
@@ -39,9 +40,7 @@ export function Redirect() {
       });
       const returnTo = sessionStorage.getItem('ocidReturnTo');
       sessionStorage.removeItem('ocidReturnTo');
-      const safeReturnTo = /^\/(?!\/|redirect|login)(?:[a-z0-9/_?=&.-]*)$/i.test(returnTo || '') ? returnTo : null;
-      const roleHome = verifiedUser.role === 'admin' ? '/admin' : verifiedUser.role === 'organizer' ? '/manage' : '/dashboard';
-      navigate(safeReturnTo && safeReturnTo !== '/' ? safeReturnTo : roleHome, { replace: true });
+      navigate(getPostLoginDestination(verifiedUser.role, returnTo), { replace: true });
     } catch (error) {
       isProcessed.current = false;
       useStore.getState().logout({ skipRequest: true });
@@ -188,5 +187,3 @@ export function Redirect() {
 }
 
 export default Redirect;
-    useStore.getState().logout({ skipRequest: true });
-    sessionStorage.removeItem('ocidReturnTo');
