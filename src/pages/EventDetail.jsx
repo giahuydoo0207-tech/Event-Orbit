@@ -3,8 +3,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { fetchEventBySlug, registerForEvent, checkInStudent, fetchEventAttendees, fetchChapterById } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { THEMES } from '../constants/themes';
-import QRCode from 'qrcode';
-import { Html5QrcodeScanner } from 'html5-qrcode';
 import NotFoundState from '../components/NotFoundState';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
@@ -86,47 +84,57 @@ export function EventDetail() {
     if (showQRModal && qrCanvasRef.current && event) {
       // QR encodes the student self check-in URL
       const checkinUrl = `${window.location.origin}/student-checkin?eventId=${event.id}`;
-      QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
-        width: 250,
-        margin: 2,
-        color: {
-          dark: '#0A2540',
-          light: '#FFFFFF'
-        }
-      }).catch(err => console.error('Failed to generate QR canvas', err));
+      import('qrcode')
+        .then(({ default: QRCode }) => QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
+          width: 250,
+          margin: 2,
+          color: {
+            dark: '#0A2540',
+            light: '#FFFFFF'
+          }
+        }))
+        .catch(err => console.error('Failed to generate QR canvas', err));
     }
   }, [showQRModal, event]);
 
   // QR Scanner initialization inside Student Modal
   useEffect(() => {
     let scanner = null;
+    let cancelled = false;
+    let setupTimer = null;
     if (showScannerModal && event) {
       // Delay scanner setup slightly to let the element render in DOM
-      setTimeout(() => {
-        scanner = new Html5QrcodeScanner("reader", {
-          fps: 10,
-          qrbox: { width: 200, height: 200 }
-        });
-        
-        scanner.render(async (decodedText) => {
-          console.log("Scanner scanned content:", decodedText);
-          // Expecting URL containing eventId
-          if (decodedText.includes(`eventId=${event.id}`)) {
-            if (scanner) {
-              scanner.clear().catch(e => console.error(e));
+      setupTimer = setTimeout(() => {
+        import('html5-qrcode').then(({ Html5QrcodeScanner }) => {
+          if (cancelled) return;
+
+          scanner = new Html5QrcodeScanner("reader", {
+            fps: 10,
+            qrbox: { width: 200, height: 200 }
+          });
+
+          scanner.render(async (decodedText) => {
+            console.log("Scanner scanned content:", decodedText);
+            // Expecting URL containing eventId
+            if (decodedText.includes(`eventId=${event.id}`)) {
+              if (scanner) {
+                scanner.clear().catch(e => console.error(e));
+              }
+              setShowScannerModal(false);
+              handleSelfCheckIn();
+            } else {
+              showToast("This QR code belongs to a different event or is invalid.", "error");
             }
-            setShowScannerModal(false);
-            handleSelfCheckIn();
-          } else {
-            showToast("This QR code belongs to a different event or is invalid.", "error");
-          }
-        }, (err) => {
-          // silent error callback to prevent flooding
-        });
+          }, () => {
+            // silent error callback to prevent flooding
+          });
+        }).catch(err => console.error('Failed to load QR scanner', err));
       }, 300);
     }
 
     return () => {
+      cancelled = true;
+      if (setupTimer) clearTimeout(setupTimer);
       if (scanner) {
         scanner.clear().catch(e => console.error(e));
       }

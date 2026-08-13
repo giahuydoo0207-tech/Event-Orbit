@@ -12,7 +12,7 @@ export function StudentCheckin() {
   const [eventId, setEventId] = useState(searchParams.get('eventId'));
   const navigate = useNavigate();
   
-  const { user, setUser } = useStore();
+  const { user } = useStore();
   const { ocAuth } = useOCAuth();
 
   const [event, setEvent] = useState(null);
@@ -21,11 +21,6 @@ export function StudentCheckin() {
   const [txHash, setTxHash] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   
-  // Local login state
-  const [mssvInput, setMssvInput] = useState('');
-  const [fullNameInput, setFullNameInput] = useState('');
-  const [showLocalLogin, setShowLocalLogin] = useState(false);
-
   const loadEvent = async () => {
     let currentEventId = eventId;
     
@@ -86,64 +81,9 @@ export function StudentCheckin() {
       sessionStorage.setItem('ocidReturnTo', `${window.location.pathname}${window.location.search}`);
       ocAuth.signInWithRedirect({ state: 'opencampus' });
     } catch (err) {
-      // Sandbox fallback mock session
-      const payload = {
-        ocid: 'alex.edu',
-        fullName: 'Alex Mercer',
-        role: 'student',
-        ethAddress: '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6'
-      };
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      }).then(res => {
-        if (res.ok) {
-          setUser({
-            isAuthenticated: true,
-            method: 'ocid',
-            ocid: 'alex.edu',
-            ethAddress: '0x326C977E6e1C8116C92fD9CDE32A44B04C0dBbB6',
-            mssv: null,
-            fullName: 'Alex Mercer',
-            role: 'student'
-          });
-        }
-      });
+      console.error('OCID sign-in could not be started:', err);
+      setErrorMessage('Unable to start Open Campus ID sign-in. Please try again.');
     }
-  };
-
-  const handleLocalSubmit = (e) => {
-    e.preventDefault();
-    if (!mssvInput.trim() || !fullNameInput.trim()) return;
-
-    const payload = {
-      ocid: null,
-      mssv: mssvInput.trim(),
-      fullName: fullNameInput.trim(),
-      role: 'student',
-      ethAddress: null // Option (b)
-    };
-
-    fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(payload)
-    }).then(res => {
-      if (res.ok) {
-        setUser({
-          isAuthenticated: true,
-          method: 'mssv',
-          ocid: null,
-          ethAddress: null,
-          mssv: mssvInput.trim(),
-          fullName: fullNameInput.trim(),
-          role: 'student'
-        });
-      }
-    });
   };
 
   const showToast = useToastStore((state) => state.showToast);
@@ -278,66 +218,12 @@ export function StudentCheckin() {
                 <div className="text-xs font-semibold text-text-secondary text-center uppercase tracking-wider">
                   Authentication Required
                 </div>
-                {!showLocalLogin ? (
-                  <>
                     <button
                       onClick={handleOCIDLogin}
                       className="w-full py-3 bg-accent-blue hover:bg-accent-hover text-white text-sm font-semibold rounded-md shadow-sm transition-colors"
                     >
-                      Connect with OCID
+                      Connect with Open Campus ID
                     </button>
-                    <button
-                      onClick={() => setShowLocalLogin(true)}
-                      className="w-full py-3 bg-white border border-border text-navy text-sm font-semibold rounded-md hover:bg-slate-50 transition-colors"
-                    >
-                      Login with Student ID (MSSV)
-                    </button>
-                  </>
-                ) : (
-                  <form onSubmit={handleLocalSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-secondary uppercase mb-1">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={fullNameInput}
-                        onChange={(e) => setFullNameInput(e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full border-b border-border py-1.5 text-xs focus:outline-none focus:border-accent-blue"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-text-secondary uppercase mb-1">
-                        Student ID (MSSV)
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={mssvInput}
-                        onChange={(e) => setMssvInput(e.target.value)}
-                        placeholder="IT202201"
-                        className="w-full border-b border-border py-1.5 text-xs focus:outline-none focus:border-accent-blue"
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowLocalLogin(false)}
-                        className="w-1/3 py-2 border border-border rounded text-xs text-text-secondary hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="w-2/3 py-2 bg-navy text-white rounded text-xs font-semibold hover:bg-navy-light"
-                      >
-                        Sign In
-                      </button>
-                    </div>
-                  </form>
-                )}
               </div>
             ) : (
               /* Confirmation if logged in */

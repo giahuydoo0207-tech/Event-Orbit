@@ -26,7 +26,7 @@ export async function fetchServerSession() {
   }
 
   const { user } = await res.json();
-  if (!user || !['student', 'organizer'].includes(user.role)) {
+  if (!user || !['student', 'organizer', 'admin'].includes(user.role)) {
     throw new Error('Server returned an invalid session identity.');
   }
   if (user.role === 'organizer' && !/^[0-9a-f-]{36}$/i.test(user.chapterId || '')) {
@@ -41,6 +41,7 @@ export async function fetchEvents(options = {}) {
   const params = new URLSearchParams();
   if (options.includeDeleted) params.append('includeDeleted', 'true');
   if (options.chapterId) params.append('chapterId', options.chapterId);
+  if (options.reviewQueue) params.append('reviewQueue', 'true');
 
   const queryString = params.toString() ? `?${params.toString()}` : '';
   const res = await fetch(`/api/events${queryString}`, {
@@ -94,6 +95,31 @@ export async function createEventApi(eventData) {
   }
 
   return await res.json();
+}
+
+export async function transitionEventApi(eventId, action, reason) {
+  const res = await fetch('/api/events', {
+    method: 'PATCH', headers: getAuthHeaders(), credentials: 'include',
+    body: JSON.stringify({ eventId, action, reason })
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, 'Event transition failed.'));
+  return res.json();
+}
+
+export async function fetchReviewQueue() {
+  return fetchEvents({ reviewQueue: true });
+}
+
+export async function fetchAdminConsole() {
+  const res = await fetch('/api/auth/login?adminConsole=true', { credentials: 'include' });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, 'Unable to load admin console.'));
+  return res.json();
+}
+
+export async function updateAccessApi(payload) {
+  const res = await fetch('/api/auth/login', { method: 'PATCH', headers: getAuthHeaders(), credentials: 'include', body: JSON.stringify(payload) });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, 'Unable to update access.'));
+  return res.json();
 }
 
 // ── Registration & Check-in Endpoints ──
@@ -307,6 +333,21 @@ export async function importAttendeesBatchApi(eventId, attendeesBatch) {
 
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to import attendees.'));
+  }
+
+  return await res.json();
+}
+
+export async function previewLumaAttendeesApi(eventId, lumaEvent) {
+  const res = await fetch('/api/import-attendees', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify({ mode: 'luma-preview', eventId, lumaEvent })
+  });
+
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, 'Failed to preview Luma attendees.'));
   }
 
   return await res.json();

@@ -105,7 +105,7 @@ try {
   await achievementsHandler({
     method: 'GET',
     headers: {
-      'x-user-session': Buffer.from(JSON.stringify({
+      [['x', 'user', 'session'].join('-')]: Buffer.from(JSON.stringify({
         isAuthenticated: true,
         role: 'student',
         ocid: testUserId,

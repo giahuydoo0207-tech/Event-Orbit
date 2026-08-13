@@ -30,7 +30,7 @@ on conflict (slug) do update set
 create table if not exists sessions (
   token text primary key,
   user_id text not null,
-  role text not null check (role in ('student', 'organizer')),
+  role text not null check (role in ('student', 'organizer', 'admin')),
   chapter_id uuid references chapters(id),
   ocid text,
   mssv text,
@@ -41,6 +41,58 @@ create table if not exists sessions (
 );
 
 alter table sessions enable row level security;
+alter table sessions drop constraint if exists sessions_role_check;
+alter table sessions add constraint sessions_role_check check (role in ('student', 'organizer', 'admin'));
+
+alter table events add column if not exists status text not null default 'draft';
+alter table events add column if not exists reviewed_by text;
+alter table events add column if not exists reviewed_at timestamptz;
+alter table events add column if not exists rejection_reason text;
+alter table events add column if not exists published_at timestamptz;
+alter table events add column if not exists submitted_by text;
+alter table events drop constraint if exists events_status_check;
+alter table events add constraint events_status_check check (status in ('draft','pending_review','rejected','approved','published','archived'));
+
+create table if not exists chapter_organizers (
+  chapter_id uuid references chapters(id) on delete cascade not null,
+  ocid text not null, role text not null default 'organizer' check (role = 'organizer'),
+  status text not null default 'active' check (status in ('active','revoked','pending')),
+  created_at timestamptz default now(), primary key (chapter_id, ocid)
+);
+create table if not exists admin_users (
+  ocid text primary key, status text not null default 'active' check (status in ('active','revoked')),
+  created_at timestamptz default now()
+);
+insert into admin_users (ocid, status) values ('giahuydoo0207.edu', 'active')
+on conflict (ocid) do nothing;
+alter table chapter_organizers enable row level security;
+alter table admin_users enable row level security;
+
+create or replace function manage_admin_access(p_actor_ocid text, p_target_ocid text, p_action text)
+returns void language plpgsql security definer set search_path=public as $$
+declare v_active_count bigint;
+begin
+  if not exists (select 1 from admin_users where ocid=p_actor_ocid and status='active') then
+    raise exception 'admin_required';
+  end if;
+  if p_action in ('grant','reactivate') then
+    insert into admin_users (ocid,status) values (p_target_ocid,'active')
+    on conflict (ocid) do update set status='active';
+  elsif p_action='revoke' then
+    perform pg_advisory_xact_lock(hashtext('event_orbit_admin_guard'));
+    select count(*) into v_active_count from admin_users where status='active';
+    if v_active_count <= 1 then raise exception 'last_active_admin'; end if;
+    update admin_users set status='revoked' where ocid=p_target_ocid;
+  else raise exception 'invalid_action'; end if;
+end; $$;
+revoke all on function manage_admin_access(text,text,text) from public,anon,authenticated;
+grant execute on function manage_admin_access(text,text,text) to service_role;
+
+-- Preserve currently approved chapter owners while moving authority out of
+-- chapters.ocid. Future grants and revocations must update this table only.
+insert into chapter_organizers (chapter_id, ocid, role, status)
+select id, ocid, 'organizer', 'active' from chapters where ocid is not null and ocid <> ''
+on conflict (chapter_id, ocid) do nothing;
 
 -- Existing sessions were issued by the previous client-trusting login flow and
 -- cannot be distinguished from legitimate sessions, so revoke all of them.
@@ -72,7 +124,7 @@ create or replace function record_qr_checkin(
 language plpgsql security definer set search_path = public as $$
 declare v_event events%rowtype; v_achievement_id uuid;
 begin
-  select * into v_event from events where id = p_event_id and deleted_at is null;
+  select * into v_event from events where id = p_event_id and deleted_at is null and status = 'published';
   if not found then raise exception 'event_not_found' using errcode = 'P0002'; end if;
   insert into qr_nonces (nonce, user_id, event_id, expires_at, used_at)
     values (p_nonce, p_user_id, p_event_id, p_expires_at, now());
@@ -95,7 +147,7 @@ begin
   select * into v_claim from pending_claims where claim_token=p_claim_token
     and status='pending' and expires_at>=now() for update;
   if not found then return; end if;
-  select * into v_event from events where id=v_claim.event_id and deleted_at is null;
+  select * into v_event from events where id=v_claim.event_id and deleted_at is null and status='published';
   if not found then raise exception 'event_not_found' using errcode='P0002'; end if;
   select id into v_achievement_id from achievements
     where achievements.event_id=v_event.id and achievements.user_id=p_user_id;
@@ -128,7 +180,7 @@ create or replace function register_for_event(
 language plpgsql security definer set search_path=public as $$
 declare v_capacity int; v_count bigint; v_registration_id uuid; v_registered_at timestamptz;
 begin
-  select capacity into v_capacity from events where id=p_event_id and deleted_at is null for update;
+  select capacity into v_capacity from events where id=p_event_id and deleted_at is null and status='published' for update;
   if not found then raise exception 'event_not_found' using errcode='P0002'; end if;
   select count(*) into v_count from registrations where event_id=p_event_id;
   if v_count>=v_capacity then raise exception 'event_full' using errcode='P0001'; end if;

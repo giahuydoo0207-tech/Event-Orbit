@@ -105,8 +105,8 @@ export function EventCreate() {
         chapterId: chapterId || null
       });
 
-      showToast('Event created successfully!', 'success');
-      navigate(`/e/${newEvent.slug}`);
+      showToast('Draft event created successfully.', 'success');
+      navigate(`/manage/${encodeURIComponent(chapterId)}`);
     } catch (err) {
       console.error('Event creation failed:', err);
       showToast(err.message || 'Failed to create event. Please try again.', 'error');
@@ -415,7 +415,7 @@ export function EventCreate() {
                 disabled={submitting}
                 className="w-full py-3 bg-navy text-white text-sm font-semibold rounded hover:bg-navy-light transition-all disabled:opacity-50"
               >
-                {submitting ? 'Processing...' : 'Publish Event & Open Registrations'}
+                {submitting ? 'Processing...' : 'Save Draft Event'}
               </button>
             </div>
 

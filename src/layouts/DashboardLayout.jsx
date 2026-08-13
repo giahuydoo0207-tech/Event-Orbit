@@ -16,10 +16,15 @@ export function DashboardLayout({ children }) {
     navigate('/');
   };
 
+  const isAdmin = organizerSession?.role === 'admin';
   const isOrganizer = organizerSession?.role === 'organizer';
+  const canManageChapter = Boolean(organizerSession?.chapterId || organizerSession?.chapter_id);
 
   // Navigation Links definition
-  const navLinks = isOrganizer ? [
+  const navLinks = isAdmin ? [
+    { label: 'Admin Console', path: '/admin' },
+    ...(canManageChapter ? [{ label: 'Manage Chapters', path: '/manage' }] : []),
+  ] : isOrganizer ? [
     { label: 'Manage Chapters', path: '/manage' },
     { label: 'Explore Events', path: '/events' }
   ] : [
@@ -30,7 +35,7 @@ export function DashboardLayout({ children }) {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-oc-mist text-oc-ink font-sans">
+    <div className="flex min-h-[100dvh] overflow-hidden bg-oc-mist text-oc-ink font-sans">
       {/* Accessibility Skip Link */}
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       {/* Mobile Header Bar */}
@@ -65,7 +70,7 @@ export function DashboardLayout({ children }) {
               Event Orbit
             </Link>
             <span className="badge-kicker text-[9px] text-oc-turquoise uppercase tracking-widest font-bold block mt-1">
-              {isOrganizer ? 'Organizer Portal' : 'Student Hub'}
+              {isAdmin ? 'Admin Console' : isOrganizer ? 'Organizer Portal' : 'Student Hub'}
             </span>
           </div>
 
@@ -73,7 +78,7 @@ export function DashboardLayout({ children }) {
           <nav className="flex flex-col space-y-2">
             {navLinks.map((link) => {
               const isActive = location.pathname === link.path ||
-                (isOrganizer && link.label === 'Manage Chapters' && location.pathname.startsWith('/manage'));
+                ((isOrganizer || isAdmin) && link.label === 'Manage Chapters' && location.pathname.startsWith('/manage'));
               return (
                 <Link
                   key={link.path}

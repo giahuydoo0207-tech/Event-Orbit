@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { fetchEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
 import QRCode from 'qrcode';
-import { AttendeeImportModal } from '../components/AttendeeImportModal';
 import { StatusBadge } from '../components/StatusBadge';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
+
+const AttendeeImportModal = lazy(() =>
+  import('../components/AttendeeImportModal').then((module) => ({ default: module.AttendeeImportModal }))
+);
 
 export function EventManage() {
   const { id, chapterId } = useParams();
@@ -325,16 +328,20 @@ export function EventManage() {
       </section>
 
       {/* Attendee Import Modal */}
-      <AttendeeImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        eventId={id}
-        onSuccess={() => {
-          showToast('Imported attendees successfully!', 'success');
-          loadData();
-          loadPendingClaims();
-        }}
-      />
+      {isImportModalOpen && (
+        <Suspense fallback={null}>
+          <AttendeeImportModal
+            isOpen
+            onClose={() => setIsImportModalOpen(false)}
+            eventId={id}
+            onSuccess={() => {
+              showToast('Imported attendees successfully!', 'success');
+              loadData();
+              loadPendingClaims();
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (

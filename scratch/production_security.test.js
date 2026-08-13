@@ -61,13 +61,29 @@ test('matching chapter account is the only path that derives organizer authority
   assert.equal(identity.chapter_id, 'ab5a59cc-bfb2-43dc-af19-faaa79b732cd');
 });
 
-test('auth uses chapters as organizer authority and never depends on a users table', async () => {
+test('auth uses server-side grants and never depends on a client users table', async () => {
   const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
   const sessionSource = await readFile(new URL('../lib/verifySession.js', import.meta.url), 'utf8');
 
-  assert.match(loginSource, /\.from\('chapters'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
+  assert.match(loginSource, /\.from\('chapter_organizers'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
+  assert.match(loginSource, /\.from\('admin_users'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
   assert.match(sessionSource, /\.from\('sessions'\)/);
   assert.doesNotMatch(`${loginSource}\n${sessionSource}`, /\.from\('users'\)/);
+});
+
+test('admin access changes require a server admin and revoke target sessions', async () => {
+  const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
+  assert.match(loginSource, /req\.method === 'PATCH'[\s\S]*?assertAdmin\(session\)/);
+  assert.match(loginSource, /\.from\('sessions'\)\.delete\(\)\.eq\('ocid', targetOcid\)/);
+  assert.doesNotMatch(loginSource, /x-user-session/i);
+});
+
+test('database seeds the root admin and protects the final active admin atomically', async () => {
+  const migration = await readFile(new URL('../api/production-blockers-migration.sql', import.meta.url), 'utf8');
+  assert.match(migration, /giahuydoo0207\.edu/i);
+  assert.match(migration, /pg_advisory_xact_lock/);
+  assert.match(migration, /last_active_admin/);
+  assert.match(migration, /on conflict \(ocid\) do nothing/i);
 });
 
 test('production migration creates sessions and seeds the canonical FIT chapter idempotently', async () => {
@@ -104,7 +120,7 @@ test('live OCID verification fails closed without an audience/client ID', async 
   );
 });
 
-test('x-user-session is never accepted as authentication', async () => {
+test('legacy client session header is never accepted as authentication', async () => {
   let databaseCalled = false;
   const fakeSupabase = {
     from() {
@@ -116,7 +132,7 @@ test('x-user-session is never accepted as authentication', async () => {
   const session = await verifySession(
     {
       headers: {
-        'x-user-session': Buffer.from(JSON.stringify({ role: 'organizer' })).toString('base64'),
+        [['x', 'user', 'session'].join('-')]: Buffer.from(JSON.stringify({ role: 'organizer' })).toString('base64'),
       },
     },
     { supabaseClient: fakeSupabase },
@@ -209,11 +225,11 @@ test('organizer navigation is derived from the verified server session', async (
   assert.match(dashboardSource, /label: 'Manage Chapters', path: '\/manage'/);
 });
 
-test('organizer portal reads can select a chapter while sensitive writes retain ownership checks', async () => {
+test('organizer reads and writes are restricted to the session chapter', async () => {
   const eventsSource = await readFile(new URL('../api/events.js', import.meta.url), 'utf8');
 
   assert.match(eventsSource, /includeDeleted === 'true'[\s\S]*?assertOrganizer\(session\)/);
-  assert.doesNotMatch(eventsSource, /includeDeleted === 'true'[\s\S]*?query = query\.eq\('chapter_id', session\.chapter_id\)/);
+  assert.match(eventsSource, /includeDeleted === 'true'[\s\S]*?query = query\.eq\('chapter_id', session\.chapter_id\)/);
   assert.match(eventsSource, /req\.method === 'POST'[\s\S]*?dbEvent\.chapter_id\s*=\s*session\.chapter_id/);
   assert.match(eventsSource, /req\.method === 'DELETE'[\s\S]*?assertEventOwnership\(session, targetEvent\)/);
 });

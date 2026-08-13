@@ -29,13 +29,14 @@ export default async function handler(req, res) {
 
     const { data: event, error: eventError } = await supabase
       .from('events')
-      .select('id, chapter_id')
+      .select('id, chapter_id, status')
       .eq('id', eventId)
       .is('deleted_at', null)
       .maybeSingle();
 
     if (eventError) throw eventError;
     if (!event) return res.status(404).json({ error: 'Event not found.' });
+    if (event.status !== 'published') return res.status(409).json({ error: 'QR check-in is only available for published events.' });
     try {
       assertEventOwnership(session, event);
     } catch (error) {

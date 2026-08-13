@@ -30,6 +30,12 @@ create table events (
   visibility text default 'Public',
   cover_image text,
   deleted_at timestamptz default null,
+  status text not null default 'draft' check (status in ('draft','pending_review','rejected','approved','published','archived')),
+  reviewed_by text,
+  reviewed_at timestamptz,
+  rejection_reason text,
+  published_at timestamptz,
+  submitted_by text,
   created_at timestamptz default now()
 );
 
@@ -76,10 +82,44 @@ create table chapter_follows (
 -- 6. Bảng Sessions (Quản lý phiên đăng nhập, hỗ trợ lưu eth_address để relayer mint SBT)
 -- Organizer authority is derived server-side from chapters.ocid. Unmatched
 -- verified OCID identities are students; no users table is required.
+create table chapter_organizers (
+  chapter_id uuid references chapters(id) on delete cascade not null,
+  ocid text not null,
+  role text not null default 'organizer' check (role = 'organizer'),
+  status text not null default 'active' check (status in ('active','revoked','pending')),
+  created_at timestamptz default now(),
+  primary key (chapter_id, ocid)
+);
+
+create table admin_users (
+  ocid text primary key,
+  status text not null default 'active' check (status in ('active','revoked')),
+  created_at timestamptz default now()
+);
+insert into admin_users (ocid, status) values ('giahuydoo0207.edu', 'active')
+on conflict (ocid) do nothing;
+
+create or replace function manage_admin_access(p_actor_ocid text, p_target_ocid text, p_action text)
+returns void language plpgsql security definer set search_path=public as $$
+declare v_active_count bigint;
+begin
+  if not exists (select 1 from admin_users where ocid=p_actor_ocid and status='active') then raise exception 'admin_required'; end if;
+  if p_action in ('grant','reactivate') then
+    insert into admin_users (ocid,status) values (p_target_ocid,'active') on conflict (ocid) do update set status='active';
+  elsif p_action='revoke' then
+    perform pg_advisory_xact_lock(hashtext('event_orbit_admin_guard'));
+    select count(*) into v_active_count from admin_users where status='active';
+    if v_active_count <= 1 then raise exception 'last_active_admin'; end if;
+    update admin_users set status='revoked' where ocid=p_target_ocid;
+  else raise exception 'invalid_action'; end if;
+end; $$;
+revoke all on function manage_admin_access(text,text,text) from public,anon,authenticated;
+grant execute on function manage_admin_access(text,text,text) to service_role;
+
 create table sessions (
   token text primary key,
   user_id text not null,
-  role text not null check (role in ('student', 'organizer')),
+  role text not null check (role in ('student', 'organizer', 'admin')),
   chapter_id uuid references chapters(id),
   ocid text,
   mssv text,
@@ -133,6 +173,8 @@ alter table achievements enable row level security;
 alter table chapter_follows enable row level security;
 alter table pending_claims enable row level security;
 alter table sessions enable row level security;
+alter table chapter_organizers enable row level security;
+alter table admin_users enable row level security;
 
 -- Quyền select công khai chỉ cho Events và Chapters (không chứa dữ liệu nhạy cảm)
 create policy "Public read events" on events for select using (true);
@@ -163,7 +205,7 @@ declare
 begin
   select * into v_event
   from events
-  where id = p_event_id and deleted_at is null;
+  where id = p_event_id and deleted_at is null and status = 'published';
 
   if not found then
     raise exception 'event_not_found' using errcode = 'P0002';
@@ -223,7 +265,7 @@ begin
 
   if not found then return; end if;
 
-  select * into v_event from events where id = v_claim.event_id and deleted_at is null;
+  select * into v_event from events where id = v_claim.event_id and deleted_at is null and status = 'published';
   if not found then
     raise exception 'event_not_found' using errcode = 'P0002';
   end if;
@@ -299,7 +341,7 @@ declare
   v_registered_at timestamptz;
 begin
   select capacity into v_capacity from events
-  where id = p_event_id and deleted_at is null
+  where id = p_event_id and deleted_at is null and status = 'published'
   for update;
   if not found then raise exception 'event_not_found' using errcode = 'P0002'; end if;
 

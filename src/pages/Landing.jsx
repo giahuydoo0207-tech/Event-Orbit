@@ -1,7 +1,11 @@
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
-import { CredentialOrb } from '../components/CredentialOrb';
+
+const CredentialOrb = lazy(() =>
+  import('../components/CredentialOrb').then((module) => ({ default: module.CredentialOrb }))
+);
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -17,6 +21,18 @@ function StatCounter({ value, label, suffix = '' }) {
 
 export function Landing() {
   const containerRef = useScrollReveal();
+  const [showCredentialOrb, setShowCredentialOrb] = useState(false);
+
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 768px)').matches) return undefined;
+    const showOrb = () => setShowCredentialOrb(true);
+    if ('requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(showOrb, { timeout: 1500 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timeoutId = window.setTimeout(showOrb, 750);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const valueProps = [
     {
@@ -97,7 +113,11 @@ export function Landing() {
 
             {/* Right Column: Three.js Credential Orb */}
             <div className="hero-enter hero-enter-globe hidden h-[420px] items-center justify-center py-4 md:flex lg:col-span-5 lg:h-[500px] lg:px-4 lg:py-0">
-              <CredentialOrb className="relative max-w-[400px] lg:-translate-x-4 lg:-translate-y-4 xl:max-w-[430px]" />
+              <Suspense fallback={<div className="h-full w-full" aria-hidden="true" />}>
+                {showCredentialOrb && (
+                  <CredentialOrb className="relative max-w-[400px] lg:-translate-x-4 lg:-translate-y-4 xl:max-w-[430px]" />
+                )}
+              </Suspense>
             </div>
 
           </div>

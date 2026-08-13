@@ -8,6 +8,186 @@ import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../li
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const LUMA_API_ORIGIN = 'https://public-api.luma.com';
+const MAX_IMPORT_ROWS = 500;
+
+export function parseLumaEventIdentifier(input) {
+  const value = String(input || '').trim();
+  if (!value || value.length > 300) return null;
+
+  if (/^[a-zA-Z0-9_-]{3,100}$/.test(value)) return value;
+
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || !['luma.com', 'www.luma.com'].includes(url.hostname.toLowerCase())) return null;
+    const parts = url.pathname.split('/').filter(Boolean);
+    const identifier = parts.at(-1);
+    return identifier && /^[a-zA-Z0-9_-]{3,100}$/.test(identifier) ? identifier : null;
+  } catch {
+    return null;
+  }
+}
+
+function findMssv(guest) {
+  const direct = guest.mssv || guest.student_id || guest.studentId;
+  if (typeof direct === 'string' || typeof direct === 'number') return String(direct).trim();
+
+  const answers = guest.registration_answers || guest.registrationAnswers || guest.answers || [];
+  if (!Array.isArray(answers)) return '';
+  const answer = answers.find((item) => /\bmssv\b|student[\s_-]*id|m[aã]\s*sinh\s*vi[eê]n/i.test(String(item?.label || item?.question || '').trim()));
+  const value = answer?.value ?? answer?.answer;
+  return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+}
+
+export function normalizeLumaGuest(entry) {
+  const guest = entry?.guest || entry?.user || entry?.person || entry || {};
+  return {
+    name: String(guest.user_name || guest.name || guest.full_name || guest.fullName || '').trim().slice(0, 200),
+    email: String(guest.user_email || guest.email || '').trim().toLowerCase().slice(0, 320),
+    mssv: findMssv(guest).slice(0, 64)
+  };
+}
+
+async function selectInBatches(table, columns, filterColumn, values, eventId) {
+  if (!values.length) return [];
+  const batches = [];
+  for (let index = 0; index < values.length; index += 50) {
+    let query = supabase.from(table).select(columns);
+    if (eventId) query = query.eq('event_id', eventId);
+    batches.push(query.in(filterColumn, values.slice(index, index + 50)));
+  }
+  const results = await Promise.all(batches);
+  if (results.some((result) => result.error)) {
+    throw new Error('Unable to classify attendee preview.');
+  }
+  return results.flatMap((result) => result.data || []);
+}
+
+export async function fetchLumaGuests(lumaEvent) {
+  const apiKey = process.env.LUMA_API_KEY;
+  if (!apiKey) {
+    const error = new Error('Luma integration is not configured.');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  let identifier = parseLumaEventIdentifier(lumaEvent);
+  if (!identifier) {
+    const error = new Error('Enter a valid Luma event URL or event ID.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!identifier.startsWith('evt-')) {
+    const lookupUrl = new URL('/v1/entity/lookup', LUMA_API_ORIGIN);
+    lookupUrl.searchParams.set('slug', identifier);
+    const lookupResponse = await fetch(lookupUrl, {
+      headers: { accept: 'application/json', 'x-luma-api-key': apiKey },
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!lookupResponse.ok) {
+      const error = new Error('Luma event not found or not accessible.');
+      error.statusCode = lookupResponse.status === 404 ? 404 : 502;
+      throw error;
+    }
+    const lookup = await lookupResponse.json();
+    identifier = String(lookup.event?.api_id || lookup.event?.id || lookup.entity?.api_id || lookup.entity?.id || lookup.api_id || lookup.id || '');
+    if (!identifier.startsWith('evt-')) {
+      const error = new Error('The Luma URL does not resolve to an event.');
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  const guests = [];
+  let cursor = '';
+  do {
+    const url = new URL('/v1/events/guests/list', LUMA_API_ORIGIN);
+    url.searchParams.set('event_id', identifier);
+    url.searchParams.set('pagination_limit', '100');
+    if (cursor) url.searchParams.set('pagination_cursor', cursor);
+
+    const response = await fetch(url, {
+      headers: { accept: 'application/json', 'x-luma-api-key': apiKey },
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000)
+    });
+    if (!response.ok) {
+      const error = new Error(response.status === 404 ? 'Luma event not found or not accessible.' : 'Unable to retrieve attendees from Luma.');
+      error.statusCode = response.status === 404 ? 404 : 502;
+      throw error;
+    }
+
+    const payload = await response.json();
+    const page = payload.entries || payload.guests || payload.data || [];
+    if (!Array.isArray(page)) {
+      const error = new Error('Luma returned an unsupported attendee response.');
+      error.statusCode = 502;
+      throw error;
+    }
+    guests.push(...page.slice(0, MAX_IMPORT_ROWS - guests.length).map(normalizeLumaGuest));
+    cursor = guests.length < MAX_IMPORT_ROWS ? String(payload.next_cursor || payload.nextCursor || '') : '';
+  } while (cursor);
+
+  return guests;
+}
+
+async function classifyPreviewAttendees(attendees, eventId) {
+  const seen = new Set();
+  const rows = attendees.map((attendee) => {
+    const row = { name: attendee.name || '', email: attendee.email || '', mssv: attendee.mssv || '' };
+    if ((!row.mssv && !row.email) || (!row.name && !row.email)) {
+      return { ...row, status: 'invalid', reason: 'Missing required name/email or student identifier.' };
+    }
+    const key = row.mssv ? `mssv:${row.mssv}` : `email:${row.email}`;
+    if (seen.has(key)) return { ...row, status: 'invalid', reason: 'Duplicate attendee in Luma response.' };
+    seen.add(key);
+    return row;
+  });
+
+  const candidates = rows.filter((row) => !row.status);
+  const mssvs = [...new Set(candidates.map((row) => row.mssv).filter(Boolean))];
+  const emails = [...new Set(candidates.map((row) => row.email).filter(Boolean))];
+  const [sessionsByMssv, sessionsByOcid, registrationsByMssv, claimsByMssv, claimsByEmail] = await Promise.all([
+    selectInBatches('sessions', 'user_id, ocid, mssv', 'mssv', mssvs),
+    selectInBatches('sessions', 'user_id, ocid, mssv', 'ocid', emails),
+    selectInBatches('registrations', 'user_id, ocid, mssv', 'mssv', mssvs),
+    selectInBatches('pending_claims', 'import_mssv, status', 'import_mssv', mssvs, eventId),
+    selectInBatches('pending_claims', 'import_email, status', 'import_email', emails, eventId)
+  ]);
+
+  const studentsByMssv = new Map();
+  for (const student of [...registrationsByMssv, ...sessionsByMssv]) {
+    if (student.mssv) studentsByMssv.set(student.mssv, student);
+  }
+  const studentsByEmail = new Map(sessionsByOcid.map((student) => [String(student.ocid || '').toLowerCase(), student]));
+  const matchedByRow = new Map();
+  for (const row of candidates) {
+    matchedByRow.set(row, studentsByMssv.get(row.mssv) || studentsByEmail.get(row.email) || null);
+  }
+
+  const userIds = [...new Set([...matchedByRow.values()].filter(Boolean).map((student) => student.user_id || student.ocid || student.mssv))];
+  const achievements = await selectInBatches('achievements', 'user_id', 'user_id', userIds, eventId);
+  const issuedUserIds = new Set(achievements.map((achievement) => achievement.user_id));
+  const claimsByIdentifier = new Map([
+    ...claimsByMssv.map((claim) => [`mssv:${claim.import_mssv}`, claim.status]),
+    ...claimsByEmail.map((claim) => [`email:${claim.import_email}`, claim.status])
+  ]);
+
+  return rows.map((row) => {
+    if (row.status) return row;
+    const matchedStudent = matchedByRow.get(row);
+    if (matchedStudent) {
+      const userId = matchedStudent.user_id || matchedStudent.ocid || matchedStudent.mssv;
+      const alreadyIssued = issuedUserIds.has(userId);
+      return { ...row, status: alreadyIssued ? 'already_issued' : 'matched_existing', reason: alreadyIssued ? 'Badge already issued previously.' : 'Matched an existing OCID/student account.' };
+    }
+    const claimStatus = claimsByIdentifier.get(row.mssv ? `mssv:${row.mssv}` : `email:${row.email}`);
+    const alreadyIssued = claimStatus === 'claimed';
+    return { ...row, status: alreadyIssued ? 'already_issued' : 'unmatched', reason: alreadyIssued ? 'Badge already claimed previously.' : 'A claim link will be created after Confirm Import.' };
+  });
+}
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -46,12 +226,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { eventId, attendees } = req.body;
+    const { eventId, attendees, mode, lumaEvent } = req.body || {};
 
-    if (!eventId || !Array.isArray(attendees)) {
+    if (!eventId || (mode !== 'luma-preview' && !Array.isArray(attendees))) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
     }
-    if (attendees.length === 0 || attendees.length > 500) {
+    if (mode !== 'luma-preview' && (attendees.length === 0 || attendees.length > MAX_IMPORT_ROWS)) {
       return res.status(400).json({ error: 'Each import batch must contain between 1 and 500 attendees.' });
     }
 
@@ -88,6 +268,16 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: error.message });
       }
       throw error;
+    }
+
+    if (mode === 'luma-preview') {
+      const lumaAttendees = await fetchLumaGuests(lumaEvent);
+      const preview = await classifyPreviewAttendees(lumaAttendees, event.id);
+      const summary = preview.reduce((counts, attendee) => {
+        counts[attendee.status] = (counts[attendee.status] || 0) + 1;
+        return counts;
+      }, { matched_existing: 0, already_issued: 0, unmatched: 0, invalid: 0 });
+      return res.status(200).json({ ok: true, source: 'luma', attendees: preview, summary });
     }
 
     const issuedList = [];
@@ -292,7 +482,7 @@ export default async function handler(req, res) {
           mocked = relayerResult.mocked;
           mintStatus = 'success';
         } catch (mintErr) {
-          console.error(`Relayer minting failed for ${userId}:`, mintErr);
+          console.error('Relayer minting failed during attendee import:', mintErr?.name || 'Error');
           txHash = null;
           mintStatus = 'failed';
         }
@@ -347,7 +537,7 @@ export default async function handler(req, res) {
       batchClaimUrl
     });
   } catch (error) {
-    console.error('Import Attendees API Error:', error);
-    return res.status(500).json({ error: error.message || 'Internal Server Error during attendee import.' });
+    console.error('Import Attendees API failed:', error?.name || 'Error');
+    return res.status(error.statusCode || 500).json({ error: error.message || 'Internal Server Error during attendee import.' });
   }
 }

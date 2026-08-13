@@ -2,14 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { mapEventDbToClient, mapEventClientToDb } from '../lib/mappers.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
-import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
+import { AuthorizationError, assertAdmin, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
+import { getEventTransition } from '../lib/eventWorkflow.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
@@ -20,12 +21,19 @@ export default async function handler(req, res) {
   try {
     // ── GET: Fetch events list ──
     if (req.method === 'GET') {
-      const { includeDeleted, chapterId } = req.query;
+      const { includeDeleted, chapterId, reviewQueue } = req.query;
       let query = supabase
         .from('events')
         .select('*, chapters(*)');
 
-      if (includeDeleted === 'true') {
+      if (reviewQueue === 'true') {
+        const session = await verifySession(req);
+        try { assertAdmin(session); } catch (error) {
+          if (error instanceof AuthorizationError) return res.status(403).json({ error: error.message });
+          throw error;
+        }
+        query = query.in('status', ['draft', 'pending_review', 'approved', 'rejected', 'published']).is('deleted_at', null);
+      } else if (includeDeleted === 'true') {
         const session = await verifySession(req);
         try {
           assertOrganizer(session);
@@ -35,8 +43,9 @@ export default async function handler(req, res) {
           }
           throw error;
         }
+        query = query.eq('chapter_id', session.chapter_id);
       } else {
-        query = query.is('deleted_at', null);
+        query = query.is('deleted_at', null).eq('status', 'published');
       }
 
       // Filter by chapterId if specified
@@ -85,6 +94,8 @@ export default async function handler(req, res) {
       // Ensure valid chapter_id resolution for Postgres foreign key
       const dbEvent = mapEventClientToDb(clientEvent);
       dbEvent.chapter_id = session.chapter_id;
+      dbEvent.status = 'draft';
+      dbEvent.submitted_by = session.ocid;
       
       // Auto-generate slug if not provided
       if (!dbEvent.slug) {
@@ -109,6 +120,32 @@ export default async function handler(req, res) {
       }
 
       return res.status(201).json(mapEventDbToClient(data));
+    }
+
+    if (req.method === 'PATCH') {
+      const session = await verifySession(req);
+      if (!session) return res.status(401).json({ error: 'Authentication required.' });
+      const { eventId, action, reason } = req.body || {};
+      if (!eventId || !['submit', 'approve', 'reject', 'publish'].includes(action)) {
+        return res.status(400).json({ error: 'A valid eventId and action are required.' });
+      }
+      const { data: event, error: findError } = await supabase
+        .from('events').select('id, chapter_id, status').eq('id', eventId).maybeSingle();
+      if (findError) throw findError;
+      if (!event) return res.status(404).json({ error: 'Event not found.' });
+      try {
+        if (action === 'submit') assertEventOwnership(session, event);
+        else assertAdmin(session);
+        const changes = getEventTransition(event.status, action, session.role, reason);
+        if (session.role === 'admin' && ['approve', 'reject'].includes(action)) changes.reviewed_by = session.ocid;
+        const { data, error } = await supabase.from('events').update(changes).eq('id', event.id)
+          .eq('status', event.status).select('*, chapters(*)').single();
+        if (error) throw error;
+        return res.status(200).json(mapEventDbToClient(data));
+      } catch (error) {
+        if (error instanceof AuthorizationError) return res.status(403).json({ error: error.message });
+        return res.status(409).json({ error: error.message });
+      }
     }
 
     // ── DELETE: Soft-delete event ──

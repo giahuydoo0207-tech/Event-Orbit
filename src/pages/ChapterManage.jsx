@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { fetchOrganizerEvents, fetchChapterById } from '../api/mockApi';
-import { AttendeeImportModal } from '../components/AttendeeImportModal';
+import { fetchOrganizerEvents, fetchChapterById, transitionEventApi } from '../api/mockApi';
 import { CategoryIcon } from '../components/CategoryIcon';
 import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
+
+const AttendeeImportModal = lazy(() =>
+  import('../components/AttendeeImportModal').then((module) => ({ default: module.AttendeeImportModal }))
+);
 
 export function ChapterManage() {
   const { chapterId } = useParams();
@@ -335,6 +338,8 @@ export function ChapterManage() {
 
                       {/* Lighter status indicators — subtle tint, no border */}
                       <td className="py-4 pr-4 whitespace-nowrap">
+                        <span className="font-mono text-[10px] font-bold uppercase text-oc-blue">{event.status?.replace('_', ' ') || 'draft'}</span>
+                        {' '}
                         {status === 'upcoming' && (
                           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-extrabold uppercase text-oc-blue tracking-wider">
                             <span className="w-1.5 h-1.5 rounded-full bg-oc-blue" />
@@ -362,6 +367,9 @@ export function ChapterManage() {
                       </td>
 
                       <td className="py-4 text-right whitespace-nowrap">
+                        {isOwnedChapter && ['draft', 'rejected'].includes(event.status) && (
+                          <button onClick={async () => { try { await transitionEventApi(event.id, 'submit'); await loadData(); } catch (error) { console.error('Submit for review failed:', error); } }} className="mr-3 text-xs font-bold text-oc-blue hover:underline">Submit for review</button>
+                        )}
                         {status !== 'deleted' && isOwnedChapter ? (
                           <Link
                             to={`/manage/${encodeURIComponent(chapterId)}/events/${event.id}`}
@@ -385,14 +393,16 @@ export function ChapterManage() {
       </div>
 
       {/* Attendee Import Modal */}
-      {isOwnedChapter && (
-        <AttendeeImportModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          events={allEvents.filter(e => !e.deletedAt)}
-          chapterId={ownedChapterId}
-          onImportSuccess={() => loadData()}
-        />
+      {isOwnedChapter && isImportModalOpen && (
+        <Suspense fallback={null}>
+          <AttendeeImportModal
+            isOpen
+            onClose={() => setIsImportModalOpen(false)}
+            events={allEvents.filter(e => !e.deletedAt)}
+            chapterId={ownedChapterId}
+            onImportSuccess={() => loadData()}
+          />
+        </Suspense>
       )}
     </div>
   );

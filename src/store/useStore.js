@@ -1,23 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { DEMO_ACCOUNTS } from '../api/mockData';
-
-const LOCAL_USER_KEY = 'orbit_user_session';
-
 const getInitialUser = () => {
-  try {
-    const saved = localStorage.getItem(LOCAL_USER_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Migrate followedOrgIds to followedChapterIds if needed
-      if (parsed && !parsed.followedChapterIds) {
-        parsed.followedChapterIds = parsed.followedOrgIds || [];
-      }
-      return parsed;
-    }
-  } catch (e) {
-    console.error('Failed to load user session', e);
-  }
   return {
     isAuthenticated: false,
     method: null,
@@ -41,54 +24,14 @@ export const useStore = create(
 
       setUser: (userData) => set((state) => {
         const newUser = { ...state.user, ...userData };
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
         return { user: newUser };
       }),
 
-      loginAsDemo: (role) => set((state) => {
-        const account = DEMO_ACCOUNTS[role];
-        const newUser = {
-          ...state.user,
-          isAuthenticated: true,
-          method: 'mssv',
-          mssv: account.mssv,
-          ocid: account.ocid,
-          fullName: account.fullName,
-          role: account.role,
-          chapterId: account.chapterId || null,
-          email: `${account.mssv.toLowerCase()}@opencampus.org`,
-          ethAddress: account.ethAddress || null,
-          // Reset followedChapterIds on role switch to avoid mixing demo data
-          followedChapterIds: account.role === 'student'
-            ? ['ab5a59cc-bfb2-43dc-af19-faaa79b732cd']
-            : [],
-        };
-
-        // Call backend to establish session cookie in background
-        fetch('/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            ocid: account.ocid || null,
-            mssv: account.mssv,
-            fullName: account.fullName,
-            role: account.role,
-            chapterId: account.chapterId || null,
-            ethAddress: account.ethAddress || null
-          })
-        }).catch(err => console.error('Demo login session sync failed:', err));
-
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(newUser));
-        return { user: newUser };
-      }),
-
-      logout: () => {
+      logout: ({ skipRequest = false } = {}) => {
         // Clear session on backend in background
-        fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(err => console.error('Backend logout failed:', err));
+        if (!skipRequest) fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(err => console.error('Backend logout failed:', err));
 
         set(() => {
-          localStorage.removeItem(LOCAL_USER_KEY);
           return {
             user: {
               isAuthenticated: false,
@@ -112,7 +55,6 @@ export const useStore = create(
         if (followed.includes(chapterId)) return {};
         const updatedFollowed = [...followed, chapterId];
         const updatedUser = { ...state.user, followedChapterIds: updatedFollowed };
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updatedUser));
         return { user: updatedUser };
       }),
 
@@ -120,7 +62,6 @@ export const useStore = create(
         const followed = state.user.followedChapterIds || [];
         const updatedFollowed = followed.filter(id => id !== chapterId);
         const updatedUser = { ...state.user, followedChapterIds: updatedFollowed };
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(updatedUser));
         return { user: updatedUser };
       }),
 
@@ -164,9 +105,9 @@ export const useStore = create(
     {
       name: 'eduai-orbit-session', // key in localStorage
       storage: createJSONStorage(() => localStorage),
-      // Only persist user session & events, ignore transient state
+      // Authentication is server-owned. Persist preferences and public event cache only.
       partialize: (state) => ({
-        user: state.user,
+        user: { ...getInitialUser(), followedChapterIds: state.user.followedChapterIds },
         events: state.events,
       }),
     }

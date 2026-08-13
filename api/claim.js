@@ -86,8 +86,9 @@ async function handleGetClaimInfo(req, res) {
     // Fetch event details
     const { data: event } = await supabase
       .from('events')
-      .select('id, name, points, datetime, location, chapter_id')
+      .select('id, name, points, datetime, location, chapter_id, status')
       .eq('id', claim.event_id)
+      .eq('status', 'published')
       .maybeSingle();
 
     // Fetch chapter name if available
@@ -300,7 +301,7 @@ async function handlePostClaim(req, res) {
         mocked = relayerResult.mocked;
         mintStatus = 'success';
       } catch (mintErr) {
-        console.error(`[Claim] Relayer minting failed for ${userId}:`, mintErr);
+        console.error('[Claim] Relayer minting failed:', mintErr?.name || 'Error');
         txHash = null;
         mintStatus = 'failed';
       }
@@ -349,7 +350,7 @@ async function handlePostClaim(req, res) {
       console.error('[Claim] Session persist failed (non-blocking):', sessionErr);
     }
 
-    console.log(`[Claim] Badge claimed successfully: user=${userId}, event=${reservation.event_id}, txHash=${txHash}`);
+    console.log('[Claim] Badge claim completed.');
 
     return res.status(200).json({
       ok: true,

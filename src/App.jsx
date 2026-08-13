@@ -28,6 +28,7 @@ const EventManage = lazy(() => import('./pages/EventManage'));
 const EventHistory = lazy(() => import('./pages/EventHistory'));
 const StudentCheckin = lazy(() => import('./pages/StudentCheckin'));
 const ClaimBadge = lazy(() => import('./pages/ClaimBadge'));
+const AdminReview = lazy(() => import('./pages/AdminReview'));
 
 function App() {
   return (
@@ -63,6 +64,10 @@ function App() {
             <Route path="/my-events" element={<MyEvents />} />
             <Route path="/dashboard" element={<DashboardStudent />} />
             <Route path="/following" element={<Following />} />
+          </Route>
+
+          <Route element={<ProtectedRoute requireRole="admin"><DashboardLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<AdminReview />} />
           </Route>
 
           {/* ── Organizer Protected Routes (Shared Persistent DashboardLayout) ── */}

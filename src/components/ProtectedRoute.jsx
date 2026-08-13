@@ -9,10 +9,9 @@ export function ProtectedRoute({ children, requireRole }) {
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
   const [serverSession, setServerSession] = useState(null);
-  const [checkingSession, setCheckingSession] = useState(Boolean(requireRole));
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    if (!requireRole) return undefined;
     let active = true;
     fetchServerSession()
       .then((verifiedUser) => {
@@ -29,13 +28,13 @@ export function ProtectedRoute({ children, requireRole }) {
     return () => { active = false; };
   }, [requireRole, setUser]);
 
-  if (requireRole) {
-    if (checkingSession) {
+  if (checkingSession) {
       return <div className="py-24"><LoadingBar className="max-w-[140px] mx-auto" /></div>;
-    }
+  }
+  if (requireRole) {
     if (!serverSession) return <Navigate to="/login" replace />;
-    if (serverSession.role !== requireRole) {
-      return <Navigate to={serverSession.role === 'student' ? '/dashboard' : '/login'} replace />;
+    if (serverSession.role !== requireRole && !(serverSession.role === 'admin' && requireRole === 'organizer' && serverSession.chapterId)) {
+      return <Navigate to={serverSession.role === 'student' ? '/dashboard' : serverSession.role === 'admin' ? '/admin' : '/manage'} replace />;
     }
     return (
       <OrganizerSessionProvider session={serverSession}>
@@ -44,7 +43,7 @@ export function ProtectedRoute({ children, requireRole }) {
     );
   }
 
-  if (!user.isAuthenticated) {
+  if (!serverSession || !user.isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

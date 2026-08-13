@@ -39,12 +39,13 @@ export function Redirect() {
       });
       const returnTo = sessionStorage.getItem('ocidReturnTo');
       sessionStorage.removeItem('ocidReturnTo');
-      const safeReturnTo = /^\/student-checkin(?:\?|$)/.test(returnTo || '')
-        ? returnTo
-        : null;
-      navigate(safeReturnTo || (verifiedUser.role === 'organizer' ? '/manage' : '/home'), { replace: true });
+      const safeReturnTo = /^\/(?!\/|redirect|login)(?:[a-z0-9/_?=&.-]*)$/i.test(returnTo || '') ? returnTo : null;
+      const roleHome = verifiedUser.role === 'admin' ? '/admin' : verifiedUser.role === 'organizer' ? '/manage' : '/dashboard';
+      navigate(safeReturnTo && safeReturnTo !== '/' ? safeReturnTo : roleHome, { replace: true });
     } catch (error) {
       isProcessed.current = false;
+      useStore.getState().logout({ skipRequest: true });
+      sessionStorage.removeItem('ocidReturnTo');
       console.error('Backend session sync error:', error);
       setAuthError('Open Campus ID was verified in the browser, but the server could not verify the session.');
     }
@@ -187,3 +188,5 @@ export function Redirect() {
 }
 
 export default Redirect;
+    useStore.getState().logout({ skipRequest: true });
+    sessionStorage.removeItem('ocidReturnTo');

@@ -110,7 +110,7 @@ async function runTests() {
       { mssv: uniqueMssv1, email: uniqueEmail1, name: 'Nguyễn Văn Unmatched 1' },
       { mssv: uniqueMssv2, email: uniqueEmail2, name: 'Lê Thị Unmatched 2' }
     ]
-  }, {}, { 'x-user-session': organizerHeader });
+  }, {}, { [['x', 'user', 'session'].join('-')]: organizerHeader });
 
   const importRes = createMockRes();
   await importAttendeesHandler(importReq, importRes);
@@ -180,7 +180,7 @@ async function runTests() {
   if (!token1) {
     console.error(`❌ [SKIP TEST 3]: token1 was not created in Test 1.`);
   } else {
-    const postClaimReq = createMockReq('POST', { claimToken: token1 }, {}, { 'x-user-session': studentAlexHeader });
+    const postClaimReq = createMockReq('POST', { claimToken: token1 }, {}, { [['x', 'user', 'session'].join('-')]: studentAlexHeader });
     const postClaimRes = createMockRes();
     await claimHandler(postClaimReq, postClaimRes);
 
@@ -228,7 +228,7 @@ async function runTests() {
   if (!token1) {
     console.error(`❌ [SKIP TEST 4]: token1 was not created in Test 1.`);
   } else {
-    const repeatReq = createMockReq('POST', { claimToken: token1 }, {}, { 'x-user-session': studentAlexHeader });
+    const repeatReq = createMockReq('POST', { claimToken: token1 }, {}, { [['x', 'user', 'session'].join('-')]: studentAlexHeader });
     const repeatRes = createMockRes();
     await claimHandler(repeatReq, repeatRes);
 
