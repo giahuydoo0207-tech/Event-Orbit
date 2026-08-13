@@ -3,6 +3,7 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import checkinHandler from '../api/checkin.js';
 import achievementsHandler from '../api/achievements.js';
+import registrationsHandler from '../api/registrations.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 const testUserId = `codex-checkin-${Date.now()}.edu`;
@@ -84,6 +85,18 @@ try {
   if (registrationError) throw registrationError;
   assert.ok(registration, 'Successful walk-in check-in must persist a registration');
   assert.equal(registration.source, 'qr_checkin');
+
+  const myEventsResponse = responseCapture();
+  await registrationsHandler({
+    method: 'GET',
+    headers: authenticatedHeaders(),
+    query: { mine: '1' },
+  }, myEventsResponse);
+  assert.equal(myEventsResponse.statusCode, 200, JSON.stringify(myEventsResponse.body));
+  const checkedInEvent = myEventsResponse.body.find((row) => row.eventId === event.id);
+  assert.ok(checkedInEvent, 'QR check-in event must appear in My Events history');
+  assert.equal(checkedInEvent.checkedIn, true);
+  assert.equal(checkedInEvent.source, 'qr_checkin');
 
   const dashboardResponse = responseCapture();
   await achievementsHandler({

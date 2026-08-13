@@ -1,11 +1,6 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
-
-const CredentialOrb = lazy(() =>
-  import('../components/CredentialOrb').then((module) => ({ default: module.CredentialOrb }))
-);
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -21,18 +16,6 @@ function StatCounter({ value, label, suffix = '' }) {
 
 export function Landing() {
   const containerRef = useScrollReveal();
-  const [showCredentialOrb, setShowCredentialOrb] = useState(false);
-
-  useEffect(() => {
-    if (!window.matchMedia('(min-width: 768px)').matches) return undefined;
-    const showOrb = () => setShowCredentialOrb(true);
-    if ('requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(showOrb, { timeout: 1500 });
-      return () => window.cancelIdleCallback(idleId);
-    }
-    const timeoutId = window.setTimeout(showOrb, 750);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
 
   const valueProps = [
     {
@@ -68,11 +51,11 @@ export function Landing() {
           }}
         />
 
-        <div className="relative mx-auto max-w-6xl">
+        <div className="relative mx-auto max-w-7xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             
             {/* Left Column: Copy & CTA */}
-            <div className="lg:col-span-7 text-center lg:text-left space-y-6">
+            <div className="lg:col-span-6 text-center lg:text-left space-y-6">
               {/* Kicker Badge */}
               <div className="hero-enter hero-enter-badge inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20">
                 <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
@@ -111,13 +94,17 @@ export function Landing() {
               </div>
             </div>
 
-            {/* Right Column: Three.js Credential Orb */}
-            <div className="hero-enter hero-enter-globe hidden h-[420px] items-center justify-center py-4 md:flex lg:col-span-5 lg:h-[500px] lg:px-4 lg:py-0">
-              <Suspense fallback={<div className="h-full w-full" aria-hidden="true" />}>
-                {showCredentialOrb && (
-                  <CredentialOrb className="relative max-w-[400px] lg:-translate-x-4 lg:-translate-y-4 xl:max-w-[430px]" />
-                )}
-              </Suspense>
+            {/* Right Column: Campus club illustration */}
+            <div className="hero-enter hero-enter-globe hidden min-w-0 items-center justify-center py-4 md:flex lg:col-span-6 lg:-translate-x-4 lg:-translate-y-2 lg:py-0 xl:-translate-x-6">
+              <img
+                src="/hero-event-orbit-campus.webp"
+                alt="Students attending an Event Orbit campus session"
+                width="1514"
+                height="1039"
+                decoding="async"
+                fetchPriority="high"
+                className="h-auto max-h-[480px] w-full max-w-[620px] object-contain xl:max-h-[520px] xl:max-w-[700px]"
+              />
             </div>
 
           </div>

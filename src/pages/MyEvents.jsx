@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchEvents, fetchRegistrationsByUser } from '../api/mockApi';
+import { fetchEvents, fetchMyEventRegistrations } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 
@@ -37,7 +37,7 @@ export function MyEvents() {
       try {
         const [allEvents, registrations] = await Promise.all([
           fetchEvents(),
-          fetchRegistrationsByUser(user.id),
+          fetchMyEventRegistrations(),
         ]);
 
         const regIds = registrations.map((r) => r.eventId);
@@ -50,7 +50,7 @@ export function MyEvents() {
       }
     }
     load();
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated]);
 
   const myEvents = useMemo(() => {
     if (!registeredEventIds.length) return [];

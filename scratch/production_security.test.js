@@ -336,7 +336,9 @@ test('QR nonce uniqueness is scoped to each authenticated student', async () => 
 test('registrations never exposes an unfiltered attendee list', async () => {
   const source = await readFile(new URL('../api/registrations.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /Case 3:[\s\S]*?\.from\('badge_recipients_view'\)[\s\S]*?\.select\('\*'\)/);
-  assert.match(source, /An eventId or userId filter is required/);
+  assert.match(source, /An eventId or mine filter is required/);
+  assert.match(source, /mine\s*===\s*'1'[\s\S]*?\.eq\('user_id',\s*session\.user_id\)/);
+  assert.doesNotMatch(source, /registrations\?userId=/);
 });
 
 test('client-supplied capacity is not read by the registration endpoint', async () => {

@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { eventId, userId } = req.query;
+      const { eventId, mine } = req.query;
       const session = await verifySession(req);
       if (!session) {
         return res.status(401).json({ error: 'Authentication required.' });
@@ -87,15 +87,15 @@ export default async function handler(req, res) {
         return res.status(200).json((viewData || []).map(mapViewRow));
       }
 
-      // --- Case 2: filter by user ---
-      if (userId) {
-        if (session.role !== 'student' || session.user_id !== userId) {
-          return res.status(403).json({ error: 'You can only view your own registrations.' });
+      // --- Case 2: current student's own event history ---
+      if (mine === '1') {
+        if (session.role !== 'student') {
+          return res.status(403).json({ error: 'Student access required.' });
         }
         const { data: viewData, error: viewError } = await supabase
           .from('badge_recipients_view')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', session.user_id);
 
         if (viewError) {
           console.error('badge_recipients_view query error:', viewError);
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
       }
 
       // --- Case 3: no filter — full admin fetch ---
-      return res.status(400).json({ error: 'An eventId or userId filter is required.' });
+      return res.status(400).json({ error: 'An eventId or mine filter is required.' });
     }
 
     if (req.method === 'POST') {

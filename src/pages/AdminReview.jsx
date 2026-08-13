@@ -46,7 +46,11 @@ export default function AdminReview() {
 
     <section aria-labelledby="event-review" className="space-y-6">
       <div><h2 id="event-review" className="text-2xl font-black text-oc-ink">Event Review</h2><p className="mt-1 text-sm text-slate-500">All active workflow states, ordered by submission time.</p></div>
-      <div className="max-h-[60vh] min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain border-y border-oc-periwinkle/70 md:max-h-[520px]">
+      <div
+        aria-label="Scrollable event review list"
+        tabIndex="0"
+        className="max-h-[55vh] min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border border-oc-periwinkle/70 md:max-h-[420px]"
+      >
         <div className="sticky top-0 z-10 hidden grid-cols-[minmax(0,1fr)_minmax(8rem,0.45fr)_5rem_7rem_5rem] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500 sm:grid">
           <span>Event</span><span>Chapter</span><span>Points</span><span>Status</span><span>Action</span>
         </div>

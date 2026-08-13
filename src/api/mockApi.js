@@ -230,11 +230,8 @@ export async function fetchEventAttendees(eventId) {
   return await res.json();
 }
 
-export async function fetchRegistrationsByUser(user) {
-  if (!user) return [];
-  const userId = user.ocid || user.mssv || user.ethAddress;
-
-  const res = await fetch(`/api/registrations?userId=${encodeURIComponent(userId)}`, {
+export async function fetchMyEventRegistrations() {
+  const res = await fetch('/api/registrations?mine=1', {
     credentials: 'include'
   });
   if (!res.ok) {
