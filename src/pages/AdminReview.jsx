@@ -100,6 +100,12 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
           {event.submittedBy&&<EventDetail label="Submitted by" value={event.submittedBy} mono />}
           <EventDetail label="Points" value={event.points ?? 'Not set'} />
         </dl>
+        {event.description && (
+          <div className="mt-6 pt-5 border-t border-oc-periwinkle/70">
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-2">Description</p>
+            <p className="text-xs leading-6 text-slate-700 whitespace-pre-line">{event.description}</p>
+          </div>
+        )}
         {event.rejectionReason&&<p className="mt-6 border-l-2 border-oc-blue pl-3 text-xs leading-5 text-slate-600"><span className="font-bold text-oc-ink">Rejection reason:</span> {event.rejectionReason}</p>}
     </div>
 
