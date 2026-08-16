@@ -105,11 +105,22 @@ export default async function handler(req, res) {
           .replace(/(^-|-$)/g, '') + '-' + Date.now().toString(36);
       }
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('events')
         .insert(dbEvent)
         .select('*, chapters(*)')
         .single();
+
+      if (error && (error.message?.includes('submitted_by') || error.details?.includes('submitted_by'))) {
+        delete dbEvent.submitted_by;
+        const retry = await supabase
+          .from('events')
+          .insert(dbEvent)
+          .select('*, chapters(*)')
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) {
         console.error('Supabase Event creation error:', error);
