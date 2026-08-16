@@ -6,6 +6,7 @@ import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
+import useToastStore from '../store/useToastStore';
 
 const AttendeeImportModal = lazy(() =>
   import('../components/AttendeeImportModal').then((module) => ({ default: module.AttendeeImportModal }))
@@ -22,6 +23,9 @@ export function ChapterManage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'upcoming' | 'ongoing' | 'completed' | 'deleted'
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const showToast = useToastStore((state) => state.showToast);
+  const [submittingEventId, setSubmittingEventId] = useState(null);
 
   // Aggregate Metrics
   const [metrics, setMetrics] = useState({
@@ -368,7 +372,25 @@ export function ChapterManage() {
 
                       <td className="py-4 text-right whitespace-nowrap">
                         {isOwnedChapter && ['draft', 'rejected'].includes(event.status) && (
-                          <button onClick={async () => { try { await transitionEventApi(event.id, 'submit'); await loadData(); } catch (error) { console.error('Submit for review failed:', error); } }} className="mr-3 text-xs font-bold text-oc-blue hover:underline">Submit for review</button>
+                          <button 
+                            disabled={submittingEventId === event.id}
+                            onClick={async () => { 
+                              setSubmittingEventId(event.id);
+                              try { 
+                                await transitionEventApi(event.id, 'submit'); 
+                                showToast('Event submitted for admin review successfully.', 'success');
+                                await loadData(); 
+                              } catch (error) { 
+                                console.error('Submit for review failed:', error); 
+                                showToast(error.message || 'Failed to submit event for review.', 'error');
+                              } finally {
+                                setSubmittingEventId(null);
+                              }
+                            }} 
+                            className="mr-3 text-xs font-bold text-oc-blue hover:underline disabled:opacity-50"
+                          >
+                            {submittingEventId === event.id ? 'Submitting...' : 'Submit for review'}
+                          </button>
                         )}
                         {status !== 'deleted' && isOwnedChapter ? (
                           <Link

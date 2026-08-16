@@ -19,9 +19,45 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ── GET: Fetch events list ──
+    // ── GET: Fetch events list or single event ──
     if (req.method === 'GET') {
-      const { includeDeleted, chapterId, reviewQueue } = req.query;
+      const { includeDeleted, chapterId, reviewQueue, id, eventId, slug } = req.query;
+      const targetId = id || eventId;
+
+      if (targetId) {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*, chapters(*)')
+          .eq('id', targetId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Supabase Event fetch error by ID:', error);
+          return res.status(500).json({ error: 'Failed to retrieve event.' });
+        }
+        if (!data) {
+          return res.status(404).json({ error: 'Event not found.' });
+        }
+        return res.status(200).json(mapEventDbToClient(data));
+      }
+
+      if (slug) {
+        const { data, error } = await supabase
+          .from('events')
+          .select('*, chapters(*)')
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Supabase Event fetch error by slug:', error);
+          return res.status(500).json({ error: 'Failed to retrieve event.' });
+        }
+        if (!data) {
+          return res.status(404).json({ error: 'Event not found.' });
+        }
+        return res.status(200).json(mapEventDbToClient(data));
+      }
+
       let query = supabase
         .from('events')
         .select('*, chapters(*)');

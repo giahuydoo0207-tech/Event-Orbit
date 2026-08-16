@@ -73,13 +73,37 @@ export async function deleteEventApi(eventId) {
 }
 
 export async function fetchEventById(id) {
-  const events = await fetchEvents();
-  return events.find(e => e.id === id) || null;
+  if (!id) return null;
+  try {
+    const res = await fetch(`/api/events?id=${encodeURIComponent(id)}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Direct fetchEventById failed, falling back to list:', err);
+  }
+  const events = await fetchEvents({ includeDeleted: true }).catch(() => fetchEvents());
+  return events?.find?.(e => e.id === id) || null;
 }
 
 export async function fetchEventBySlug(slug) {
+  if (!slug) return null;
+  try {
+    const res = await fetch(`/api/events?slug=${encodeURIComponent(slug)}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Direct fetchEventBySlug failed, falling back to list:', err);
+  }
   const events = await fetchEvents();
-  return events.find(e => e.slug === slug) || null;
+  return events?.find?.(e => e.slug === slug) || null;
 }
 
 export async function createEventApi(eventData) {
