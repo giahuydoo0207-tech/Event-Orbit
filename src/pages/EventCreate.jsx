@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createEventApi } from '../api/mockApi';
+import { createEventApi, transitionEventApi } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import useToastStore from '../store/useToastStore';
 
@@ -72,8 +72,8 @@ export function EventCreate() {
 
   const showToast = useToastStore((state) => state.showToast);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, mode = 'draft') => {
+    if (e?.preventDefault) e.preventDefault();
     if (!title.trim()) return showToast('Event title is required.', 'error');
     if (!description.trim()) return showToast('Short description is required.', 'error');
     if (!content.trim()) return showToast('Event content is required.', 'error');
@@ -105,7 +105,18 @@ export function EventCreate() {
         chapterId: chapterId || null
       });
 
-      showToast('Draft event created successfully.', 'success');
+      if (mode === 'submit' && newEvent?.id) {
+        try {
+          await transitionEventApi(newEvent.id, 'submit');
+          showToast('Event submitted for admin review successfully.', 'success');
+        } catch (transErr) {
+          console.warn('Auto transition failed, saved as draft:', transErr);
+          showToast('Draft event created. Please click Submit for Review from chapter management.', 'info');
+        }
+      } else {
+        showToast('Draft event saved successfully.', 'success');
+      }
+
       navigate(`/manage/${encodeURIComponent(chapterId)}`);
     } catch (err) {
       console.error('Event creation failed:', err);
@@ -408,14 +419,23 @@ export function EventCreate() {
               </div>
             </div>
 
-            {/* Submit */}
-            <div className="pt-4">
+            {/* Actions */}
+            <div className="pt-4 flex flex-col sm:flex-row gap-3">
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => handleSubmit(e, 'draft')}
                 disabled={submitting}
-                className="w-full py-3 bg-navy text-white text-sm font-semibold rounded hover:bg-navy-light transition-all disabled:opacity-50"
+                className="flex-1 py-3 border border-oc-navy text-oc-navy text-xs font-bold rounded-lg hover:bg-oc-navy/5 transition-all disabled:opacity-50"
               >
-                {submitting ? 'Processing...' : 'Save Draft Event'}
+                {submitting ? 'Processing...' : 'Save as Draft'}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, 'submit')}
+                disabled={submitting}
+                className="flex-1 py-3 bg-oc-blue text-white text-xs font-bold rounded-lg hover:bg-oc-blue/90 shadow-sm transition-all disabled:opacity-50"
+              >
+                {submitting ? 'Processing...' : 'Submit for Review'}
               </button>
             </div>
 
