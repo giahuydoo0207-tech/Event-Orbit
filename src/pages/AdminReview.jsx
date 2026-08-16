@@ -421,53 +421,64 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
         </div>
         {warning}
       </form>
-      <div className="divide-y divide-oc-periwinkle/60 border-y border-oc-periwinkle/60">
-        <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_130px_180px] gap-4 py-2 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-400">
+      <div
+        aria-label={`${title} list`}
+        tabIndex="0"
+        className="rounded-lg border border-oc-periwinkle/70 bg-white shadow-oc-sm overflow-hidden"
+      >
+        <div className="sticky top-0 z-10 hidden sm:grid sm:grid-cols-[minmax(0,1fr)_130px_180px] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500">
           <span>Identity &amp; Scope</span>
           <span>Status</span>
           <span className="text-right pr-2">Actions</span>
         </div>
-        {rows.map((row) => (
-          <div
-            key={row.key}
-            className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_130px_180px] sm:items-center sm:gap-4"
-          >
-            <div className="min-w-0">
-              <strong className="text-sm font-bold text-oc-ink truncate block">{row.ocid}</strong>
-              <p className="text-xs text-slate-500 truncate">{row.detail}</p>
-            </div>
-            <div className="min-w-0">
-              <span className={statusClass}>{row.status}</span>
-              <p className="mt-1 text-[11px] text-slate-500 font-mono">
-                {new Date(row.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            <div className="flex items-center justify-start sm:justify-end gap-2 shrink-0">
-              <button
-                className={`${buttonClass} w-24 text-center ${
-                  row.status === 'active'
-                    ? 'border border-oc-navy text-oc-navy hover:bg-oc-navy/5'
-                    : 'border border-oc-blue text-oc-blue hover:bg-oc-blue/5'
-                }`}
-                onClick={() => onToggle(row)}
-              >
-                {row.status === 'active' ? 'Revoke' : 'Reactivate'}
-              </button>
-              {row.status === 'revoked' && onDelete ? (
+        <div className="max-h-[305px] overflow-y-auto overscroll-contain no-scrollbar divide-y divide-oc-periwinkle/60 px-4">
+          {rows.map((row) => (
+            <div
+              key={row.key}
+              className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_130px_180px] sm:items-center sm:gap-4"
+            >
+              <div className="min-w-0">
+                <strong className="text-sm font-bold text-oc-ink truncate block">{row.ocid}</strong>
+                <p className="text-xs text-slate-500 truncate">{row.detail}</p>
+              </div>
+              <div className="min-w-0">
+                <span className={statusClass}>{row.status}</span>
+                <p className="mt-1 text-[11px] text-slate-500 font-mono">
+                  {new Date(row.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="flex items-center justify-start sm:justify-end gap-2 shrink-0">
                 <button
-                  className={`${buttonClass} w-[72px] text-center border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300`}
-                  onClick={() => onDelete(row)}
-                  title="Permanently delete access record"
+                  className={`${buttonClass} w-24 text-center ${
+                    row.status === 'active'
+                      ? 'border border-oc-navy text-oc-navy hover:bg-oc-navy/5'
+                      : 'border border-oc-blue text-oc-blue hover:bg-oc-blue/5'
+                  }`}
+                  onClick={() => onToggle(row)}
                 >
-                  Delete
+                  {row.status === 'active' ? 'Revoke' : 'Reactivate'}
                 </button>
-              ) : (
-                <div className="hidden sm:block w-[72px]" aria-hidden="true" />
-              )}
+                {row.status === 'revoked' && onDelete ? (
+                  <button
+                    className={`${buttonClass} w-[72px] text-center border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300`}
+                    onClick={() => onDelete(row)}
+                    title="Permanently delete access record"
+                  >
+                    Delete
+                  </button>
+                ) : (
+                  <div className="hidden sm:block w-[72px]" aria-hidden="true" />
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        {rows.length === 0 && <p className="py-6 text-sm text-slate-500">No access records yet.</p>}
+          ))}
+          {rows.length === 0 && (
+            <div className="py-8 text-center" role="status">
+              <p className="text-sm font-semibold text-oc-ink">No access records yet.</p>
+              <p className="mt-1 text-xs text-slate-500">Newly granted accounts will appear here.</p>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

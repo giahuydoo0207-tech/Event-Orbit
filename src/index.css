@@ -12,6 +12,15 @@
   }
 }
 
+/* Hide scrollbars cross-browser while maintaining scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 /* Open Campus Signature Brand Gradient */
 .bg-oc-gradient {
   background: linear-gradient(90deg, #141BEB 0%, #00EDBE 100%);
