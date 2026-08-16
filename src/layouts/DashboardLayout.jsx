@@ -16,22 +16,29 @@ export function DashboardLayout({ children }) {
     navigate('/');
   };
 
-  const isAdmin = organizerSession?.role === 'admin';
-  const isOrganizer = organizerSession?.role === 'organizer';
-  const canManageChapter = Boolean(organizerSession?.chapterId || organizerSession?.chapter_id);
+  const isManageSection = location.pathname.startsWith('/manage');
+  const isAdminSection = location.pathname.startsWith('/admin');
 
-  // Navigation Links definition
-  const navLinks = isAdmin ? [
-    { label: 'Admin Console', path: '/admin' },
-  ] : isOrganizer ? [
-    { label: 'Manage Chapters', path: '/manage' },
-    { label: 'Explore Events', path: '/events' }
-  ] : [
-    { label: 'Home', path: '/home' },
-    { label: 'My Events', path: '/my-events' },
-    { label: 'My Achievements', path: '/dashboard' },
-    { label: 'Following', path: '/following' }
-  ];
+  // Navigation Links & Kicker based on current portal section
+  const portalKicker = isAdminSection
+    ? 'Admin Console'
+    : isManageSection
+    ? 'Organizer Portal'
+    : 'Student Hub';
+
+  const navLinks = isAdminSection
+    ? [{ label: 'Admin Console', path: '/admin' }]
+    : isManageSection
+    ? [
+        { label: 'Manage Chapters', path: '/manage' },
+        { label: 'Explore Events', path: '/events' },
+      ]
+    : [
+        { label: 'Home', path: '/home' },
+        { label: 'My Events', path: '/my-events' },
+        { label: 'My Achievements', path: '/dashboard' },
+        { label: 'Following', path: '/following' },
+      ];
 
   return (
     <div className="flex min-h-[100dvh] overflow-hidden bg-oc-mist text-oc-ink font-sans">
@@ -69,15 +76,16 @@ export function DashboardLayout({ children }) {
               Event Orbit
             </Link>
             <span className="badge-kicker text-[9px] text-oc-turquoise uppercase tracking-widest font-bold block mt-1">
-              {isAdmin ? 'Admin Console' : isOrganizer ? 'Organizer Portal' : 'Student Hub'}
+              {portalKicker}
             </span>
           </div>
 
           {/* Menu Links */}
           <nav className="flex flex-col space-y-2">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path ||
-                (isOrganizer && link.label === 'Manage Chapters' && location.pathname.startsWith('/manage'));
+              const isActive =
+                location.pathname === link.path ||
+                (link.path === '/manage' && location.pathname.startsWith('/manage'));
               return (
                 <Link
                   key={link.path}
