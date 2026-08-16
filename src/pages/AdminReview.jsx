@@ -132,12 +132,12 @@ export default function AdminReview() {
         <div
           aria-label="Scrollable event review list"
           tabIndex="0"
-          className="max-h-[55vh] min-w-0 overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border border-oc-periwinkle/70 md:max-h-[420px]"
+          className="rounded-lg border border-oc-periwinkle/70 bg-white shadow-oc-sm overflow-hidden"
         >
-          <div className="sticky top-0 z-10 hidden grid-cols-[minmax(0,1fr)_minmax(8rem,0.45fr)_5rem_7rem_5rem] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500 sm:grid">
-            <span>Event</span><span>Chapter</span><span>Points</span><span>Status</span><span>Action</span>
+          <div className="sticky top-0 z-10 hidden grid-cols-[minmax(0,1fr)_minmax(8rem,0.45fr)_5rem_7rem_5rem] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500 sm:grid">
+            <span>Event</span><span>Chapter</span><span>Points</span><span>Status</span><span className="text-right pr-2">Action</span>
           </div>
-          <div className="divide-y divide-oc-periwinkle/70">
+          <div className="max-h-[305px] overflow-y-auto overscroll-contain no-scrollbar divide-y divide-oc-periwinkle/60">
             {data.events.map((event) => (
               <EventReviewRow key={event.id} event={event} onReview={setSelectedEvent} />
             ))}
