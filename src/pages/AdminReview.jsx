@@ -302,55 +302,104 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-oc-navy/70 p-0 sm:items-center sm:p-6" onMouseDown={onClose}>
-      <section role="dialog" aria-modal="true" aria-labelledby="event-review-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-md bg-white p-5 sm:rounded-md sm:p-7" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between gap-5 border-b border-oc-periwinkle/70 pb-5">
+      <section role="dialog" aria-modal="true" aria-labelledby="event-review-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-md bg-white p-5 sm:rounded-xl sm:p-7 space-y-6 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-start justify-between gap-5 border-b border-oc-periwinkle/70 pb-4">
           <div className="min-w-0">
-            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-oc-blue">Event Review</p>
-            <h2 id="event-review-title" className="mt-2 break-words text-2xl font-black text-oc-ink">{event.name}</h2>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-oc-blue">
+                {event.category || 'EVENT REVIEW'}
+              </span>
+              <span className={statusClass}>{status}</span>
+            </div>
+            <h2 id="event-review-title" className="mt-1 break-words text-2xl font-black text-oc-ink">{event.name}</h2>
           </div>
-          <button autoFocus className={`${buttonClass} border border-slate-400 text-slate-700`} onClick={onClose}>
+          <button autoFocus className={`${buttonClass} border border-slate-400 text-slate-700 hover:bg-slate-50`} onClick={onClose}>
             Close
           </button>
         </div>
 
-        <div className="py-6">
-          <span className={statusClass}>{status}</span>
-          <dl className="mt-5 grid min-w-0 gap-x-8 gap-y-5 text-xs sm:grid-cols-2">
-            <EventDetail label="Chapter" value={event.chapter?.name || 'Unknown'} />
-            <EventDetail label="Schedule" value={new Date(event.datetime).toLocaleString()} />
-            <EventDetail label="Location" value={event.location || 'Not set'} />
-            {event.submittedBy && <EventDetail label="Submitted by" value={event.submittedBy} mono />}
-            <EventDetail label="Points" value={event.points ?? 'Not set'} />
-          </dl>
-          {event.description && (
-            <div className="mt-6 pt-5 border-t border-oc-periwinkle/70">
-              <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-2">Description</p>
-              <p className="text-xs leading-6 text-slate-700 whitespace-pre-line">{event.description}</p>
-            </div>
-          )}
-          {event.rejectionReason && (
-            <p className="mt-6 border-l-2 border-oc-blue pl-3 text-xs leading-5 text-slate-600">
-              <span className="font-bold text-oc-ink">Rejection reason:</span> {event.rejectionReason}
-            </p>
-          )}
-        </div>
+        {/* Visual Cover Banner if present */}
+        {event.coverImage && (
+          <div className="aspect-[2.4/1] w-full bg-slate-100 overflow-hidden rounded-lg border border-oc-periwinkle/70 shadow-oc-sm">
+            <img
+              src={event.coverImage}
+              alt={event.name}
+              className="object-cover w-full h-full"
+              onError={(e) => {
+                e.target.src = 'https://picsum.photos/seed/default/800/400';
+              }}
+            />
+          </div>
+        )}
 
+        {/* Metadata Grid */}
+        <dl className="grid min-w-0 gap-x-6 gap-y-4 rounded-lg bg-oc-mist/60 border border-oc-periwinkle/50 p-4 text-xs sm:grid-cols-2">
+          <EventDetail label="Chapter" value={event.chapter?.name || 'Unknown'} />
+          <EventDetail label="Schedule" value={new Date(event.datetime).toLocaleString()} />
+          <EventDetail label="Location" value={`${event.locationType || 'In-person'}: ${event.location || 'Not set'}`} />
+          {event.submittedBy && <EventDetail label="Submitted by" value={event.submittedBy} mono />}
+          <EventDetail label="SBT Capacity" value={`${event.capacity ?? 'Unlimited'} attendees`} />
+          <EventDetail label="SBT Points Reward" value={`+${event.points ?? 5} pts`} />
+        </dl>
+
+        {/* Summary Description */}
+        {event.description && (
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-1.5">Summary</p>
+            <p className="text-xs font-semibold leading-6 text-oc-ink bg-slate-50 border border-slate-200/70 rounded-md p-3.5 whitespace-pre-line">
+              {event.description}
+            </p>
+          </div>
+        )}
+
+        {/* Full Event Content / Agenda */}
+        {event.content && (
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-1.5">Full Event Details &amp; Content</p>
+            <div className="text-xs leading-6 text-slate-700 bg-white border border-oc-periwinkle/60 rounded-md p-4 space-y-2 whitespace-pre-line">
+              {event.content}
+            </div>
+          </div>
+        )}
+
+        {/* Tags */}
+        {event.tags && event.tags.length > 0 && (
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-1.5">Tags</p>
+            <div className="flex flex-wrap gap-1.5">
+              {event.tags.map((tag) => (
+                <span key={tag} className="rounded border border-oc-periwinkle/80 bg-oc-mist px-2.5 py-1 font-mono text-[10px] font-bold text-oc-ink">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {event.rejectionReason && (
+          <p className="border-l-2 border-red-500 bg-red-50 p-3 text-xs leading-5 text-red-800 rounded-r-md">
+            <span className="font-bold">Previous rejection reason:</span> {event.rejectionReason}
+          </p>
+        )}
+
+        {/* Admin Decision Section */}
         <div className="border-t border-oc-periwinkle/70 pt-5">
-          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Decision</p>
+          <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Admin Decision</p>
           {hasAction ? (
             <div className="mt-3 space-y-3">
               {event.status === 'pending_review' && (
                 <div className="flex flex-wrap gap-2">
-                  <button className={`${buttonClass} bg-oc-blue text-white`} onClick={() => transition(event.id, 'approve')}>
+                  <button className={`${buttonClass} bg-oc-blue text-white hover:bg-oc-blue/90`} onClick={() => transition(event.id, 'approve')}>
                     Approve
                   </button>
-                  <button className={`${buttonClass} border border-oc-navy text-oc-navy`} onClick={() => setRejection({ eventId: event.id, reason: '' })}>
+                  <button className={`${buttonClass} border border-oc-navy text-oc-navy hover:bg-oc-navy/5`} onClick={() => setRejection({ eventId: event.id, reason: '' })}>
                     Reject
                   </button>
                 </div>
               )}
               {event.status === 'approved' && (
-                <button className={`${buttonClass} bg-oc-turquoise text-oc-ink`} onClick={() => transition(event.id, 'publish')}>
+                <button className={`${buttonClass} bg-oc-turquoise text-oc-ink hover:bg-oc-turquoise/90`} onClick={() => transition(event.id, 'publish')}>
                   Publish
                 </button>
               )}
@@ -363,11 +412,12 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
                     value={rejection.reason}
                     onChange={(e) => setRejection({ ...rejection, reason: e.target.value })}
                     className="w-full resize-y rounded-md border border-slate-400 px-3 py-2 text-xs focus:border-oc-blue focus:outline-none"
+                    placeholder="Provide a clear reason for the organizer..."
                   />
                   <div className="flex flex-wrap gap-2">
                     <button
                       disabled={!rejection.reason.trim()}
-                      className={`${buttonClass} bg-oc-navy text-white`}
+                      className={`${buttonClass} bg-oc-navy text-white disabled:opacity-50`}
                       onClick={() => transition(event.id, 'reject', rejection.reason)}
                     >
                       Confirm Reject
