@@ -98,21 +98,6 @@ export function DashboardLayout({ children }) {
               );
             })}
           </nav>
-
-          {isAdmin && canManageChapter && (
-            <div className="border-t border-white/10 pt-6">
-              <p className="badge-kicker mb-2 px-4 text-[9px] font-bold uppercase tracking-widest text-white/40">
-                Organizer Portal
-              </p>
-              <Link
-                to="/manage"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block rounded-md px-4 py-3 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-              >
-                Go to Manage Hub
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* Sidebar Footer Account info */}

@@ -50,13 +50,17 @@ export function PublicLayout({ children }) {
               
               {user.isAuthenticated ? (
                 <>
-                  {user.role === 'student' ? (
-                    <Link to="/home" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      My Hub
+                  {user.role === 'admin' ? (
+                    <Link to="/admin" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
+                      Admin Console
                     </Link>
-                  ) : (
+                  ) : user.role === 'organizer' ? (
                     <Link to="/manage" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
                       Manage Hub
+                    </Link>
+                  ) : (
+                    <Link to="/home" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
+                      My Hub
                     </Link>
                   )}
                   <span className="text-[11px] text-slate-500 font-mono hidden sm:inline-block">
