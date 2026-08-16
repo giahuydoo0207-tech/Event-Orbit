@@ -57,27 +57,79 @@ export default async function handler(req, res) {
     }
     const { resource, action, ocid, chapterId } = req.body || {};
     const targetOcid = typeof ocid === 'string' ? ocid.trim().toLowerCase() : '';
-    if (!/^[a-z0-9][a-z0-9._-]{2,127}$/i.test(targetOcid) || !['admin', 'organizer'].includes(resource) || !['grant', 'revoke', 'reactivate'].includes(action)) {
+    if (!/^[a-z0-9][a-z0-9._-]{2,127}$/i.test(targetOcid) || !['admin', 'organizer'].includes(resource) || !['grant', 'revoke', 'reactivate', 'delete'].includes(action)) {
       return res.status(400).json({ error: 'Invalid access management request.' });
     }
     try {
       if (resource === 'admin') {
-        const { error } = await supabase.rpc('manage_admin_access', { p_actor_ocid: session.ocid, p_target_ocid: targetOcid, p_action: action });
-        if (error) {
-          if (error.message?.includes('last_active_admin')) return res.status(409).json({ error: 'The final active admin cannot be revoked.' });
-          throw error;
+        if (action === 'delete') {
+          const { data: currentAdmin, error: fetchErr } = await supabase
+            .from('admin_users')
+            .select('status')
+            .eq('ocid', targetOcid)
+            .maybeSingle();
+          if (fetchErr) throw fetchErr;
+          if (!currentAdmin) return res.status(404).json({ error: 'Admin access record not found.' });
+          if (currentAdmin.status !== 'revoked') {
+            return res.status(400).json({ error: 'Only revoked admin access records can be permanently deleted.' });
+          }
+          const { error: delErr } = await supabase.from('admin_users').delete().eq('ocid', targetOcid);
+          if (delErr) throw delErr;
+        } else {
+          const { error } = await supabase.rpc('manage_admin_access', { p_actor_ocid: session.ocid, p_target_ocid: targetOcid, p_action: action });
+          if (error) {
+            if (error.message?.includes('last_active_admin')) return res.status(409).json({ error: 'The final active admin cannot be revoked.' });
+            throw error;
+          }
         }
       } else {
         if (!chapterId) return res.status(400).json({ error: 'A chapter is required for organizer access.' });
-        const status = action === 'revoke' ? 'revoked' : 'active';
-        const { error } = await supabase.from('chapter_organizers').upsert({ chapter_id: chapterId, ocid: targetOcid, role: 'organizer', status }, { onConflict: 'chapter_id,ocid' });
-        if (error) throw error;
+        if (action === 'delete') {
+          const { data: currentOrg, error: fetchErr } = await supabase
+            .from('chapter_organizers')
+            .select('status')
+            .eq('chapter_id', chapterId)
+            .eq('ocid', targetOcid)
+            .maybeSingle();
+          if (fetchErr) throw fetchErr;
+          if (!currentOrg) return res.status(404).json({ error: 'Organizer access record not found.' });
+          if (currentOrg.status !== 'revoked') {
+            return res.status(400).json({ error: 'Only revoked organizer access records can be permanently deleted.' });
+          }
+          const { error: delErr } = await supabase.from('chapter_organizers').delete().eq('chapter_id', chapterId).eq('ocid', targetOcid);
+          if (delErr) throw delErr;
+        } else {
+          const status = action === 'revoke' ? 'revoked' : 'active';
+          if (status === 'active') {
+            const { data: existingActive, error: checkError } = await supabase
+              .from('chapter_organizers')
+              .select('chapter_id, chapters(name)')
+              .eq('ocid', targetOcid)
+              .eq('status', 'active')
+              .neq('chapter_id', chapterId)
+              .maybeSingle();
+
+            if (checkError) {
+              console.error('Organizer duplicate check failed:', checkError);
+              return res.status(500).json({ error: 'Unable to verify organizer permissions.' });
+            }
+
+            if (existingActive) {
+              const chapterName = existingActive.chapters?.name || existingActive.chapter_id;
+              return res.status(409).json({
+                error: `This OCID is already an active organizer for "${chapterName}". Revoke that access first before granting a new chapter.`
+              });
+            }
+          }
+          const { error } = await supabase.from('chapter_organizers').upsert({ chapter_id: chapterId, ocid: targetOcid, role: 'organizer', status }, { onConflict: 'chapter_id,ocid' });
+          if (error) throw error;
+        }
       }
       await supabase.from('sessions').delete().eq('ocid', targetOcid);
       return res.status(200).json({ ok: true });
     } catch (error) {
-      console.error('Access management failed:', error?.name || 'Error');
-      return res.status(500).json({ error: 'Unable to update access.' });
+      console.error('Access management failed:', error?.name || 'Error', error);
+      return res.status(500).json({ error: error.message || 'Unable to update access.' });
     }
   }
 

@@ -28,9 +28,6 @@ export function PublicLayout({ children }) {
               <Link to="/" className="text-xl font-extrabold text-oc-blue tracking-tight hover:opacity-90 transition-opacity">
                 Event Orbit
               </Link>
-              <span className="badge-kicker text-[9px] px-1.5 py-0.5 rounded-sm bg-oc-mist text-oc-blue border border-oc-periwinkle/60">
-                EDU CHAIN
-              </span>
             </div>
 
             {/* Navigation Links */}

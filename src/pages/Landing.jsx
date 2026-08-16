@@ -56,14 +56,6 @@ export function Landing() {
             
             {/* Left Column: Copy & CTA */}
             <div className="lg:col-span-6 text-center lg:text-left space-y-6">
-              {/* Kicker Badge */}
-              <div className="hero-enter hero-enter-badge inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20">
-                <span className="w-2 h-2 rounded-full bg-oc-turquoise animate-pulse"></span>
-                <span className="badge-kicker text-oc-turquoise text-[11px] font-mono tracking-wider uppercase">
-                  POWERED BY OPEN CAMPUS ID
-                </span>
-              </div>
-
               {/* Headline */}
               <h1 className="text-3xl font-black leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 <span className="hero-enter hero-enter-line-one block">Campus Events.</span>

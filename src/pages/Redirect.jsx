@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LoginCallBack, useOCAuth } from '@opencampus/ocid-connect-js';
 import { useStore } from '../store/useStore';
-import { LoadingBar } from '../components/LoadingBar';
 import { getPostLoginDestination } from '../lib/authNavigation';
 
 export function Redirect() {
@@ -112,13 +111,10 @@ export function Redirect() {
 
   // Redesigned Loading Component — Open Campus Deep Navy Theme
   const OpenCampusLoadingCard = (
-    <div className="relative z-10 text-center max-w-sm w-full mx-4 px-8 py-10 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-6 shadow-2xl">
+    <div className="relative z-10 text-center max-w-sm w-full mx-4 px-8 py-10 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-7 shadow-2xl">
       {/* Brand Header */}
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center">
         <span className="text-xl font-extrabold text-white tracking-tight">Event Orbit</span>
-        <span className="badge-kicker text-[9px] px-1.5 py-0.5 rounded bg-oc-blue/40 text-oc-turquoise border border-oc-turquoise/30">
-          EDU CHAIN
-        </span>
       </div>
 
       {/* Glowing Dual-Ring Spinner */}
@@ -135,9 +131,6 @@ export function Redirect() {
           Exchanging PKCE token &amp; verifying credentials
         </p>
       </div>
-
-      {/* Animated Progress Bar */}
-      <LoadingBar variant="dark" />
     </div>
   );
 

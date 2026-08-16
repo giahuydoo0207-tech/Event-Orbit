@@ -48,7 +48,7 @@ export default {
       },
       fontFamily: {
         sans: ['Poppins', 'system-ui', 'sans-serif'],
-        mono: ['Space Mono', 'monospace'],
+        mono: ['Poppins', 'system-ui', 'sans-serif'],
       },
     },
   },

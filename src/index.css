@@ -25,16 +25,17 @@
 
 /* Open Campus Micro Accent Tag */
 .badge-kicker {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Poppins', system-ui, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   font-size: 0.65rem;
 }
 
-/* Global number font — all numeric values use Space Mono + tabular-nums for consistent alignment */
+/* Global number font — all numeric values use Poppins + tabular-nums for consistent alignment */
 .num {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -121,8 +122,8 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 
 /* Single focal hero number — Luma-style: large, bold, pure text, no shape wrapper */
 .editorial-hero-number {
-  font-family: 'Space Mono', monospace;
-  font-weight: 700;
+  font-family: 'Poppins', system-ui, sans-serif;
+  font-weight: 800;
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1;
   letter-spacing: -0.03em;
