@@ -16,7 +16,11 @@ export function Following() {
       try {
         const list = await fetchChapters();
         const followedIds = user.followedChapterIds || [];
-        const filtered = list.filter(c => followedIds.includes(c.id));
+        const filtered = list.filter(c => 
+          followedIds.includes(c.id) || 
+          followedIds.includes(c.slug) || 
+          followedIds.includes(c.ocid)
+        );
         setFollowedChapters(filtered);
       } catch (err) {
         console.error(err);

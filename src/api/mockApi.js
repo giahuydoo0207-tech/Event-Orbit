@@ -1,5 +1,6 @@
 import { CHAPTERS } from './mockData';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
+import useStore from '../store/useStore';
 
 export function getAuthHeaders() {
   return { 'Content-Type': 'application/json' };
@@ -288,16 +289,34 @@ export function isEventInChapter(event, chapter) {
 
 export async function fetchChapters() {
   let followersMap = {};
-  const res = await fetch('/api/chapters-follow');
-  if (res.ok) {
-    followersMap = await res.json();
+  try {
+    const res = await fetch('/api/chapters-follow', {
+      headers: getAuthHeaders(),
+      credentials: 'include'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      followersMap = data.followersMap || data;
+      if (Array.isArray(data.followedChapterIds) && data.followedChapterIds.length > 0) {
+        useStore.getState().setUser({
+          followedChapterIds: Array.from(new Set([
+            ...(useStore.getState().user?.followedChapterIds || []),
+            ...data.followedChapterIds
+          ]))
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch chapter followers:', err);
   }
 
-  const events = await fetchEvents();
+  const events = await fetchEvents().catch(() => []);
 
   return CHAPTERS.map(c => {
     const realEventCount = events.filter(e => !e.deletedAt && isEventInChapter(e, c)).length;
-    const followerCount = followersMap[c.id] !== undefined ? followersMap[c.id] : (c.followerCount || 0);
+    const followerCount = followersMap[c.id] !== undefined 
+      ? followersMap[c.id] 
+      : (followersMap[c.slug] !== undefined ? followersMap[c.slug] : (c.followerCount || 0));
     return {
       ...c,
       eventsHosted: realEventCount,
@@ -336,7 +355,7 @@ export async function toggleFollowChapter(id, isFollow) {
   }
 
   const data = await res.json();
-  return { id, followerCount: data.followerCount };
+  return { id, chapterUuid: data.chapterUuid, followerCount: data.followerCount };
 }
 
 // ── Attendee List Import Endpoint ──

@@ -50,17 +50,17 @@ export function PublicLayout({ children }) {
               
               {user.isAuthenticated ? (
                 <>
-                  {user.role === 'admin' ? (
+                  <Link to="/home" className="text-xs font-semibold text-slate-700 hover:text-oc-blue transition-colors">
+                    Student Hub
+                  </Link>
+                  {user.role === 'admin' && (
                     <Link to="/admin" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
                       Admin Console
                     </Link>
-                  ) : user.role === 'organizer' ? (
+                  )}
+                  {user.role === 'organizer' && (
                     <Link to="/manage" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      Manage Hub
-                    </Link>
-                  ) : (
-                    <Link to="/home" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      My Hub
+                      Organizer Portal
                     </Link>
                   )}
                   <span className="text-[11px] text-slate-500 font-mono hidden sm:inline-block">

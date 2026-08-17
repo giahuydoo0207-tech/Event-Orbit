@@ -40,7 +40,11 @@ export function ChapterProfile() {
 
         // Initialize follow state from store
         if (user.isAuthenticated && user.followedChapterIds) {
-          setFollowingState(user.followedChapterIds.includes(chapterData.id));
+          setFollowingState(
+            user.followedChapterIds.includes(chapterData.id) ||
+            (chapterData.slug && user.followedChapterIds.includes(chapterData.slug)) ||
+            (chapterData.ocid && user.followedChapterIds.includes(chapterData.ocid))
+          );
         }
       } catch (err) {
         console.error('Failed to load chapter profile', err);
@@ -69,15 +73,19 @@ export function ChapterProfile() {
     try {
       const updatedChapter = await toggleFollowChapter(chapter.id, nextState);
       if (updatedChapter) {
-        setChapter(updatedChapter);
+        setChapter(prev => ({ ...prev, ...updatedChapter }));
       }
 
       // Sync Zustand store
       if (nextState) {
         followChapter(chapter.id);
+        if (chapter.slug) followChapter(chapter.slug);
+        if (updatedChapter?.chapterUuid) followChapter(updatedChapter.chapterUuid);
         showToast(`Subscribed to calendar: ${chapter.name}`, 'success');
       } else {
         unfollowChapter(chapter.id);
+        if (chapter.slug) unfollowChapter(chapter.slug);
+        if (updatedChapter?.chapterUuid) unfollowChapter(updatedChapter.chapterUuid);
         showToast(`Unsubscribed from calendar: ${chapter.name}`, 'info');
       }
     } catch (err) {
