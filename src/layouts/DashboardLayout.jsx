@@ -27,15 +27,10 @@ export function DashboardLayout({ children }) {
     : 'Student Hub';
 
   const navLinks = isAdminSection
-    ? [
-        { label: 'Admin Console', path: '/admin' },
-        { label: 'Student Hub', path: '/home' },
-        { label: 'Explore Events', path: '/events' },
-      ]
+    ? [{ label: 'Admin Console', path: '/admin' }]
     : isManageSection
     ? [
         { label: 'Manage Chapters', path: '/manage' },
-        { label: 'Student Hub', path: '/home' },
         { label: 'Explore Events', path: '/events' },
       ]
     : [
@@ -43,8 +38,6 @@ export function DashboardLayout({ children }) {
         { label: 'My Events', path: '/my-events' },
         { label: 'My Achievements', path: '/dashboard' },
         { label: 'Following', path: '/following' },
-        ...(user.role === 'admin' ? [{ label: 'Admin Console ↗', path: '/admin' }] : []),
-        ...(user.role === 'organizer' ? [{ label: 'Organizer Portal ↗', path: '/manage' }] : []),
       ];
 
   return (
