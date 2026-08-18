@@ -28,8 +28,8 @@ export function Following() {
         setLoading(false);
       }
     }
-    loadFollowed();
-  }, [user.followedChapterIds]);
+    loadFollowed();  
+    }, [JSON.stringify(user.followedChapterIds)]);
 
   if (loading) {
     return (
