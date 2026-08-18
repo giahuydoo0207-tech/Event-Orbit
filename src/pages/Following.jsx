@@ -49,7 +49,14 @@ export function Following() {
       <p className="mt-1 max-w-2xl text-xs text-slate-500 font-medium">
         Chapters you follow. Their events appear in your personalized Home feed.
       </p>
-
+            <div className="mt-4">
+        <Link
+          to="/chapters"
+          className="inline-block px-4 py-2 bg-oc-blue text-white text-xs font-bold rounded-md shadow-sm hover:bg-oc-indigo transition-colors"
+        >
+          + Follow More Chapters
+        </Link>
+      </div>
       {followedChapters.length === 0 ? (
         /* Empty State — editorial, no heavy bordered box */
         <div className="text-center py-20 mt-8">
