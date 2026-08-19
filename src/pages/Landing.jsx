@@ -26,7 +26,7 @@ export function Landing() {
     {
       title: 'Verified Attendance',
       description:
-        'Check in with QR codes. Receive Soulbound Token (SBT) badges minted on EDU Chain as proof.',
+        'Check in with QR codes. Receive verified digital credentials issued on Open Campus ID as proof.',
     },
     {
       title: 'Achievement Portfolio',
@@ -66,7 +66,7 @@ export function Landing() {
 
               {/* Subtitle */}
               <p className="hero-enter hero-enter-subtitle mx-auto lg:mx-0 max-w-xl text-sm leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
-                Event Orbit connects students with campus chapters, verifies attendance with Soulbound Tokens, and builds certified achievement profiles, all powered by Open Campus.
+                Event Orbit connects students with campus chapters, verifies attendance, and builds certified digital credential profiles, all powered by Open Campus.
               </p>
 
               {/* CTA Buttons */}
@@ -130,7 +130,7 @@ export function Landing() {
             <StatCounter value={500} suffix="+" label="Students" />
             <StatCounter value={12} label="Chapters" />
             <StatCounter value={48} label="Events Hosted" />
-            <StatCounter value={156} label="SBTs Minted" />
+            <StatCounter value={156} label="Credentials Issued" />
           </div>
         </div>
       </section>
@@ -141,7 +141,7 @@ export function Landing() {
           <div className="badge-kicker text-oc-blue">Open Campus Ecosystem</div>
           <h2 className="text-2xl font-black text-oc-ink">Decentralized Credentials for Education</h2>
           <p className="text-xs text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
-            Every event check-in issues an immutable Soulbound Token (SBT) credential linked directly to your Open Campus ID (OCID).
+            Every event check-in issues a verified digital credential linked directly to your Open Campus ID (OCID).
           </p>
         </div>
       </section>

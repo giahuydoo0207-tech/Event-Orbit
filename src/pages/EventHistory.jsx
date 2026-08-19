@@ -109,7 +109,7 @@ export function EventHistory() {
       'Student Name',
       'Check-in Status',
       'Check-in Time',
-      'Badge Status',
+      'Credential Status',
       'Transaction Hash',
       'Registration Source',
       'Wallet Address'
@@ -123,40 +123,47 @@ export function EventHistory() {
       a.checkedInAt ? `"${new Date(a.checkedInAt).toLocaleString()}"` : 'N/A',
       a.mintStatus || 'not_issued',
       `"${a.txHash || ''}"`,
-      a.source || 'qr_checkin',
-      `"${a.ethAddress || ''}"`
+      `"${a.source || 'qr'}"`,
+      `"${a.walletAddress || 'N/A'}"`
     ]);
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `${selectedEvent.name.replace(/\s+/g, '_')}_attendees_${new Date().toISOString().slice(0, 10)}.csv`
-    );
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `attendees_${selectedEvent.id}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showToast('Attendee CSV exported successfully!', 'success');
   };
 
-  // Filtered Attendees by search term
   const filteredAttendees = attendees.filter(a => {
-    if (!searchTerm.trim()) return true;
+    if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
-    const nameMatch = (a.studentName || '').toLowerCase().includes(term);
-    const mssvMatch = (a.mssv || '').toLowerCase().includes(term);
-    const ocidMatch = (a.ocid || '').toLowerCase().includes(term);
-    return nameMatch || mssvMatch || ocidMatch;
+    return (
+      (a.studentName && a.studentName.toLowerCase().includes(term)) ||
+      (a.mssv && a.mssv.toLowerCase().includes(term)) ||
+      (a.ocid && a.ocid.toLowerCase().includes(term))
+    );
   });
+
+  const getStatusDisplay = (ev) => {
+    if (ev.deletedAt) {
+      return { status: 'soft_deleted', label: 'SOFT DELETED' };
+    }
+    const eventDate = new Date(ev.datetime);
+    const isPast = eventDate < new Date();
+    if (isPast) {
+      return { status: 'completed', label: 'COMPLETED' };
+    }
+    return { status: 'published', label: 'PUBLISHED' };
+  };
 
   if (redirectPath) {
     return <Navigate to={redirectPath} replace />;
   }
 
-  if (loading) {
+  if (loadingEvents) {
     return (
       <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
         <div className="badge-kicker text-[10px] text-slate-400">Loading Chapter Event History...</div>
@@ -166,100 +173,74 @@ export function EventHistory() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header breadcrumbs */}
-      <div>
-        <Link to={managePath} className="text-xs font-bold text-accent-blue hover:underline uppercase tracking-wider">
-          &larr; Back to Chapter Management Console
-        </Link>
-
-        <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-navy flex items-center gap-2">
-              Event History &amp; Attendee Logs
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
-                {chapter?.name || 'Chapter'}
-              </span>
-            </h1>
-            <p className="text-xs text-text-secondary mt-1">
-              Historical archive of completed &amp; soft-deleted events along with student attendance and Soulbound Token logs.
-            </p>
-          </div>
+    <div className="space-y-8 font-sans">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-6">
+        <div>
+          <h1 className="text-2xl font-black text-navy leading-tight">
+            {chapter ? `${chapter.name} History` : 'Event History & Archive'}
+          </h1>
+          <p className="text-xs text-text-secondary mt-1">
+            Historical archive of completed &amp; soft-deleted events along with student attendance and credential issuance logs.
+          </p>
         </div>
+
+        {selectedEvent && (
+          <button
+            onClick={() => setSelectedEvent(null)}
+            className="px-4 py-2 border border-border rounded text-xs font-semibold text-text-secondary hover:text-navy hover:bg-slate-50 transition-colors self-start sm:self-auto"
+          >
+            &larr; Back to Events Archive
+          </button>
+        )}
       </div>
 
-      {/* VIEW MODE 2: Attendee List Detail View for Selected Event */}
-      {selectedEventId && selectedEvent ? (
-        <div className="space-y-6 animate-[fadeIn_0.2s_ease-out]">
-          {/* Back button */}
-          <button
-            onClick={handleClearSelectedEvent}
-            className="text-xs font-bold text-navy hover:text-accent-blue flex items-center gap-1"
-          >
-            &larr; Return to Event History List
-          </button>
-
-          {/* Selected Event Summary Card */}
+      {selectedEvent ? (
+        <div className="space-y-6">
           <div className="bg-surface border border-border rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-navy">{selectedEvent.name}</h2>
-                {selectedEvent.deletedAt ? (
-                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold uppercase text-rose-700 tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
-                    <span>Soft Deleted</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-extrabold uppercase text-emerald-700 tracking-wider">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>Completed / Active</span>
-                  </span>
-                )}
+            <div className="space-y-1">
+              <div className="text-[10px] text-accent-blue font-bold uppercase tracking-wider">
+                Event Attendee Registry
               </div>
-              <p className="text-xs text-text-secondary mt-1">
-                Date: {new Date(selectedEvent.datetime).toLocaleString()} &bull; Location: {selectedEvent.location} &bull; Reward: +{selectedEvent.points} pts
-              </p>
+              <h2 className="text-xl font-black text-navy">{selectedEvent.name}</h2>
+              <div className="text-xs text-text-secondary">
+                {new Date(selectedEvent.datetime).toLocaleString()} &bull; {selectedEvent.location} ({selectedEvent.locationType})
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
               <button
-                onClick={handleExportAttendeeCSV}
+                onClick={exportAttendeesCsv}
                 disabled={attendees.length === 0}
-                className="px-4 py-2 border border-border bg-white text-navy hover:bg-slate-50 text-xs font-semibold rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5"
+                className="px-4 py-2 bg-accent-blue hover:bg-accent-hover text-white rounded text-xs font-semibold shadow-sm transition-colors disabled:opacity-50"
               >
                 Export CSV Report
               </button>
             </div>
           </div>
 
-          {/* Search & Stats Bar */}
           <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative max-w-sm flex-1">
               <input
                 type="text"
+                placeholder="Search attendee by MSSV, OCID, name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search attendees by Name, MSSV, or OCID..."
-                className="w-full border border-border rounded-lg pl-9 pr-4 py-2 text-xs text-navy focus:outline-none focus:border-accent-blue bg-white"
+                className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-xs bg-white focus:outline-none focus:border-accent-blue"
               />
               <span className="absolute left-3 top-2.5 text-xs text-text-secondary pointer-events-none">&search;</span>
             </div>
 
             <div className="flex gap-4 text-xs font-semibold">
               <span className="text-navy">Total Registered: <b>{attendees.length}</b></span>
-              <span className="text-success">Checked-in / Badged: <b>{attendees.filter(a => a.checkedIn).length}</b></span>
+              <span className="text-success">Checked-in / Credentialed: <b>{attendees.filter(a => a.checkedIn).length}</b></span>
             </div>
           </div>
 
-          {/* Attendees Table */}
           {loadingAttendees ? (
             <div className="py-12 text-center text-xs text-text-secondary">Loading attendee logs...</div>
           ) : filteredAttendees.length === 0 ? (
             <div className="py-16 text-center bg-surface border border-dashed border-border rounded-xl">
               <div className="text-sm font-semibold text-navy">No attendee records found</div>
-              <p className="text-xs text-text-secondary mt-1">
-                {searchTerm ? 'No attendees match your search query.' : 'No student registrations recorded for this event.'}
-              </p>
             </div>
           ) : (
             <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
@@ -270,7 +251,7 @@ export function EventHistory() {
                       <th className="p-4">Student Info</th>
                       <th className="p-4">MSSV / OCID</th>
                       <th className="p-4 text-center">Check-in Status</th>
-                      <th className="p-4 text-center">Badge Status</th>
+                      <th className="p-4 text-center">Credential Status</th>
                       <th className="p-4 text-center">Source</th>
                       <th className="p-4 text-right">Transaction Hash</th>
                     </tr>
@@ -302,11 +283,11 @@ export function EventHistory() {
                             status={att.mintStatus || (att.checkedIn ? 'success' : 'not_issued')}
                             label={
                               att.mintStatus === 'success' || att.mintStatus === 'minted_onchain'
-                                ? 'SBT MINTED'
+                                ? 'CREDENTIAL ISSUED'
                                 : att.mintStatus === 'skipped_no_wallet' || att.mintStatus === 'off_chain'
-                                ? 'OFF-CHAIN (NO WALLET)'
+                                ? 'OFF-CHAIN (REGISTERED)'
                                 : att.mintStatus === 'pending' || att.mintStatus === 'minting'
-                                ? 'MINTING...'
+                                ? 'ISSUING...'
                                 : 'NOT ISSUED'
                             }
                           />
@@ -325,12 +306,12 @@ export function EventHistory() {
                               href={`https://educhain-testnet.blockscout.com/tx/${att.txHash}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-accent-blue hover:underline font-semibold"
+                              className="text-accent-blue hover:underline"
                             >
-                              {att.txHash.slice(0, 6)}...{att.txHash.slice(-4)}
+                              {att.txHash.substring(0, 8)}...{att.txHash.substring(att.txHash.length - 4)}
                             </a>
                           ) : (
-                            <span className="text-slate-400">&mdash;</span>
+                            <span className="text-text-secondary opacity-60">N/A</span>
                           )}
                         </td>
                       </tr>
@@ -342,20 +323,12 @@ export function EventHistory() {
           )}
         </div>
       ) : (
-        /* VIEW MODE 1: Chapter Event History List */
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-bold text-navy">All Historical &amp; Soft Deleted Events</h2>
-            <span className="text-xs text-text-secondary">
-              Total Recorded Events: <b>{events.length}</b>
-            </span>
-          </div>
-
+        <div className="space-y-4">
           {events.length === 0 ? (
-            <div className="text-center py-16 bg-surface border border-dashed border-border rounded-xl">
-              <h3 className="text-sm font-semibold text-navy">No historical events recorded</h3>
+            <div className="py-16 text-center bg-surface border border-dashed border-border rounded-xl">
+              <div className="text-sm font-semibold text-navy">No archived events found</div>
               <p className="text-xs text-text-secondary mt-1">
-                Events hosted or soft-deleted in this chapter will appear here.
+                Completed and deleted events will be preserved in this registry.
               </p>
             </div>
           ) : (
@@ -367,7 +340,7 @@ export function EventHistory() {
                       <th className="p-4">Event Name &amp; Details</th>
                       <th className="p-4">Date &amp; Time</th>
                       <th className="p-4 text-center">Registrations</th>
-                      <th className="p-4 text-center">Checked-in Badges</th>
+                      <th className="p-4 text-center">Checked-in Credentials</th>
                       <th className="p-4">Status</th>
                       <th className="p-4 text-right">Actions</th>
                     </tr>

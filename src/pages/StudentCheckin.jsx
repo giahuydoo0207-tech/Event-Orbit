@@ -97,13 +97,13 @@ export function StudentCheckin() {
       return;
     }
 
-    setStatusState('processing');
+        setStatusState('processing');
     try {
       const res = await checkInStudent(qrData, user);
       if (res.success) {
         setTxHash(res.txHash);
         setStatusState('success');
-        showToast('Attendance confirmed! Badge issued.', 'success');
+        showToast('Attendance confirmed! Credential issued.', 'success');
       } else {
         if (getCheckinLookupFailureState({ status: res.status }, true) === 'connect') {
           setStatusState('connect');
@@ -200,15 +200,15 @@ export function StudentCheckin() {
               <p className="text-xs text-text-secondary">{event?.location}</p>
             </div>
 
-            {/* Inner Info Banner: R_parent = 12px, Padding = 16px -> R_child = 4px (rounded-sm) */}
+            {/* Inner Info Banner */}
             <div className="bg-accent-blue/5 border border-accent-blue/15 rounded-lg p-4 flex items-center gap-4">
               <div className="text-center bg-accent-blue text-white rounded-sm p-2 min-w-[70px]">
-                <span className="text-xs uppercase font-bold block leading-none">SBT</span>
+                <span className="text-xs uppercase font-bold block leading-none">PTS</span>
                 <span className="text-xl font-black">+{event?.points}</span>
                 <span className="text-[9px] block uppercase leading-none">pts</span>
               </div>
               <p className="text-xs text-text-secondary">
-                Confirming attendance issues a Soulbound Token credential directly to your student badge profile.
+                Confirming attendance issues a verified digital credential directly to your student profile.
               </p>
             </div>
 
@@ -267,9 +267,9 @@ export function StudentCheckin() {
         {statusState === 'processing' && (
           <div className="text-center py-10 space-y-4">
             <div className="w-10 h-10 border-t-2 border-accent-blue rounded-full animate-spin mx-auto"></div>
-            <h2 className="text-lg font-bold text-navy">Issuing Soulbound Token...</h2>
+            <h2 className="text-lg font-bold text-navy">Issuing Event Credential...</h2>
             <p className="text-xs text-text-secondary">
-              Giao dịch đang được xác thực on-chain. Vui lòng giữ kết nối Internet.
+              Thông tin điểm danh đang được xác thực và ghi nhận. Vui lòng giữ kết nối Internet.
             </p>
           </div>
         )}
@@ -287,7 +287,7 @@ export function StudentCheckin() {
 
             <div className="bg-success/5 border border-success/20 rounded-xl p-4 text-left space-y-3">
               <div className="flex justify-between items-center text-xs">
-                <span className="text-text-secondary">Earned Badge:</span>
+                <span className="text-text-secondary">Earned Credential:</span>
                 <span className="font-bold text-success">+{event?.points} points</span>
               </div>
               <div className="text-xs font-semibold text-navy">{event?.name}</div>
@@ -311,7 +311,7 @@ export function StudentCheckin() {
               to="/dashboard"
               className="w-full py-2.5 bg-navy text-white text-xs font-semibold rounded block text-center"
             >
-              View My Badge Wallet
+              View My Credentials
             </Link>
           </div>
         )}

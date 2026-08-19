@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { fetchStudentAchievements } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { CredentialCard } from '../components/CredentialCard';
+import { CredentialDetailModal } from '../components/CredentialDetailModal';
 
 export function DashboardStudent() {
   const user = useStore((state) => state.user);
   const [achievements, setAchievements] = useState([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedCredential, setSelectedCredential] = useState(null);
 
   useEffect(() => {
     async function loadAchievements() {
@@ -15,8 +18,8 @@ export function DashboardStudent() {
       setLoading(true);
       try {
         const res = await fetchStudentAchievements(user);
-        setAchievements(res.achievements);
-        setTotalPoints(res.totalPoints);
+        setAchievements(res.achievements || []);
+        setTotalPoints(res.totalPoints || 0);
       } catch (err) {
         console.error(err);
       } finally {
@@ -29,7 +32,7 @@ export function DashboardStudent() {
   if (loading) {
     return (
       <div className="py-20 text-center space-y-4 max-w-sm mx-auto font-sans">
-        <div className="badge-kicker text-[10px] text-slate-400">Retrieving achievements catalog...</div>
+        <div className="badge-kicker text-[10px] text-slate-400">Retrieving credentials catalog...</div>
         <LoadingBar className="max-w-[140px] mx-auto" />
       </div>
     );
@@ -47,7 +50,7 @@ export function DashboardStudent() {
           </div>
           <h1 className="text-2xl font-black text-oc-ink">Welcome Back, {user.fullName}!</h1>
           <p className="text-xs text-slate-500 font-medium">
-            Tracking your Open Campus verified event participation and SBT awards on EDU Chain.
+            Tracking your verified event participation and digital credentials on Open Campus ID.
           </p>
           {user.ocid && (
             <div className="text-xs font-mono font-bold text-oc-blue mt-1">{user.ocid}</div>
@@ -68,10 +71,10 @@ export function DashboardStudent() {
         </div>
       </div>
 
-      {/* Badges & Achievements Catalog */}
+      {/* Credentials Catalog */}
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-black text-oc-ink">Soulbound Token Badges</h2>
+          <h2 className="text-lg font-black text-oc-ink">Credentials</h2>
           <span className="badge-kicker text-oc-blue">{achievements.length} Credentials</span>
         </div>
 
@@ -79,49 +82,33 @@ export function DashboardStudent() {
           <div className="text-center py-16 bg-white border border-dashed border-oc-periwinkle rounded-xl space-y-2">
             <h3 className="text-sm font-bold text-oc-ink">No credentials claimed yet</h3>
             <p className="text-xs text-slate-500">
-              Attend campus events and check in via QR code to earn your first verified SBT badge.
+              Attend campus events and check in via QR code to earn your first verified event credential.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {achievements.map((ach) => (
-              <div
+              <CredentialCard
                 key={ach.id}
-                className="bg-white border border-oc-periwinkle/70 rounded-xl p-4 shadow-sm hover:shadow-md transition-all space-y-4"
-              >
-                {/* R_child = R_parent(16px) - Padding(16px) = 4px (rounded-sm) */}
-                <div className="relative h-40 bg-oc-mist rounded-sm overflow-hidden flex items-center justify-center p-3 border border-oc-periwinkle/40">
-                  <img
-                    src={ach.badgeImage}
-                    alt={ach.eventName}
-                    className="max-h-full max-w-full object-contain rounded-sm shadow-sm"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <span className="badge-kicker bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full text-[9px]">
-                      VERIFIED ON-CHAIN
-                    </span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-oc-ink leading-snug">{ach.eventName}</h3>
-                  <div className="badge-kicker text-oc-blue text-[10px]">+ {ach.points} Points</div>
-                  <div className="text-[10px] text-slate-500 font-medium pt-1">
-                    Earned: {new Date(ach.earnedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </div>
-                </div>
-
-                {ach.txHash && (
-                  <div className="pt-3 border-t border-oc-periwinkle/40 flex justify-between items-center text-[10px]">
-                    <span className="text-slate-400 font-medium">Tx Hash:</span>
-                    <span className="font-mono text-oc-blue truncate max-w-[120px]">{ach.txHash}</span>
-                  </div>
-                )}
-              </div>
+                credential={ach}
+                recipientName={user.fullName}
+                recipientOcid={user.ocid}
+                onViewDetails={(cred) => setSelectedCredential(cred)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {/* Modal View */}
+      {selectedCredential && (
+        <CredentialDetailModal
+          credential={selectedCredential}
+          recipientName={user.fullName}
+          recipientOcid={user.ocid}
+          onClose={() => setSelectedCredential(null)}
+        />
+      )}
     </div>
   );
 }

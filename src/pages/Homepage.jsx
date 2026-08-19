@@ -44,7 +44,7 @@ export function Homepage() {
       }
     }
     loadFeed();
-  }, [user.followedChapterIds]);
+    }, [JSON.stringify(user.followedChapterIds)]);
 
   const getChapterName = (event) => {
     if (event.chapter?.name) return event.chapter.name;

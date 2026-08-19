@@ -229,7 +229,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
 
       setResults(aggregatedResults);
       setStep('results');
-      showToast(`Processing complete! Issued ${aggregatedResults.issuedList.length} badges.`, 'success');
+      showToast(`Processing complete! Issued ${aggregatedResults.issuedList.length} credentials.`, 'success');
       
       if (handleSuccessCallback) {
         handleSuccessCallback();
@@ -291,13 +291,13 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
         <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-slate-50">
           <div>
             <h2 className="text-base font-bold text-navy flex items-center gap-2">
-              Import & Auto-Issue Event Badges
+              Import & Auto-Issue Event Credentials
               <span className="bg-accent-blue/10 text-accent-blue text-[10px] uppercase font-extrabold px-2 py-0.5 rounded">
                 Partner Import
               </span>
             </h2>
             <p className="text-xs text-text-secondary mt-0.5">
-              Upload external attendee lists (.xlsx/.csv from Luma, Ticketbox, FB Events) to issue Soulbound Badges.
+              Upload external attendee lists (.xlsx/.csv) to issue verified digital credentials.
             </p>
           </div>
           <button
@@ -525,7 +525,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
             <div className="py-12 text-center space-y-6">
               <div className="w-12 h-12 border-4 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
               <div className="space-y-2">
-                <h3 className="text-base font-bold text-navy">Processing & Issuing Badges...</h3>
+                <h3 className="text-base font-bold text-navy">Processing & Issuing Credentials...</h3>
                 <p className="text-xs text-text-secondary font-medium">{statusText}</p>
               </div>
 
@@ -548,7 +548,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
           {step === 'results' && (
             <div className="space-y-6 pt-4">
               <div className="border-b border-border pb-4">
-                <h3 className="text-lg font-extrabold text-navy">Import & Badge Issuance Summary</h3>
+                <h3 className="text-lg font-extrabold text-navy">Import & Credential Issuance Summary</h3>
                 <p className="text-xs text-text-secondary">
                   Processed <span className="num font-bold text-oc-blue">{results.totalProcessed}</span> records from the uploaded file.
                 </p>
@@ -568,7 +568,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                     <h4 className="badge-kicker text-[10px] font-bold text-oc-navy tracking-wider">
                       Unmatched Attendees (<span className="num">{results.unmatchedList.length}</span>)
                     </h4>
-                    <div className="flex items-center gap-3"><span className="text-[10px] text-text-secondary font-medium">Send the claim link to each student so they can self-claim their badge.</span>{results.unmatchedList.some((item) => item.claimUrl) && <button onClick={() => copyToClipboard(results.unmatchedList.filter((item) => item.claimUrl).map((item) => `${item.name}: ${item.claimUrl}`).join('\n'), 'Claim links copied to clipboard.')} className="shrink-0 rounded-md border border-oc-blue/30 px-2 py-1 text-[10px] font-bold text-oc-blue">Copy All</button>}</div>
+                    <div className="flex items-center gap-3"><span className="text-[10px] text-text-secondary font-medium">Send the claim link to each student so they can self-claim their credential.</span>{results.unmatchedList.some((item) => item.claimUrl) && <button onClick={() => copyToClipboard(results.unmatchedList.filter((item) => item.claimUrl).map((item) => `${item.name}: ${item.claimUrl}`).join('\n'), 'Claim links copied to clipboard.')} className="shrink-0 rounded-md border border-oc-blue/30 px-2 py-1 text-[10px] font-bold text-oc-blue">Copy All</button>}</div>
                   </div>
 
                   <div className={`bg-white border border-oc-periwinkle rounded-lg overflow-x-auto ${results.unmatchedList.length > 6 ? 'max-h-64 overflow-y-auto' : ''}`}>

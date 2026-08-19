@@ -173,7 +173,7 @@ export function EventDetail() {
         setIsCheckedIn(true);
         setTxHash(res.txHash);
         loadData();
-        showToast("Attendance confirmed! Badge issued.", "success");
+        showToast("Attendance confirmed! Credential issued.", "success");
       } else {
         showToast(res.error || "Check-in failed", "error");
       }
@@ -285,7 +285,7 @@ export function EventDetail() {
                 <div className="font-semibold">{event.location}</div>
               </div>
               <div className="space-y-1">
-                <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">SBT Value</div>
+                <div className="text-[10px] text-text-secondary uppercase font-bold tracking-widest">Credential Value</div>
                 <div className={`font-bold ${themeStyle.accentText}`}>+{event.points} movement points</div>
               </div>
             </div>
@@ -416,7 +416,7 @@ export function EventDetail() {
 
                   {isCheckedIn && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-success">SBT Issued</span>
+                      <span className="text-xs font-bold text-success">Credential Issued</span>
                       {txHash && (
                         <a
                           href={`https://edu-chain-testnet.blockscout.com/tx/${txHash}`}

@@ -3,12 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { fetchStudentAchievementsByOcid } from '../api/mockApi';
 import NotFoundState from '../components/NotFoundState';
 import { LoadingBar } from '../components/LoadingBar';
+import { CredentialCard } from '../components/CredentialCard';
+import { CredentialDetailModal } from '../components/CredentialDetailModal';
 
 export function PublicProfile() {
   const { ocid } = useParams();
   const [achievements, setAchievements] = useState([]);
   const [totalPoints, setTotalPoints] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedCredential, setSelectedCredential] = useState(null);
 
   useEffect(() => {
     async function loadPublicData() {
@@ -94,39 +97,41 @@ export function PublicProfile() {
         </div>
       </div>
 
-      {/* Badges gallery (verified tokens) */}
+      {/* Credentials gallery */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-md font-bold uppercase tracking-wider text-navy">Verified Soulbound Token Badges</h2>
-          <p className="text-xs text-text-secondary mt-1">SBT credentials certified on EDU Chain Testnet.</p>
+          <h2 className="text-md font-bold uppercase tracking-wider text-navy">Verified Credentials</h2>
+          <p className="text-xs text-text-secondary mt-1">Digital credentials verified on Open Campus ID.</p>
         </div>
 
         {achievements.length === 0 ? (
           <div className="text-center py-16 bg-white border border-border rounded-xl space-y-2">
-            <p className="text-sm font-bold text-navy">No badges earned yet</p>
-            <p className="text-xs text-text-secondary">Attend an event to earn your first SBT.</p>
+            <p className="text-sm font-bold text-navy">No credentials earned yet</p>
+            <p className="text-xs text-text-secondary">Attend an event to earn your first credential.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {achievements.map((ach) => (
-              <div key={ach.id} className="bg-white border border-border rounded-xl p-4 text-center space-y-3 shadow-sm hover:shadow-md transition-all">
-                {/* R_child = 16px - 16px padding = 4px (rounded-sm) */}
-                <div className="aspect-square w-20 mx-auto rounded-sm overflow-hidden bg-slate-50 border border-border">
-                  <img
-                    src={ach.badgeImage}
-                    alt={ach.eventName}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-xs font-bold text-navy line-clamp-1 leading-tight">{ach.eventName}</h3>
-                  <div className="text-[9px] text-accent-blue font-bold">+{ach.points} pts</div>
-                </div>
-              </div>
+              <CredentialCard
+                key={ach.id}
+                credential={ach}
+                recipientName={displayName}
+                recipientOcid={ocid}
+                onViewDetails={(cred) => setSelectedCredential(cred)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      {selectedCredential && (
+        <CredentialDetailModal
+          credential={selectedCredential}
+          recipientName={displayName}
+          recipientOcid={ocid}
+          onClose={() => setSelectedCredential(null)}
+        />
+      )}
 
       {/* Blockchain Transactions Ledger */}
       {achievements.length > 0 && (

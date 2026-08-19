@@ -230,7 +230,7 @@ export function ChapterManage() {
                 onClick={() => setIsImportModalOpen(true)}
                 className="text-xs font-bold text-oc-blue hover:underline transition-colors"
               >
-                Import &amp; Issue Badges
+                Import &amp; Issue Credentials
               </button>
               <Link
                 to={`/manage/${encodeURIComponent(chapterId)}/history`}

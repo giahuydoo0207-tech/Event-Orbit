@@ -79,7 +79,7 @@ export function EventCreate() {
     if (!content.trim()) return showToast('Event content is required.', 'error');
     if (!datetime) return showToast('Date & time is required.', 'error');
     if (!location.trim()) return showToast('Location details are required.', 'error');
-    if (!points || Number(points) <= 0) return showToast('SBT Points Reward must be greater than 0.', 'error');
+    if (!points || Number(points) <= 0) return showToast('Points Reward must be greater than 0.', 'error');
 
     setSubmitting(true);
     try {
@@ -93,15 +93,15 @@ export function EventCreate() {
         description,
         content,
         datetime,
-        locationType,
         location,
-        capacity: Number(capacity),
-        points: Number(points),
+        locationType,
+        capacity: Number(capacity) || 50,
+        points: Number(points) || 5,
         theme: selectedTheme,
         category,
-        visibility,
         tags: allTags,
         coverImage,
+        autoPublish: false,
         chapterId: chapterId || null
       });
 
@@ -117,10 +117,9 @@ export function EventCreate() {
         showToast('Draft event saved successfully.', 'success');
       }
 
-      navigate(`/manage/${encodeURIComponent(chapterId)}`);
+      navigate(`/manage/${chapterId || 'fit'}`);
     } catch (err) {
-      console.error('Event creation failed:', err);
-      showToast(err.message || 'Failed to create event. Please try again.', 'error');
+      showToast(err.message || 'Failed to create event', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +134,7 @@ export function EventCreate() {
       <div>
         <h1 className="text-2xl font-black text-oc-ink">Create New Event</h1>
         <p className="text-xs text-slate-500 mt-1 font-medium">
-          Draft your event details and configure your Soulbound Token (SBT) reward structures on EDU Chain.
+          Draft your event details and configure your verified digital credential reward structures on Open Campus ID.
         </p>
       </div>
 
@@ -368,7 +367,7 @@ export function EventCreate() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                  SBT Points Reward *
+                  Points Reward *
                 </label>
                 <input
                   type="number"
@@ -381,7 +380,7 @@ export function EventCreate() {
               </div>
             </div>
 
-            {/* Theme / Visibility */}
+            {/* Theme / Category */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
@@ -398,80 +397,155 @@ export function EventCreate() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-secondary uppercase mb-2">
-                  Visibility
+                <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
+                  Event Category
                 </label>
-                <div className="flex space-x-3 text-xs pt-1">
-                  {['Public', 'Private'].map(v => (
-                    <label key={v} className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value={v}
-                        checked={visibility === v}
-                        onChange={() => setVisibility(v)}
-                        className="mr-1.5"
-                      />
-                      {v}
-                    </label>
-                  ))}
-                </div>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full border-b border-border py-2 text-sm focus:outline-none"
+                >
+                  <option value="Tech">Tech</option>
+                  <option value="AI">AI</option>
+                  <option value="Blockchain">Blockchain</option>
+                  <option value="Design">Design</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Career">Career</option>
+                </select>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="pt-4 flex flex-col sm:flex-row gap-3">
+            {/* Cover Image Upload / Custom Seed */}
+            <div className="space-y-3 pt-2">
+              <label className="block text-xs font-semibold text-text-secondary uppercase">
+                Event Cover Image
+              </label>
+              
+              <div className="flex gap-4 text-xs font-medium">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageMode"
+                    value="seed"
+                    checked={imageMode === 'seed'}
+                    onChange={() => setImageMode('seed')}
+                  />
+                  <span>Preset / Keyword</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="imageMode"
+                    value="upload"
+                    checked={imageMode === 'upload'}
+                    onChange={() => setImageMode('upload')}
+                  />
+                  <span>Upload Image File</span>
+                </label>
+              </div>
+
+              {imageMode === 'seed' ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={coverSeed}
+                    onChange={(e) => setCoverSeed(e.target.value)}
+                    placeholder="Keyword (e.g. ai, hackathon, web3)"
+                    className="flex-1 border-b border-border py-1 text-sm focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCoverSeed(Math.random().toString(36).substring(7))}
+                    className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium hover:bg-slate-200"
+                  >
+                    Randomize
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-oc-blue/10 file:text-oc-blue hover:file:bg-oc-blue/20 cursor-pointer"
+                  />
+                  {coverImageData && (
+                    <span className="text-[11px] text-emerald-600 font-medium block">
+                      Custom image loaded for preview.
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* AI Enhancement Section */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleEnhanceContent}
+                disabled={isAiGenerating || (!title && !description)}
+                className="w-full py-2.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 hover:border-purple-300 text-purple-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                <span>{isAiGenerating ? '✨ AI Generating Details...' : '✨ Enhance Description & Suggest Tags with AI'}</span>
+              </button>
+            </div>
+
+            {/* Submit Action Buttons */}
+            <div className="pt-6 border-t border-border flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => navigate(`/manage/${chapterId || 'fit'}`)}
+                className="px-5 py-2.5 border border-border text-text-secondary hover:text-navy rounded text-xs font-semibold"
+              >
+                Cancel
+              </button>
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, 'draft')}
                 disabled={submitting}
-                className="flex-1 py-3 border border-oc-navy text-oc-navy text-xs font-bold rounded-lg hover:bg-oc-navy/5 transition-all disabled:opacity-50"
+                className="px-5 py-2.5 border border-oc-blue text-oc-blue hover:bg-oc-blue/5 rounded text-xs font-semibold transition-all disabled:opacity-50"
               >
-                {submitting ? 'Processing...' : 'Save as Draft'}
+                {submitting ? 'Saving...' : 'Save as Draft'}
               </button>
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, 'submit')}
                 disabled={submitting}
-                className="flex-1 py-3 bg-oc-blue text-white text-xs font-bold rounded-lg hover:bg-oc-blue/90 shadow-sm transition-all disabled:opacity-50"
+                className="px-6 py-2.5 bg-accent-blue hover:bg-accent-hover text-white rounded text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
               >
-                {submitting ? 'Processing...' : 'Submit for Review'}
+                {submitting ? 'Submitting...' : 'Submit for Review'}
               </button>
             </div>
-
           </form>
         </div>
 
         {/* Live Preview Column */}
-        <div className="sticky top-6 h-fit space-y-4">
-          <div className="text-xs uppercase font-bold text-text-secondary tracking-widest">
-            Live Preview (Theme: {selectedTheme})
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-text-secondary uppercase">
+            <span>Live Card Preview</span>
+            <span className="text-[10px] text-accent-blue">{selectedTheme} Theme</span>
           </div>
 
-          <div className={`border rounded-xl overflow-hidden shadow-sm transition-all duration-300 ${themeStyle.bg} ${themeStyle.text} ${themeStyle.border}`}>
-            {/* Mock Cover image */}
-            <div className="aspect-[2.5/1] w-full bg-slate-100 overflow-hidden relative border-b border-border">
+          <div className={`border border-border rounded-2xl overflow-hidden shadow-lg transition-all ${themeStyle.card}`}>
+            {/* Header Banner */}
+            <div className="relative aspect-[2.4/1] w-full bg-slate-800 flex items-end p-6">
               <img
-                src={imageMode === 'upload' && coverImageData
-                  ? coverImageData
-                  : `https://picsum.photos/seed/${coverSeed || 'orbit'}/800/400`
-                }
-                alt="cover preview"
-                className="object-cover w-full h-full"
-                onError={(e) => {
-                  e.target.src = 'https://picsum.photos/seed/default/800/400';
-                }}
+                src={imageMode === 'upload' && coverImageData ? coverImageData : `https://picsum.photos/seed/${coverSeed || 'orbit'}/800/400`}
+                alt="Event cover preview"
+                className="absolute inset-0 w-full h-full object-cover opacity-60"
               />
+              <div className="relative z-10 space-y-1">
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${themeStyle.badge}`}>
+                  {category}
+                </span>
+              </div>
             </div>
 
             {/* Content Preview */}
-            <div className="p-6 md:p-8 space-y-6">
-              <div className="space-y-3">
-                <span className={`text-xs font-bold uppercase tracking-widest ${themeStyle.accentText}`}>
-                  {category}
-                </span>
-                <h2 className="text-2xl font-extrabold tracking-tight leading-tight">
-                  {title || 'Untitled Event'}
+            <div className="p-6 space-y-4">
+              <div>
+                <h2 className="text-xl font-bold leading-tight">
+                  {title || 'Untitled Event Preview'}
                 </h2>
                 
                 {/* Meta details preview */}
@@ -479,7 +553,7 @@ export function EventCreate() {
                   <div>Type: {locationType}</div>
                   <div>Location: {location || 'No location set'}</div>
                   <div>Date: {datetime ? new Date(datetime).toLocaleString() : 'No date set'}</div>
-                  <div>SBT Capacity: {capacity} attendees</div>
+                  <div>Attendance Capacity: {capacity} attendees</div>
                 </div>
               </div>
 
@@ -505,7 +579,7 @@ export function EventCreate() {
               {/* Action Button Preview */}
               <div className="border-t border-slate-300/30 pt-6 flex justify-between items-center">
                 <div className="flex items-center gap-1 text-sm font-bold">
-                  <span>SBT</span>
+                  <span>POINTS</span>
                   <span className={themeStyle.accentText}>+{points} pts</span>
                 </div>
                 <button

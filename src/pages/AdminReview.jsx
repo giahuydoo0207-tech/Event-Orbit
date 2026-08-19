@@ -339,8 +339,8 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
           <EventDetail label="Schedule" value={new Date(event.datetime).toLocaleString()} />
           <EventDetail label="Location" value={`${event.locationType || 'In-person'}: ${event.location || 'Not set'}`} />
           {event.submittedBy && <EventDetail label="Submitted by" value={event.submittedBy} mono />}
-          <EventDetail label="SBT Capacity" value={`${event.capacity ?? 'Unlimited'} attendees`} />
-          <EventDetail label="SBT Points Reward" value={`+${event.points ?? 5} pts`} />
+          <EventDetail label="Attendance Capacity" value={`${event.capacity ?? 'Unlimited'} attendees`} />
+          <EventDetail label="Points Reward" value={`+${event.points ?? 5} pts`} />
         </dl>
 
         {/* Summary Description */}
