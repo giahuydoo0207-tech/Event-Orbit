@@ -81,7 +81,7 @@ export default async function handler(req, res) {
 
         if (viewError) {
           console.error('badge_recipients_view query error:', viewError);
-          return res.status(500).json({ error: 'Failed to load badge recipients.' });
+          return res.status(500).json({ error: 'Failed to load credential recipients.' });
         }
 
         return res.status(200).json((viewData || []).map(mapViewRow));

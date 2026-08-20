@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
     if (achError || !ach) {
       console.warn(`Badge metadata query failed for credentialId ${credentialId}:`, achError);
-      return res.status(404).json({ error: 'Badge credential not found.' });
+      return res.status(404).json({ error: 'Credential not found.' });
     }
 
     const event = ach.events;
@@ -39,10 +39,10 @@ export default async function handler(req, res) {
 
     // Construct OpenSea standard ERC721 NFT metadata JSON
     const metadata = {
-      name: event ? `Attendance Proof: ${event.name}` : 'Event Orbit Attendance Badge',
+      name: event ? `Participation Credential: ${event.name}` : 'Event Orbit Participation Credential',
       description: event 
-        ? `This Soulbound Token (SBT) certifies that the holder attended the event "${event.name}" organized by "${chapter?.name || 'Event Orbit Chapter'}".`
-        : 'This Soulbound Token (SBT) certifies attendance at an Event Orbit chapter event.',
+        ? `This credential records participation in "${event.name}" organized by "${chapter?.name || 'Event Orbit Chapter'}".`
+        : 'This credential records participation in an Event Orbit chapter event.',
       image: event?.cover_image || `https://picsum.photos/seed/badge-${ach.event_id}/300/300`,
       external_url: `https://event-orbit-app.vercel.app/e/${event?.slug || ''}`,
       attributes: [

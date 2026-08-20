@@ -14,7 +14,6 @@ function toPublicAchievement(achievement) {
     earnedAt: achievement.earnedAt,
     txHash: achievement.txHash,
     mintStatus: achievement.mintStatus,
-    badgeImage: achievement.badgeImage,
   };
 }
 

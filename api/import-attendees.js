@@ -181,11 +181,11 @@ async function classifyPreviewAttendees(attendees, eventId) {
     if (matchedStudent) {
       const userId = matchedStudent.user_id || matchedStudent.ocid || matchedStudent.mssv;
       const alreadyIssued = issuedUserIds.has(userId);
-      return { ...row, status: alreadyIssued ? 'already_issued' : 'matched_existing', reason: alreadyIssued ? 'Badge already issued previously.' : 'Matched an existing OCID/student account.' };
+      return { ...row, status: alreadyIssued ? 'already_issued' : 'matched_existing', reason: alreadyIssued ? 'Credential already issued previously.' : 'Matched an existing OCID/student account.' };
     }
     const claimStatus = claimsByIdentifier.get(row.mssv ? `mssv:${row.mssv}` : `email:${row.email}`);
     const alreadyIssued = claimStatus === 'claimed';
-    return { ...row, status: alreadyIssued ? 'already_issued' : 'unmatched', reason: alreadyIssued ? 'Badge already claimed previously.' : 'A claim link will be created after Confirm Import.' };
+    return { ...row, status: alreadyIssued ? 'already_issued' : 'unmatched', reason: alreadyIssued ? 'Credential already claimed previously.' : 'A claim link will be created after Confirm Import.' };
   });
 }
 
@@ -226,12 +226,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { eventId, attendees, mode, lumaEvent } = req.body || {};
+    const { eventId, attendees } = req.body || {};
 
-    if (!eventId || (mode !== 'luma-preview' && !Array.isArray(attendees))) {
+    if (!eventId || !Array.isArray(attendees)) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
     }
-    if (mode !== 'luma-preview' && (attendees.length === 0 || attendees.length > MAX_IMPORT_ROWS)) {
+    if (attendees.length === 0 || attendees.length > MAX_IMPORT_ROWS) {
       return res.status(400).json({ error: 'Each import batch must contain between 1 and 500 attendees.' });
     }
 
@@ -268,16 +268,6 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: error.message });
       }
       throw error;
-    }
-
-    if (mode === 'luma-preview') {
-      const lumaAttendees = await fetchLumaGuests(lumaEvent);
-      const preview = await classifyPreviewAttendees(lumaAttendees, event.id);
-      const summary = preview.reduce((counts, attendee) => {
-        counts[attendee.status] = (counts[attendee.status] || 0) + 1;
-        return counts;
-      }, { matched_existing: 0, already_issued: 0, unmatched: 0, invalid: 0 });
-      return res.status(200).json({ ok: true, source: 'luma', attendees: preview, summary });
     }
 
     const issuedList = [];
@@ -386,7 +376,7 @@ export default async function handler(req, res) {
             mssv: rawMssv || 'N/A',
             email: rawEmail || 'N/A',
             name: rawName || 'Unknown',
-            reason: 'Badge already claimed via Claim Badge link'
+            reason: 'Credential already claimed via claim link'
           });
           continue;
         }
@@ -446,7 +436,7 @@ export default async function handler(req, res) {
           mssv: studentMssv || 'N/A',
           email: rawEmail || 'N/A',
           name: studentName,
-          reason: 'Badge already issued previously'
+          reason: 'Credential already issued previously'
         });
         continue;
       }
@@ -506,7 +496,7 @@ export default async function handler(req, res) {
           mssv: studentMssv || 'N/A',
           email: rawEmail || 'N/A',
           name: studentName,
-          reason: 'Badge already issued previously'
+          reason: 'Credential already issued previously'
         });
         continue;
       }

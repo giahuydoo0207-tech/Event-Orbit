@@ -96,7 +96,7 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Event not found.' });
       }
       console.error('Atomic check-in reservation failed:', reservationError);
-      return res.status(500).json({ error: 'Failed to reserve attendance badge.' });
+      return res.status(500).json({ error: 'Failed to reserve attendance credential.' });
     }
 
     const reservation = reservationRows?.[0];

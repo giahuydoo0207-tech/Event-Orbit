@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import readXlsxFile from 'read-excel-file/browser';
 import Papa from 'papaparse';
 import { StatusBadge } from './StatusBadge';
-import { importAttendeesBatchApi, previewLumaAttendeesApi } from '../api/mockApi';
+import { importAttendeesBatchApi } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 
 export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, chapterId, onImportSuccess, onSuccess }) {
@@ -13,11 +13,6 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
   const [mappedData, setMappedData] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [parsingError, setParsingError] = useState('');
-  const [importSource, setImportSource] = useState('file');
-  const [lumaEvent, setLumaEvent] = useState('');
-  const [lumaPreview, setLumaPreview] = useState([]);
-  const [lumaSummary, setLumaSummary] = useState(null);
-  const [isLumaLoading, setIsLumaLoading] = useState(false);
   
   // Processing & Batch state
   const [step, setStep] = useState('upload'); // 'upload' | 'preview' | 'processing' | 'results'
@@ -241,39 +236,10 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
     }
   };
 
-  const handleLumaPreview = async () => {
-    const targetEventId = selectedEventId || eventId;
-    if (!targetEventId) {
-      showToast('Please select a target event before previewing.', 'error');
-      return;
-    }
-    if (!lumaEvent.trim()) {
-      showToast('Enter a Luma event URL or event ID.', 'error');
-      return;
-    }
-
-    setIsLumaLoading(true);
-    setParsingError('');
-    try {
-      const response = await previewLumaAttendeesApi(targetEventId, lumaEvent.trim());
-      setLumaPreview(response.attendees || []);
-      setLumaSummary(response.summary || null);
-      setMappedData((response.attendees || []).filter((attendee) => attendee.status !== 'invalid'));
-      setStep('preview');
-    } catch (err) {
-      setParsingError(err.message || 'Failed to preview Luma attendees.');
-    } finally {
-      setIsLumaLoading(false);
-    }
-  };
-
   const handleReset = () => {
     setFile(null);
     setParsedRows([]);
     setMappedData([]);
-    setLumaPreview([]);
-    setLumaSummary(null);
-    setLumaEvent('');
     setStep('upload');
     setParsingError('');
     setProgress(0);
@@ -291,13 +257,10 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
         <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-slate-50">
           <div>
             <h2 className="text-base font-bold text-navy flex items-center gap-2">
-              Import & Auto-Issue Event Credentials
-              <span className="bg-accent-blue/10 text-accent-blue text-[10px] uppercase font-extrabold px-2 py-0.5 rounded">
-                Partner Import
-              </span>
+              Import Participant Records
             </h2>
             <p className="text-xs text-text-secondary mt-0.5">
-              Upload external attendee lists (.xlsx/.csv) to issue verified digital credentials.
+              Upload a CSV or Excel file, preview the records, then confirm the import.
             </p>
           </div>
           <button
@@ -339,17 +302,6 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
           {/* STEP 1: Upload Step */}
           {step === 'upload' && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-oc-periwinkle bg-white">
-                <button type="button" onClick={() => { setImportSource('file'); setParsingError(''); }} className={`px-4 py-3 text-xs font-bold ${importSource === 'file' ? 'bg-oc-blue text-white' : 'text-oc-navy hover:bg-oc-mist'}`}>
-                  Upload CSV/XLSX
-                </button>
-                <button type="button" onClick={() => { setImportSource('luma'); setParsingError(''); }} className={`border-l border-oc-periwinkle px-4 py-3 text-xs font-bold ${importSource === 'luma' ? 'bg-oc-blue text-white' : 'text-oc-navy hover:bg-oc-mist'}`}>
-                  Pull from Luma
-                </button>
-              </div>
-
-              {importSource === 'file' ? (
-                <>
               <label className="block text-xs font-bold text-navy uppercase tracking-wider">
                 2. Upload Attendee File (.xlsx or .csv)
               </label>
@@ -396,20 +348,6 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                   {parsingError}
                 </div>
               )}
-                </>
-              ) : (
-                <div className="space-y-4 rounded-xl border border-oc-periwinkle bg-oc-mist p-5">
-                  <div>
-                    <label htmlFor="luma-event" className="badge-kicker block text-[10px] text-oc-navy">Luma event URL or ID</label>
-                    <input id="luma-event" value={lumaEvent} onChange={(event) => setLumaEvent(event.target.value)} disabled={isLumaLoading} placeholder="https://luma.com/event-slug or evt-..." className="mt-2 w-full rounded-lg border border-oc-periwinkle bg-white px-3 py-2.5 text-xs text-oc-navy outline-none focus:border-oc-blue" />
-                  </div>
-                  <p className="text-xs leading-relaxed text-text-secondary">Preview only reads and classifies attendees. Nothing is imported until you confirm.</p>
-                  {parsingError && <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700">{parsingError}</div>}
-                  <button type="button" onClick={handleLumaPreview} disabled={isLumaLoading} className="rounded-lg bg-oc-blue px-5 py-2.5 text-xs font-bold text-white disabled:opacity-60">
-                    {isLumaLoading ? 'Loading Preview...' : 'Preview Attendees'}
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -419,27 +357,20 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-xs font-bold text-navy uppercase tracking-wider">
-                    2. {importSource === 'luma' ? 'Luma Attendee Preview' : 'File Data Preview & Header Mapping'}
+                    2. File Data Preview &amp; Header Mapping
                   </h3>
                   <p className="text-xs text-text-secondary mt-0.5">
-                    {importSource === 'luma' ? 'No data has been imported yet.' : <>File: <span className="font-semibold text-navy">{file?.name}</span></>} ({importSource === 'luma' ? lumaPreview.length : mappedData.length} total rows)
+                    File: <span className="font-semibold text-navy">{file?.name}</span> ({mappedData.length} total rows)
                   </p>
                 </div>
                 <button
                   onClick={handleReset}
                   className="text-xs text-text-secondary hover:text-navy underline"
                 >
-                  Choose another source
+                  Choose another file
                 </button>
               </div>
 
-              {importSource === 'luma' && lumaSummary && (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[['MATCHED', lumaSummary.matched_existing], ['ALREADY ISSUED', lumaSummary.already_issued], ['CLAIM AFTER CONFIRM', lumaSummary.unmatched], ['INVALID', lumaSummary.invalid]].map(([label, value]) => (
-                    <div key={label} className="rounded-lg border border-oc-periwinkle bg-oc-mist p-3"><div className="font-mono text-[9px] font-bold text-oc-navy">{label}</div><div className="mt-1 font-mono text-xl font-extrabold text-oc-blue">{value || 0}</div></div>
-                  ))}
-                </div>
-              )}
 
               {/* Taste Skill Unified Metric Bar Frame */}
               <div className="bg-slate-50/90 border border-oc-periwinkle/40 rounded-xl p-3.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 shadow-xs">
@@ -487,11 +418,10 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                         <th className="p-3">MSSV (Student ID)</th>
                         <th className="p-3">Email Address</th>
                         <th className="p-3">Full Name</th>
-                        {importSource === 'luma' && <th className="p-3">Preview Status</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {(importSource === 'luma' ? lumaPreview : mappedData).slice(0, 8).map((row, idx) => (
+                      {mappedData.slice(0, 8).map((row, idx) => (
                         <tr key={idx} className="hover:bg-slate-50">
                           <td className="p-3 text-text-secondary font-mono text-[10px]">{idx + 1}</td>
                           <td className="p-3 font-mono font-semibold text-navy">
@@ -510,7 +440,6 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                           <td className="p-3 font-medium text-navy">
                             {row.name || 'Attendee'}
                           </td>
-                          {importSource === 'luma' && <td className="p-3"><span className="font-mono text-[9px] font-bold uppercase text-oc-blue">{row.status.replaceAll('_', ' ')}</span><div className="mt-1 text-[10px] text-text-secondary">{row.reason}</div></td>}
                         </tr>
                       ))}
                     </tbody>

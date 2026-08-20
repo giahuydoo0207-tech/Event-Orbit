@@ -208,6 +208,13 @@ export async function fetchStudentAchievements(student) {
   return { achievements: data.achievements || [], totalPoints };
 }
 
+export async function fetchReadyCredentialClaims() {
+  const res = await fetch('/api/claim?mine=1', { headers: getAuthHeaders(), credentials: 'include' });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, 'Failed to load ready credentials.'));
+  const data = await res.json();
+  return data.claims || [];
+}
+
 export async function fetchStudentAchievementsByOcid(ocid) {
   const res = await fetch(`/api/achievements?public=1&ocid=${encodeURIComponent(ocid)}`);
   if (!res.ok) {
@@ -373,21 +380,6 @@ export async function importAttendeesBatchApi(eventId, attendeesBatch) {
 
   if (!res.ok) {
     throw new Error(await parseErrorMessage(res, 'Failed to import attendees.'));
-  }
-
-  return await res.json();
-}
-
-export async function previewLumaAttendeesApi(eventId, lumaEvent) {
-  const res = await fetch('/api/import-attendees', {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-    body: JSON.stringify({ mode: 'luma-preview', eventId, lumaEvent })
-  });
-
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, 'Failed to preview Luma attendees.'));
   }
 
   return await res.json();

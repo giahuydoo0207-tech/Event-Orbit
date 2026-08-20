@@ -36,6 +36,10 @@ export default async function handler(req, res) {
       return handleGetPendingClaims(req, res);
     }
 
+    if (req.query?.mine === '1') {
+      return handleGetMyReadyClaims(req, res);
+    }
+
     return res.status(400).json({ error: 'Missing token or eventId query parameter.' });
   }
 
@@ -45,6 +49,34 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).json({ error: 'Method not allowed' });
+}
+
+async function handleGetMyReadyClaims(req, res) {
+  const session = await verifySession(req);
+  if (!session || session.role !== 'student') return res.status(401).json({ error: 'Student authentication required.' });
+
+  const select = 'id, claim_token, import_name, expires_at, event:events!pending_claims_event_id_fkey(id, slug, name, datetime)';
+  const expiresAfter = new Date().toISOString();
+  const queries = [];
+  if (session.mssv) queries.push(supabase.from('pending_claims').select(select).eq('status', 'pending').gte('expires_at', expiresAfter).eq('import_mssv', String(session.mssv).trim()));
+  if (session.ocid) queries.push(supabase.from('pending_claims').select(select).eq('status', 'pending').gte('expires_at', expiresAfter).eq('import_email', String(session.ocid).trim().toLowerCase()));
+  if (!queries.length) return res.status(200).json({ claims: [] });
+
+  const results = await Promise.all(queries);
+  const failed = results.find((result) => result.error);
+  if (failed) throw failed.error;
+  const uniqueClaims = new Map(results.flatMap((result) => result.data || []).map((claim) => [claim.id, claim]));
+  const data = [...uniqueClaims.values()].sort((a, b) => new Date(b.expires_at) - new Date(a.expires_at));
+
+  return res.status(200).json({
+    claims: (data || []).map((claim) => ({
+      id: claim.id,
+      claimUrl: `/claim/${claim.claim_token}`,
+      participantName: claim.import_name || session.full_name || 'Participant',
+      expiresAt: claim.expires_at,
+      event: Array.isArray(claim.event) ? claim.event[0] : claim.event,
+    }))
+  });
 }
 
 /**
@@ -73,7 +105,7 @@ async function handleGetClaimInfo(req, res) {
     // Check if already claimed
     if (claim.status === 'claimed') {
       return res.status(409).json({
-        error: 'This badge has already been claimed.',
+        error: 'This credential has already been claimed.',
         claimedAt: claim.claimed_at
       });
     }
@@ -234,7 +266,7 @@ async function handlePostClaim(req, res) {
     }
 
     if (claim.status === 'claimed') {
-      return res.status(409).json({ error: 'This badge has already been claimed.' });
+      return res.status(409).json({ error: 'This credential has already been claimed.' });
     }
 
     if (new Date(claim.expires_at) < new Date()) {
@@ -244,10 +276,10 @@ async function handlePostClaim(req, res) {
     // 2. Verify OCID session
     const session = await verifySession(req);
     if (!session) {
-      return res.status(401).json({ error: 'You must be logged in with Open Campus ID to claim this badge.' });
+      return res.status(401).json({ error: 'You must be logged in with Open Campus ID to claim this credential.' });
     }
     if (session.role !== 'student' || !session.ocid) {
-      return res.status(403).json({ error: 'Badge claims require a verified student Open Campus ID.' });
+      return res.status(403).json({ error: 'Credential claims require a student Open Campus ID.' });
     }
 
     const userId = session.user_id || session.ocid || session.mssv;
@@ -255,6 +287,12 @@ async function handlePostClaim(req, res) {
     const studentMssv = session.mssv || claim.import_mssv || null;
     const studentName = session.full_name || claim.import_name || 'Student';
     const ethAddress = session.eth_address || null;
+
+    const intendedIdentities = [claim.import_mssv, claim.import_email].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean);
+    const sessionIdentities = [session.mssv, session.ocid].map((value) => String(value || '').trim().toLowerCase()).filter(Boolean);
+    if (intendedIdentities.length && !intendedIdentities.some((identity) => sessionIdentities.includes(identity))) {
+      return res.status(403).json({ error: 'This credential claim is assigned to a different participant.' });
+    }
 
     if (!userId) {
       return res.status(401).json({ error: 'Invalid session: no user identity found.' });
@@ -274,15 +312,15 @@ async function handlePostClaim(req, res) {
         return res.status(404).json({ error: 'The event associated with this claim no longer exists.' });
       }
       console.error('[Claim] Atomic reservation failed:', reservationError);
-      return res.status(500).json({ error: 'Failed to reserve this badge claim.' });
+      return res.status(500).json({ error: 'Failed to reserve this credential claim.' });
     }
 
     const reservation = reservationRows?.[0];
     if (!reservation) {
-      return res.status(409).json({ error: 'This badge has already been claimed or the link has expired.' });
+      return res.status(409).json({ error: 'This credential has already been claimed or the link has expired.' });
     }
     if (reservation.already_owned) {
-      return res.status(409).json({ error: 'You already have a badge for this event.' });
+      return res.status(409).json({ error: 'You already have a credential for this event.' });
     }
 
     // 6. Mint SBT on-chain / issue off-chain achievement
@@ -319,7 +357,7 @@ async function handlePostClaim(req, res) {
     if (achErr) {
       // Unique constraint — badge already issued (race condition safety)
       console.error('[Claim] Achievement mint-status update failed:', achErr);
-      return res.status(500).json({ error: 'Badge was reserved, but mint status could not be updated.' });
+      return res.status(500).json({ error: 'Credential was reserved, but issuance status could not be updated.' });
     }
 
     // 8. Update pending_claim to 'claimed'
@@ -364,6 +402,6 @@ async function handlePostClaim(req, res) {
     });
   } catch (error) {
     console.error('[Claim POST] Error:', error);
-    return res.status(500).json({ error: error.message || 'Internal Server Error during badge claim.' });
+    return res.status(500).json({ error: error.message || 'Internal Server Error during credential claim.' });
   }
 }

@@ -63,9 +63,7 @@ export function EventDetail() {
           setRegistration(matchedReg);
           setIsRegistered(true);
           setIsCheckedIn(matchedReg.checkedIn);
-          if (matchedReg.checkedIn) {
-            setTxHash('0x' + Array.from({length: 40}, () => Math.floor(Math.random()*16).toString(16)).join(''));
-          }
+          if (matchedReg.checkedIn && matchedReg.txHash) setTxHash(matchedReg.txHash);
         }
       }
     } catch (err) {
@@ -355,7 +353,7 @@ export function EventDetail() {
               )}
               {isCheckedIn && (
                 <div className="font-bold uppercase tracking-wide text-success">
-                  &bull; Verified Check-in completed!
+                  &bull; Attendance check-in completed
                 </div>
               )}
             </div>

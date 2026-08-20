@@ -1,131 +1,35 @@
 import React from 'react';
 import { CategoryIcon } from './CategoryIcon';
+import { getCredentialPresentation, hasRealPoints } from '../lib/credentialPresentation';
 
-/**
- * CredentialCard Component — Digital Credential & Certificate Record
- * Replaces the old event thumbnail card with an authentic, professional digital credential.
- */
+const toneClasses = { success: 'border-emerald-200 bg-emerald-50 text-emerald-800', info: 'border-oc-periwinkle bg-oc-mist text-oc-blue', warning: 'border-amber-200 bg-amber-50 text-amber-800', danger: 'border-rose-200 bg-rose-50 text-rose-800', neutral: 'border-slate-200 bg-slate-50 text-slate-700' };
+
 export function CredentialCard({ credential, recipientName, recipientOcid, onViewDetails }) {
   if (!credential) return null;
-
-  const eventName = credential.eventName || 'Verified Event Attendance';
-  const earnedDate = credential.earnedAt
-    ? new Date(credential.earnedAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : 'Recent';
-
-  // Determine credential status badge (No fake on-chain claims)
-  const isSample = credential.isSample || credential.id?.toString().startsWith('sample-');
-  const isClaimed = credential.mintStatus === 'claimed' || credential.mintStatus === 'success';
-  const isPending = credential.mintStatus === 'pending' || credential.mintStatus === 'minting';
-
-  let statusLabel = 'ISSUED';
-  let statusStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-
-  if (isSample) {
-    statusLabel = 'SAMPLE';
-    statusStyle = 'bg-slate-100 text-slate-700 border-slate-200';
-  } else if (isClaimed) {
-    statusLabel = 'CLAIMED';
-    statusStyle = 'bg-oc-mist text-oc-blue border-oc-periwinkle';
-  } else if (isPending) {
-    statusLabel = 'PENDING';
-    statusStyle = 'bg-amber-50 text-amber-700 border-amber-200';
-  }
-
-  const credentialId = credential.credentialId || (credential.id ? `EO-${String(credential.id).slice(0, 8).toUpperCase()}` : null);
-  const recipient = recipientName || credential.studentName || recipientOcid || credential.ocid || 'Verified Student';
-  const points = Number(credential.points) || 0;
+  const presentation = getCredentialPresentation(credential);
+  const recipient = recipientName || credential.studentName || recipientOcid || credential.ocid || 'Recipient unavailable';
+  const issuedOn = credential.earnedAt ? new Date(credential.earnedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   return (
-    <article className="group relative flex flex-col justify-between rounded-2xl border border-oc-periwinkle/80 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-oc-blue/40 hover:shadow-md">
-      
-      {/* ── Top Certificate Header & Seal ── */}
-      <div>
-        <div className="relative mb-4 flex items-center justify-between rounded-xl bg-gradient-to-br from-oc-mist to-slate-50 p-4 border border-oc-periwinkle/40 overflow-hidden">
-          {/* Subtle Guilloche / Orbit watermark lines */}
-          <div className="pointer-events-none absolute -right-6 -bottom-6 h-28 w-28 rounded-full border border-oc-blue/10" />
-          <div className="pointer-events-none absolute -right-3 -bottom-3 h-20 w-20 rounded-full border border-oc-blue/10" />
-          <div className="pointer-events-none absolute -left-8 -top-8 h-24 w-24 rounded-full border border-oc-turquoise/20" />
-
-          {/* Left: Certificate Emblem Seal */}
-          <div className="relative flex items-center gap-3">
-            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white shadow-sm border border-oc-periwinkle/80">
-              <div className="absolute inset-1 rounded-full border border-dashed border-oc-blue/30" />
-              <CategoryIcon category={credential.category || 'Tech'} className="h-5 w-5 text-oc-blue" />
-            </div>
-            <div>
-              <p className="font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-oc-blue">
-                Event Orbit
-              </p>
-              <p className="font-mono text-[10px] font-semibold text-slate-500">
-                Digital Credential
-              </p>
-            </div>
-          </div>
-
-          {/* Right: Status Pill */}
-          <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider ${statusStyle}`}>
-            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
-            {statusLabel}
-          </span>
-        </div>
-
-        {/* ── Credential Info ── */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-base font-black text-oc-ink leading-snug group-hover:text-oc-blue transition-colors line-clamp-2">
-              {eventName}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1 font-medium">
-              Awarded to: <span className="font-bold text-oc-ink">{recipient}</span>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-oc-periwinkle/40 text-[11px]">
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Issued Date</span>
-              <span className="font-medium text-slate-700">{earnedDate}</span>
-            </div>
-            <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">Performance</span>
-              {points > 0 ? (
-                <span className="font-bold text-oc-blue">+{points} Points</span>
-              ) : (
-                <span className="font-medium text-slate-700">Participation</span>
-              )}
-            </div>
-          </div>
-
-          {credentialId && (
-            <div className="pt-2 border-t border-oc-periwinkle/40 flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Credential ID</span>
-              <span className="font-mono text-slate-600 truncate max-w-[130px] font-semibold">{credentialId}</span>
-            </div>
-          )}
-
-          {credential.txHash && (
-            <div className="flex items-center justify-between text-[10px]">
-              <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Tx Hash</span>
-              <span className="font-mono text-oc-blue truncate max-w-[120px]">{credential.txHash}</span>
-            </div>
-          )}
-        </div>
+    <article className="group relative flex min-h-[350px] flex-col overflow-hidden rounded-2xl border border-oc-periwinkle/70 bg-white p-5 shadow-[0_16px_38px_rgba(20,27,235,0.07)] transition duration-200 hover:-translate-y-0.5 hover:border-oc-blue/35">
+      <div className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full border border-oc-blue/10" />
+      <div className="pointer-events-none absolute -right-7 -top-7 h-28 w-28 rounded-full border border-oc-turquoise/25" />
+      <header className="relative flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3"><div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-oc-blue/25 bg-oc-mist text-oc-blue"><div className="absolute inset-1.5 rounded-full border border-dashed border-oc-blue/30" /><CategoryIcon category={credential.category || 'Tech'} className="h-6 w-6" /></div><div><p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-oc-blue">Event Orbit</p><p className="mt-0.5 text-xs font-semibold text-slate-500">Digital Credential</p></div></div>
+        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${toneClasses[presentation.tone]}`}>{presentation.label}</span>
+      </header>
+      <div className="relative mt-7 flex-1">
+        <h3 className="break-words text-lg font-black leading-snug text-oc-ink">{credential.eventName || 'Event credential'}</h3>
+        <p className="mt-2 text-xs text-slate-500">Awarded to <span className="font-bold text-oc-ink">{recipient}</span></p>
+        <dl className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-oc-periwinkle/45 pt-4 text-xs">
+          {issuedOn && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Recorded on</dt><dd className="mt-1 font-semibold text-slate-700">{issuedOn}</dd></div>}
+          {hasRealPoints(credential) && <div><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Points</dt><dd className="mt-1 font-bold text-oc-blue">{credential.points}</dd></div>}
+          <div className="col-span-2"><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Evidence</dt><dd className="mt-1 font-semibold text-slate-700">{presentation.evidence}</dd></div>
+          {credential.credentialId && <div className="col-span-2"><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Credential ID</dt><dd className="mt-1 truncate font-mono text-[11px] text-slate-700">{credential.credentialId}</dd></div>}
+          {credential.txHash && <div className="col-span-2"><dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Transaction hash</dt><dd className="mt-1 truncate font-mono text-[11px] text-oc-blue">{credential.txHash}</dd></div>}
+        </dl>
       </div>
-
-      {/* ── Bottom Action ── */}
-      <div className="mt-4 pt-3 border-t border-oc-periwinkle/50">
-        <button
-          type="button"
-          onClick={() => onViewDetails && onViewDetails(credential)}
-          className="w-full rounded-lg bg-oc-mist/80 py-2.5 text-center text-xs font-bold text-oc-blue border border-oc-periwinkle/70 hover:bg-oc-blue hover:text-white hover:border-oc-blue transition-all active:scale-[0.99]"
-        >
-          View Credential
-        </button>
-      </div>
+      <button type="button" onClick={() => onViewDetails?.(credential)} className="relative mt-5 w-full whitespace-nowrap rounded-lg border border-oc-blue/25 bg-oc-mist px-4 py-2.5 text-xs font-bold text-oc-blue transition hover:bg-oc-blue hover:text-white active:translate-y-px">View Credential</button>
     </article>
   );
 }

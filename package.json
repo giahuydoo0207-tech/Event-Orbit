@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:claim": "node scratch/test_5_claim_cases.js",
-    "test:luma-preview": "node scratch/luma-preview.test.js"
+    "test:credential-presentation": "node scratch/credential-presentation.test.js"
   },
   "dependencies": {
     "@opencampus/ocid-connect-js": "^2.0.0-alpha.7",
