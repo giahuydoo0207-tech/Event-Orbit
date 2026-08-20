@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
-import { mintBadge } from '../lib/relayer.js';
+import { classifyMintError, mintBadge } from '../lib/relayer.js';
 import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
 
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
@@ -472,9 +472,10 @@ export default async function handler(req, res) {
           mocked = relayerResult.mocked;
           mintStatus = 'success';
         } catch (mintErr) {
-          console.error('Relayer minting failed during attendee import:', mintErr?.name || 'Error');
+          const classification = classifyMintError(mintErr);
+          console.error(JSON.stringify({ component: 'attendee-import', event: 'mint_outcome', ...classification, errorName: mintErr?.name || 'Error' }));
           txHash = null;
-          mintStatus = 'failed';
+          mintStatus = classification.mintStatus;
         }
       }
 
@@ -499,6 +500,11 @@ export default async function handler(req, res) {
           reason: 'Credential already issued previously'
         });
         continue;
+      }
+
+      if (achErr) {
+        console.error(JSON.stringify({ component: 'attendee-import', event: 'mint_status_persist_failed', databaseCode: achErr.code || null, message: achErr.message || 'Database insert failed' }));
+        throw new Error('Credential issuance status could not be recorded.');
       }
 
       issuedList.push({

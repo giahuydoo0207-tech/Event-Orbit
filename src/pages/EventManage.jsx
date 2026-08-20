@@ -25,6 +25,7 @@ export function EventManage() {
   const [loading, setLoading] = useState(true);
   const [isQrLoading, setIsQrLoading] = useState(true);
   const [qrData, setQrData] = useState('');
+  const [qrError, setQrError] = useState('');
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -33,17 +34,21 @@ export function EventManage() {
   const qrCanvasRef = useRef(null);
 
   const fetchQRData = async () => {
+    setIsQrLoading(true);
     try {
       const res = await fetch(`/api/events/${id}/qr`, {
         headers: getAuthHeaders(),
         credentials: 'include'
       });
-      if (res.ok) {
-        const data = await res.json();
-        setQrData(data.qrData);
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to generate the check-in QR code.');
+      setQrData(data.qrData);
+      setQrError('');
     } catch (err) {
       console.error('Failed to fetch signed QR data:', err);
+      setQrData('');
+      setQrError(err.message || 'Unable to generate the check-in QR code.');
+      setIsQrLoading(false);
     }
   };
 
@@ -102,10 +107,8 @@ export function EventManage() {
 
   // Generate QR Canvas with instant fallback and clean loading state
   useEffect(() => {
-    if (qrCanvasRef.current && (event || id)) {
-      const checkinUrl = qrData 
-        ? `${window.location.origin}/student-checkin?qrData=${encodeURIComponent(qrData)}`
-        : `${window.location.origin}/student-checkin?eventId=${event?.id || id}`;
+    if (qrCanvasRef.current && qrData) {
+      const checkinUrl = `${window.location.origin}/student-checkin?qrData=${encodeURIComponent(qrData)}`;
 
       QRCode.toCanvas(qrCanvasRef.current, checkinUrl, {
         width: 240,
@@ -120,6 +123,7 @@ export function EventManage() {
         })
         .catch((err) => {
           console.error('QR generation error in manager', err);
+          setQrError('The signed token was created, but the QR image could not be rendered.');
           setIsQrLoading(false);
         });
     }
@@ -224,13 +228,19 @@ export function EventManage() {
           <div className="grid grid-cols-1 items-center gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(288px,0.8fr)_1.2fr] lg:gap-14 lg:p-12">
             <div className="flex flex-col items-center lg:items-start">
               <div className="relative flex min-h-[272px] min-w-[272px] items-center justify-center rounded-xl border border-oc-turquoise/30 bg-white p-4 shadow-[0_18px_50px_rgba(0,237,190,0.08)]">
-                {isQrLoading && (
+                {isQrLoading && !qrError && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 rounded-xl bg-white/95">
                     <div className="relative flex h-10 w-10 items-center justify-center">
                       <div className="absolute inset-0 rounded-full border-2 border-oc-blue/20" />
                       <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-oc-turquoise" />
                     </div>
                     <span className="badge-kicker text-[9px] text-slate-500">Generating check-in QR</span>
+                  </div>
+                )}
+                {qrError && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-white px-6 text-center" role="alert">
+                    <span className="text-sm font-bold text-oc-navy">Check-in QR unavailable</span>
+                    <span className="mt-2 text-xs leading-relaxed text-slate-500">{qrError}</span>
                   </div>
                 )}
                 <canvas
@@ -242,7 +252,7 @@ export function EventManage() {
               <div className="mt-5 w-full max-w-[320px]">
                 <div className="badge-kicker mb-2 text-[9px] text-oc-turquoise">Session token</div>
                 <div className="select-all truncate border-t border-oc-turquoise/25 pt-3 font-mono text-[9px] leading-relaxed text-oc-periwinkle/80">
-                  {qrData || 'Generating venue check-in token...'}
+                  {qrData || (qrError ? 'No active check-in token' : 'Generating venue check-in token...')}
                 </div>
               </div>
             </div>

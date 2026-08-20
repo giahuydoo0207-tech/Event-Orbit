@@ -2,8 +2,13 @@ import { createHmac, randomUUID } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../../../lib/verifySession.js';
 import { AuthorizationError, assertEventOwnership } from '../../../lib/authorization.js';
+import { getQrAvailability } from '../../../lib/qrAvailability.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+function writeQrLog(level, event, details = {}) {
+  console[level](JSON.stringify({ component: 'event-qr', event, ...details }));
+}
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -35,19 +40,23 @@ export default async function handler(req, res) {
       .maybeSingle();
 
     if (eventError) throw eventError;
-    if (!event) return res.status(404).json({ error: 'Event not found.' });
-    if (event.status !== 'published') return res.status(409).json({ error: 'QR check-in is only available for published events.' });
+    const availability = getQrAvailability(event);
+    if (!availability.available) {
+      writeQrLog('warn', 'qr_generation_blocked', { eventId, eventStatus: event?.status || null, failureCode: availability.code });
+      return res.status(availability.status).json({ error: availability.message, code: availability.code, eventStatus: event?.status || null });
+    }
     try {
       assertEventOwnership(session, event);
     } catch (error) {
       if (error instanceof AuthorizationError) {
+        writeQrLog('warn', 'qr_authorization_failed', { eventId, failureCode: 'ORGANIZER_NOT_AUTHORIZED' });
         return res.status(403).json({ error: error.message });
       }
       throw error;
     }
 
     if (!process.env.QR_SECRET) {
-      console.error('QR_SECRET is not configured.');
+      writeQrLog('error', 'qr_generation_failed', { eventId, failureCode: 'QR_SECRET_MISSING' });
       return res.status(503).json({ error: 'QR generation is temporarily unavailable.' });
     }
 
@@ -64,9 +73,10 @@ export default async function handler(req, res) {
     // Encode to base64 for easy transport in QR code
     const qrData = Buffer.from(JSON.stringify({ ...payload, signature })).toString('base64');
     
+    writeQrLog('info', 'qr_generated', { eventId, expiresAt, ttlSeconds: 300 });
     return res.status(200).json({ qrData, expiresAt });
   } catch (error) {
-    console.error('QR Generator Error:', error);
+    writeQrLog('error', 'qr_generation_failed', { failureCode: error?.code || 'QR_GENERATION_ERROR', errorName: error?.name || 'Error' });
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
 }

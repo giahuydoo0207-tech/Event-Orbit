@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { fetchChapterBySlug, fetchEvents, toggleFollowChapter, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import NotFoundState from '../components/NotFoundState';
@@ -9,6 +9,7 @@ import { CategoryIcon } from '../components/CategoryIcon';
 
 export function ChapterProfile() {
   const { slug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, followChapter, unfollowChapter } = useStore();
 
@@ -53,7 +54,7 @@ export function ChapterProfile() {
       }
     }
     loadData();
-  }, [slug, user.isAuthenticated, user.followedChapterIds]);
+  }, [slug, user.isAuthenticated, JSON.stringify(user.followedChapterIds || [])]);
 
   const [isActionLoading, setIsActionLoading] = useState(false);
   const showToast = useToastStore((state) => state.showToast);
@@ -123,15 +124,16 @@ export function ChapterProfile() {
   const upcomingEvents = chapterEvents.filter((e) => new Date(e.datetime) >= now);
   const pastEvents = chapterEvents.filter((e) => new Date(e.datetime) < now);
   const displayedEvents = activeTab === 'upcoming' ? upcomingEvents : pastEvents;
+  const isStudentFollowingRoute = location.pathname.startsWith('/following/chapters/');
 
   return (
     <div className="max-w-4xl mx-auto py-10 space-y-12">
       {/* Back Link */}
       <Link
-        to="/chapters"
+        to={isStudentFollowingRoute ? '/following' : '/chapters'}
         className="text-xs text-accent-blue hover:underline font-semibold"
       >
-        Back to All Chapters
+        {isStudentFollowingRoute ? 'Back to Following' : 'Back to All Chapters'}
       </Link>
 
       {/* Header Info Card */}

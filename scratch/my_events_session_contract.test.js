@@ -12,5 +12,7 @@ test('My Events loads registrations from the cookie session without a client ide
   assert.match(page, /fetchMyEventRegistrations\(\)/);
   assert.doesNotMatch(page, /fetchRegistrationsByUser\(user\.id\)/);
   assert.match(endpoint, /mine\s*===\s*'1'/);
-  assert.match(endpoint, /\.eq\('user_id',\s*session\.user_id\)/);
+  assert.match(endpoint, /getStudentIdentityValues\(session\)/);
+  assert.match(endpoint, /\['user_id',\s*'ocid',\s*'mssv'\]/);
+  assert.match(endpoint, /\.in\(column,\s*identities\)/);
 });

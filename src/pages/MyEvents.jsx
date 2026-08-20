@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchEvents, fetchMyEventRegistrations } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { classifyEventTiming } from '../lib/eventTiming';
 
 const TAB_OPTIONS = ['Upcoming', 'Past', 'All Events'];
 
@@ -59,12 +60,12 @@ export function MyEvents() {
   }, [events, registeredEventIds]);
 
   const filteredEvents = useMemo(() => {
-    const now = new Date();
+    const now = Date.now();
     if (activeTab === 'Upcoming') {
-      return myEvents.filter((e) => new Date(e.datetime) >= now);
+      return myEvents.filter((e) => classifyEventTiming(e.datetime, now) === 'upcoming');
     }
     if (activeTab === 'Past') {
-      return myEvents.filter((e) => new Date(e.datetime) < now);
+      return myEvents.filter((e) => classifyEventTiming(e.datetime, now) === 'past');
     }
     return myEvents;
   }, [myEvents, activeTab]);
@@ -157,7 +158,7 @@ export function MyEvents() {
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredEvents.map((event) => {
-            const isPast = new Date(event.datetime) < new Date();
+            const isPast = classifyEventTiming(event.datetime) === 'past';
             return (
               <Link
                 key={event.id}

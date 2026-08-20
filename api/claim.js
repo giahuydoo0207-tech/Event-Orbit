@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
-import { mintBadge } from '../lib/relayer.js';
+import { classifyMintError, mintBadge } from '../lib/relayer.js';
 import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
 import { serializeSessionCookie } from '../lib/sessionCookie.js';
 
@@ -339,9 +339,10 @@ async function handlePostClaim(req, res) {
         mocked = relayerResult.mocked;
         mintStatus = 'success';
       } catch (mintErr) {
-        console.error('[Claim] Relayer minting failed:', mintErr?.name || 'Error');
+        const classification = classifyMintError(mintErr);
+        console.error(JSON.stringify({ component: 'claim', event: 'mint_outcome', ...classification, errorName: mintErr?.name || 'Error' }));
         txHash = null;
-        mintStatus = 'failed';
+        mintStatus = classification.mintStatus;
       }
     }
 
@@ -356,7 +357,7 @@ async function handlePostClaim(req, res) {
 
     if (achErr) {
       // Unique constraint — badge already issued (race condition safety)
-      console.error('[Claim] Achievement mint-status update failed:', achErr);
+      console.error(JSON.stringify({ component: 'claim', event: 'mint_status_persist_failed', databaseCode: achErr.code || null, message: achErr.message || 'Database update failed' }));
       return res.status(500).json({ error: 'Credential was reserved, but issuance status could not be updated.' });
     }
 

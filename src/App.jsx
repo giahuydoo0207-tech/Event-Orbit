@@ -64,6 +64,7 @@ function App() {
             <Route path="/my-events" element={<MyEvents />} />
             <Route path="/dashboard" element={<DashboardStudent />} />
             <Route path="/following" element={<Following />} />
+            <Route path="/following/chapters/:slug" element={<ChapterProfile />} />
           </Route>
 
           <Route element={<ProtectedRoute requireRole="admin"><DashboardLayout /></ProtectedRoute>}>

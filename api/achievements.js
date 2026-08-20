@@ -10,10 +10,14 @@ function toPublicAchievement(achievement) {
     credentialId: achievement.credentialId,
     eventId: achievement.eventId,
     eventName: achievement.eventName,
+    eventDate: achievement.eventDate,
+    issuerName: achievement.issuerName,
     points: achievement.points,
     earnedAt: achievement.earnedAt,
     txHash: achievement.txHash,
     mintStatus: achievement.mintStatus,
+    claimStatus: achievement.claimStatus,
+    tokenId: achievement.tokenId,
   };
 }
 

@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
-import { mintBadge } from '../lib/relayer.js';
+import { classifyMintError, mintBadge } from '../lib/relayer.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -118,9 +118,10 @@ export default async function handler(req, res) {
         mocked = relayerResult.mocked;
         mintStatus = 'success';
       } catch (err) {
-        console.error('Relayer minting failed:', err);
+        const classification = classifyMintError(err);
+        console.error(JSON.stringify({ component: 'checkin', event: 'mint_outcome', ...classification, errorName: err?.name || 'Error' }));
         txHash = null;
-        mintStatus = 'failed';
+        mintStatus = classification.mintStatus;
       }
     }
 
@@ -133,7 +134,7 @@ export default async function handler(req, res) {
       .eq('id', reservation.achievement_id);
 
     if (achError) {
-      console.error('Achievement recording error:', achError);
+      console.error(JSON.stringify({ component: 'checkin', event: 'mint_status_persist_failed', databaseCode: achError.code || null, message: achError.message || 'Database update failed' }));
       return res.status(500).json({ error: 'Attendance was recorded, but mint status could not be updated.' });
     }
 

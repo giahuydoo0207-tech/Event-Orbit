@@ -13,7 +13,7 @@ import {
 import {
   verifySession,
 } from '../lib/verifySession.js';
-import { mintBadge } from '../lib/relayer.js';
+import { classifyMintError, mintBadge, MintAttemptError, MintUnavailableError } from '../lib/relayer.js';
 import {
   SESSION_COOKIE_NAME,
   clearSessionCookie,
@@ -337,7 +337,8 @@ test('registrations never exposes an unfiltered attendee list', async () => {
   const source = await readFile(new URL('../api/registrations.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /Case 3:[\s\S]*?\.from\('badge_recipients_view'\)[\s\S]*?\.select\('\*'\)/);
   assert.match(source, /An eventId or mine filter is required/);
-  assert.match(source, /mine\s*===\s*'1'[\s\S]*?\.eq\('user_id',\s*session\.user_id\)/);
+  assert.match(source, /mine\s*===\s*'1'[\s\S]*?getStudentIdentityValues\(session\)/);
+  assert.match(source, /\['user_id',\s*'ocid',\s*'mssv'\][\s\S]*?\.in\(column,\s*identities\)/);
   assert.doesNotMatch(source, /registrations\?userId=/);
 });
 
@@ -361,25 +362,47 @@ test('claim reserves the achievement atomically before invoking the relayer', as
   assert.ok(reservationIndex >= 0 && mintIndex > reservationIndex);
 });
 
-test('relayer fails closed when production credentials are absent', async () => {
+test('relayer classifies absent production configuration as unavailable without a mint attempt', async () => {
   const previousNodeEnv = process.env.NODE_ENV;
   const previousMockFlag = process.env.ALLOW_MOCK_MINTING;
+  const previousContractAddress = process.env.PROOFBADGE_CONTRACT_ADDRESS;
+  const previousRelayerKey = process.env.RELAYER_PRIVATE_KEY;
   process.env.NODE_ENV = 'production';
   delete process.env.ALLOW_MOCK_MINTING;
+  delete process.env.PROOFBADGE_CONTRACT_ADDRESS;
+  delete process.env.RELAYER_PRIVATE_KEY;
 
   try {
-    await assert.rejects(
-      mintBadge({
+    let error;
+    try {
+      await mintBadge({
         recipientAddress: '0x1111111111111111111111111111111111111111',
         eventId: '3f74e7d4-06b1-47cf-a9dc-eb7d52b0c531',
         points: 5,
-      }),
-      /not configured/i,
-    );
+      });
+      assert.fail('Expected missing production configuration to reject.');
+    } catch (caught) {
+      error = caught;
+    }
+    assert.ok(error instanceof MintUnavailableError);
+    assert.deepEqual(classifyMintError(error), {
+      mintStatus: 'skipped_relayer_unavailable',
+      failureCode: 'MISSING_CONTRACT_ADDRESS',
+      mintAttempted: false,
+    });
   } finally {
     if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = previousNodeEnv;
     if (previousMockFlag === undefined) delete process.env.ALLOW_MOCK_MINTING;
     else process.env.ALLOW_MOCK_MINTING = previousMockFlag;
+    if (previousContractAddress === undefined) delete process.env.PROOFBADGE_CONTRACT_ADDRESS;
+    else process.env.PROOFBADGE_CONTRACT_ADDRESS = previousContractAddress;
+    if (previousRelayerKey === undefined) delete process.env.RELAYER_PRIVATE_KEY;
+    else process.env.RELAYER_PRIVATE_KEY = previousRelayerKey;
   }
+});
+
+test('only errors from a contract mint attempt receive failed status', () => {
+  assert.equal(classifyMintError(new MintUnavailableError('RPC_UNAVAILABLE', 'RPC unavailable')).mintStatus, 'skipped_relayer_unavailable');
+  assert.equal(classifyMintError(new MintAttemptError('CONTRACT_MINT_FAILED', 'Contract reverted')).mintStatus, 'failed');
 });

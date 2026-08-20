@@ -75,7 +75,11 @@ export function Following() {
         /* Grid — same 2-col layout as Campus Chapters, using shared ChapterCard */
         <div className="mt-8 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {followedChapters.map(chapter => (
-            <ChapterCard key={chapter.id} chapter={chapter} />
+            <ChapterCard
+              key={chapter.id}
+              chapter={chapter}
+              linkTo={`/following/chapters/${chapter.slug}`}
+            />
           ))}
         </div>
       )}
