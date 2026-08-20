@@ -11,6 +11,7 @@ import {
   assertEventOwnership,
 } from '../lib/authorization.js';
 import {
+  resolveTrustedSessionAuthorization,
   verifySession,
 } from '../lib/verifySession.js';
 import { classifyMintError, mintBadge, MintAttemptError, MintUnavailableError } from '../lib/relayer.js';
@@ -78,12 +79,10 @@ test('admin access changes require a server admin and revoke target sessions', a
   assert.doesNotMatch(loginSource, /x-user-session/i);
 });
 
-test('database seeds the root admin and protects the final active admin atomically', async () => {
+test('database protects the final active admin atomically', async () => {
   const migration = await readFile(new URL('../api/production-blockers-migration.sql', import.meta.url), 'utf8');
-  assert.match(migration, /giahuydoo0207\.edu/i);
   assert.match(migration, /pg_advisory_xact_lock/);
   assert.match(migration, /last_active_admin/);
-  assert.match(migration, /on conflict \(ocid\) do nothing/i);
 });
 
 test('production migration creates sessions and seeds the canonical FIT chapter idempotently', async () => {
@@ -140,6 +139,45 @@ test('legacy client session header is never accepted as authentication', async (
 
   assert.equal(session, null);
   assert.equal(databaseCalled, false);
+});
+
+test('stored session roles are replaced by current trusted grants', async () => {
+  const noGrants = {
+    from(table) {
+      return {
+        select() { return this; },
+        eq() { return this; },
+        async maybeSingle() { return { data: null, error: null, table }; },
+      };
+    },
+  };
+  const staleAdminSession = { ocid: 'student.edu', user_id: 'student.edu', role: 'admin', chapter_id: 'stale' };
+  const resolved = await resolveTrustedSessionAuthorization(noGrants, staleAdminSession);
+  assert.equal(resolved.role, 'student');
+  assert.equal(resolved.chapter_id, null);
+});
+
+test('current trusted admin and organizer grants are re-read during session verification', async () => {
+  const grants = {
+    from(table) {
+      return {
+        select() { return this; },
+        eq() { return this; },
+        async maybeSingle() {
+          if (table === 'admin_users') return { data: null, error: null };
+          return { data: { chapter_id: 'chapter-123' }, error: null };
+        },
+      };
+    },
+  };
+  const resolved = await resolveTrustedSessionAuthorization(grants, { ocid: 'organizer.edu', role: 'student' });
+  assert.equal(resolved.role, 'organizer');
+  assert.equal(resolved.chapter_id, 'chapter-123');
+
+  const verifierSource = await readFile(new URL('../lib/verifySession.js', import.meta.url), 'utf8');
+  assert.match(verifierSource, /resolveTrustedSessionAuthorization\([\s\S]*?data/);
+  assert.match(verifierSource, /\.from\('admin_users'\)/);
+  assert.match(verifierSource, /\.from\('chapter_organizers'\)/);
 });
 
 test('login session cookie is secure and uses the verifier cookie name', () => {

@@ -1,13 +1,31 @@
-import React, { useState, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, Suspense } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import SearchModal from '../components/SearchModal';
 import { LoadingBar } from '../components/LoadingBar';
+import { fetchServerSession } from '../api/mockApi';
+import { PublicPortalLink } from '../components/PublicPortalLink';
 
 export function PublicLayout({ children }) {
-  const { user, logout } = useStore();
+  const { logout, setUser } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [verifiedSession, setVerifiedSession] = useState(undefined);
+
+  useEffect(() => {
+    let active = true;
+    fetchServerSession()
+      .then((session) => {
+        if (!active) return;
+        setVerifiedSession(session);
+        setUser({ ...session, isAuthenticated: true, method: 'ocid' });
+      })
+      .catch(() => {
+        if (active) setVerifiedSession(null);
+      });
+    return () => { active = false; };
+  }, [setUser]);
 
   const handleLogout = () => {
     logout();
@@ -48,23 +66,11 @@ export function PublicLayout({ children }) {
                 Chapters
               </Link>
               
-              {user.isAuthenticated ? (
+              {verifiedSession ? (
                 <>
-                  {user.role === 'admin' ? (
-                    <Link to="/admin" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      Admin Console
-                    </Link>
-                  ) : user.role === 'organizer' ? (
-                    <Link to="/manage" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      Organizer Portal
-                    </Link>
-                  ) : (
-                    <Link to="/home" className="text-xs font-bold text-oc-blue hover:underline transition-colors">
-                      Student Hub
-                    </Link>
-                  )}
+                  <PublicPortalLink session={verifiedSession} pathname={location.pathname} />
                   <span className="text-[11px] text-slate-500 font-mono hidden sm:inline-block">
-                    {user.ocid || user.mssv || 'User'}
+                    {verifiedSession.ocid || verifiedSession.mssv || 'User'}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -73,14 +79,14 @@ export function PublicLayout({ children }) {
                     Sign Out
                   </button>
                 </>
-              ) : (
+              ) : verifiedSession === null ? (
                 <Link
                   to="/login"
                   className="bg-oc-blue hover:bg-oc-indigo text-white px-4 py-2 rounded-md text-xs font-bold shadow-sm transition-all active:scale-95"
                 >
                   Sign In
                 </Link>
-              )}
+              ) : null}
             </nav>
           </div>
         </div>

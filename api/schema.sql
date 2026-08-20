@@ -96,9 +96,9 @@ create table admin_users (
   status text not null default 'active' check (status in ('active','revoked')),
   created_at timestamptz default now()
 );
+
 insert into admin_users (ocid, status) values ('giahuydoo0207.edu', 'active')
 on conflict (ocid) do nothing;
-
 create or replace function manage_admin_access(p_actor_ocid text, p_target_ocid text, p_action text)
 returns void language plpgsql security definer set search_path=public as $$
 declare v_active_count bigint;
