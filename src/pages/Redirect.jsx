@@ -40,7 +40,14 @@ export function Redirect() {
       });
       const returnTo = sessionStorage.getItem('ocidReturnTo');
       sessionStorage.removeItem('ocidReturnTo');
-      navigate(getPostLoginDestination(verifiedUser, returnTo), { replace: true });
+      const destination = getPostLoginDestination(verifiedUser, returnTo);
+      console.info('Post-login navigation resolved.', {
+        returnTo,
+        role: verifiedUser.role,
+        permissions: verifiedUser.permissions,
+        destination,
+      });
+      navigate(destination, { replace: true });
     } catch (error) {
       isProcessed.current = false;
       useStore.getState().logout({ skipRequest: true });

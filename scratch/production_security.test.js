@@ -65,11 +65,13 @@ test('matching chapter account is the only path that derives organizer authority
 test('auth uses server-side grants and never depends on a client users table', async () => {
   const loginSource = await readFile(new URL('../api/auth/login.js', import.meta.url), 'utf8');
   const sessionSource = await readFile(new URL('../lib/verifySession.js', import.meta.url), 'utf8');
+  const permissionsSource = await readFile(new URL('../lib/sessionPermissions.js', import.meta.url), 'utf8');
 
-  assert.match(loginSource, /\.from\('chapter_organizers'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
-  assert.match(loginSource, /\.from\('admin_users'\)[\s\S]*?\.eq\('ocid', tokenOcid\)/);
+  assert.match(loginSource, /resolveVerifiedAccess\(supabase,\s*\{ ocid: tokenOcid \}\)/);
+  assert.match(permissionsSource, /\.from\('chapter_organizers'\)[\s\S]*?\.eq\('ocid', ocid\)[\s\S]*?\.eq\('status', 'active'\)/);
+  assert.match(permissionsSource, /\.from\('admin_users'\)[\s\S]*?\.eq\('ocid', ocid\)[\s\S]*?\.eq\('status', 'active'\)/);
   assert.match(sessionSource, /\.from\('sessions'\)/);
-  assert.doesNotMatch(`${loginSource}\n${sessionSource}`, /\.from\('users'\)/);
+  assert.doesNotMatch(`${loginSource}\n${sessionSource}\n${permissionsSource}`, /\.from\('users'\)/);
 });
 
 test('admin access changes require a server admin and revoke target sessions', async () => {

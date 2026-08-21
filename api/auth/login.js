@@ -5,17 +5,9 @@ import { OcidConfigurationError, deriveSessionIdentity, verifyOcidIdToken } from
 import { setSessionCookieHeader } from '../../lib/sessionCookie.js';
 import { verifySession } from '../../lib/verifySession.js';
 import { AuthorizationError, assertAdmin } from '../../lib/authorization.js';
+import { normalizeSessionIdentity, resolveVerifiedAccess, resolveVerifiedPermissions } from '../../lib/sessionPermissions.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-function getSessionPermissions(session) {
-  const hasStudentIdentity = Boolean(session?.user_id || session?.ocid || session?.mssv);
-  return {
-    student: hasStudentIdentity,
-    organizer: Boolean(session?.chapter_id),
-    admin: session?.role === 'admin',
-  };
-}
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -46,6 +38,13 @@ export default async function handler(req, res) {
       if (admins.error || organizers.error || chapters.error) return res.status(500).json({ error: 'Unable to load access records.' });
       return res.status(200).json({ admins: admins.data || [], organizers: organizers.data || [], chapters: chapters.data || [] });
     }
+    let permissions;
+    try {
+      permissions = await resolveVerifiedPermissions(supabase, session);
+    } catch (error) {
+      console.error('Session permission lookup failed.');
+      return res.status(500).json({ error: 'Unable to resolve account permissions.' });
+    }
     return res.status(200).json({
       ok: true,
       user: {
@@ -54,7 +53,7 @@ export default async function handler(req, res) {
         ethAddress: session.eth_address,
         role: session.role,
         chapterId: session.chapter_id,
-        permissions: getSessionPermissions(session),
+        permissions,
       },
     });
   }
@@ -167,23 +166,23 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Invalid or expired Open Campus ID token.' });
     }
 
-    const tokenOcid = typeof claims.edu_username === 'string' ? claims.edu_username.trim() : '';
+    const tokenOcid = normalizeSessionIdentity({ ocid: claims.edu_username });
     if (!tokenOcid) {
       return res.status(401).json({ error: 'Open Campus ID token has no usable identity.' });
     }
 
-    const [{ data: adminGrant, error: adminError }, { data: organizerGrant, error: grantError }] = await Promise.all([
-      supabase.from('admin_users').select('ocid').eq('ocid', tokenOcid).eq('status', 'active').maybeSingle(),
-      supabase.from('chapter_organizers').select('chapter_id').eq('ocid', tokenOcid).eq('status', 'active').maybeSingle(),
-    ]);
-
-    if (adminError || grantError) {
+    let verifiedAccess;
+    try {
+      verifiedAccess = await resolveVerifiedAccess(supabase, { ocid: tokenOcid });
+    } catch (error) {
       console.error('Account permission lookup failed.');
       return res.status(500).json({ error: 'Unable to resolve account permissions.' });
     }
+    const { permissions, organizerChapterId } = verifiedAccess;
 
-    const identity = deriveSessionIdentity(claims, organizerGrant ? { id: organizerGrant.chapter_id } : null);
-    if (adminGrant) {
+    const normalizedClaims = { ...claims, edu_username: tokenOcid };
+    const identity = deriveSessionIdentity(normalizedClaims, organizerChapterId ? { id: organizerChapterId } : null);
+    if (permissions.admin) {
       identity.role = 'admin';
     }
 
@@ -210,11 +209,7 @@ export default async function handler(req, res) {
         ethAddress: identity.eth_address,
         role: identity.role,
         chapterId: identity.chapter_id,
-        permissions: {
-          student: Boolean(identity.user_id || identity.ocid || identity.mssv),
-          organizer: Boolean(organizerGrant?.chapter_id),
-          admin: Boolean(adminGrant),
-        },
+        permissions: { ...permissions, student: Boolean(identity.user_id || identity.ocid || identity.mssv) },
       },
     });
   } catch (error) {
