@@ -3,7 +3,14 @@ import { verifySession } from '../lib/verifySession.js';
 import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
 import { getStudentIdentityValues } from '../lib/studentIdentity.js';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+let defaultSupabase;
+
+function getSupabase() {
+  if (!defaultSupabase) {
+    defaultSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  }
+  return defaultSupabase;
+}
 
 const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -26,6 +33,25 @@ function mapViewRow(v) {
   };
 }
 
+export async function loadStudentHistory(supabaseClient, identities) {
+  const historyQueries = ['user_id', 'ocid', 'mssv'].map((column) =>
+    supabaseClient.from('badge_recipients_view').select('*').in(column, identities)
+  );
+  const historyResults = await Promise.all(historyQueries);
+  const failedQuery = historyResults.find(({ error }) => error);
+
+  if (failedQuery) throw failedQuery.error;
+
+  const uniqueRows = new Map();
+  for (const { data } of historyResults) {
+    for (const row of data || []) {
+      const key = row.id || `${row.event_id}:${row.user_id || row.ocid || row.mssv}`;
+      uniqueRows.set(key, row);
+    }
+  }
+  return [...uniqueRows.values()];
+}
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
@@ -38,6 +64,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    const supabase = getSupabase();
     if (req.method === 'GET') {
       const { eventId, mine } = req.query;
       const session = await verifySession(req);
@@ -90,30 +117,19 @@ export default async function handler(req, res) {
 
       // --- Case 2: current student's own event history ---
       if (mine === '1') {
-        if (session.role !== 'student') {
-          return res.status(403).json({ error: 'Student access required.' });
-        }
         const identities = getStudentIdentityValues(session);
-        const historyQueries = ['user_id', 'ocid', 'mssv'].map((column) =>
-          supabase.from('badge_recipients_view').select('*').in(column, identities)
-        );
-        const historyResults = await Promise.all(historyQueries);
-        const failedQuery = historyResults.find(({ error }) => error);
+        if (!identities.length) {
+          return res.status(403).json({ error: 'Student identity required.' });
+        }
 
-        if (failedQuery) {
-          console.error('badge_recipients_view student history query error:', failedQuery.error);
+        let rows;
+        try {
+          rows = await loadStudentHistory(supabase, identities);
+        } catch (error) {
+          console.error('badge_recipients_view student history query error:', error);
           return res.status(500).json({ error: 'Failed to load registrations.' });
         }
-
-        const uniqueRows = new Map();
-        for (const { data } of historyResults) {
-          for (const row of data || []) {
-            const key = row.id || `${row.event_id}:${row.user_id || row.ocid || row.mssv}`;
-            uniqueRows.set(key, row);
-          }
-        }
-
-        return res.status(200).json([...uniqueRows.values()].map(mapViewRow));
+        return res.status(200).json(rows.map(mapViewRow));
       }
 
       // --- Case 3: no filter — full admin fetch ---
