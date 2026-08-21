@@ -10,6 +10,7 @@ const getInitialUser = () => {
     fullName: null,
     email: null,
     role: null,
+    permissions: null,
     followedChapterIds: [], // Chapters (calendars) this user follows
     // TODO: get from real OCID creation timestamp when integrating backend
     joinedAt: 'September 2025'
@@ -42,6 +43,7 @@ export const useStore = create(
               fullName: null,
               email: null,
               role: null,
+              permissions: null,
               followedChapterIds: [],
               joinedAt: 'September 2025'
             }

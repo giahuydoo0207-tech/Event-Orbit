@@ -35,11 +35,12 @@ export function Redirect() {
         fullName: verifiedUser.fullName,
         role: verifiedUser.role,
         chapterId: verifiedUser.chapterId,
+        permissions: verifiedUser.permissions,
         email: `${verifiedUser.ocid.replace(/[^a-zA-Z0-9._-]/g, '').toLowerCase()}@opencampus.xyz`,
       });
       const returnTo = sessionStorage.getItem('ocidReturnTo');
       sessionStorage.removeItem('ocidReturnTo');
-      navigate(getPostLoginDestination(verifiedUser.role, returnTo), { replace: true });
+      navigate(getPostLoginDestination(verifiedUser, returnTo), { replace: true });
     } catch (error) {
       isProcessed.current = false;
       useStore.getState().logout({ skipRequest: true });

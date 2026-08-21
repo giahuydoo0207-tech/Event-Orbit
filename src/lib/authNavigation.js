@@ -1,20 +1,14 @@
-const ROLE_DESTINATIONS = {
-  admin: new Set(['/admin', '/manage', '/dashboard']),
-  organizer: new Set(['/manage', '/dashboard']),
-  student: new Set(['/dashboard']),
+const DESTINATION_PERMISSION = {
+  '/home': 'student',
+  '/manage': 'organizer',
+  '/admin': 'admin',
 };
 
-const ROLE_HOME = {
-  admin: '/admin',
-  organizer: '/manage',
-  student: '/dashboard',
-};
+export function getPostLoginDestination(verifiedUser, requestedDestination) {
+  const requiredPermission = DESTINATION_PERMISSION[requestedDestination];
+  const permissions = verifiedUser?.permissions || {};
 
-export function getPostLoginDestination(role, requestedDestination) {
-  const allowedDestinations = ROLE_DESTINATIONS[role];
-  const fallback = ROLE_HOME[role] || ROLE_HOME.student;
-
-  return allowedDestinations?.has(requestedDestination)
+  return requiredPermission && permissions[requiredPermission] === true
     ? requestedDestination
-    : fallback;
+    : '/home';
 }

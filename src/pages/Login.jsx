@@ -41,7 +41,7 @@ export function Login() {
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => handleOCIDLogin('/dashboard')}
+                onClick={() => handleOCIDLogin('/home')}
                 className="w-full flex justify-center py-3 px-4 rounded-md text-sm font-semibold text-white bg-accent-blue hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-blue transition-colors"
               >
                 Student

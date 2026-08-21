@@ -8,6 +8,15 @@ import { AuthorizationError, assertAdmin } from '../../lib/authorization.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
+function getSessionPermissions(session) {
+  const hasStudentIdentity = Boolean(session?.user_id || session?.ocid || session?.mssv);
+  return {
+    student: hasStudentIdentity,
+    organizer: Boolean(session?.chapter_id),
+    admin: session?.role === 'admin',
+  };
+}
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', 'https://event-orbit-app.vercel.app');
@@ -45,6 +54,7 @@ export default async function handler(req, res) {
         ethAddress: session.eth_address,
         role: session.role,
         chapterId: session.chapter_id,
+        permissions: getSessionPermissions(session),
       },
     });
   }
@@ -200,6 +210,11 @@ export default async function handler(req, res) {
         ethAddress: identity.eth_address,
         role: identity.role,
         chapterId: identity.chapter_id,
+        permissions: {
+          student: Boolean(identity.user_id || identity.ocid || identity.mssv),
+          organizer: Boolean(organizerGrant?.chapter_id),
+          admin: Boolean(adminGrant),
+        },
       },
     });
   } catch (error) {
