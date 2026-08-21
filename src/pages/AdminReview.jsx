@@ -109,10 +109,10 @@ export default function AdminReview() {
   }
 
   return (
-    <div className="space-y-16 pb-16">
-      <header className="max-w-3xl border-b-4 border-oc-blue pb-8">
+    <div className="space-y-12 pb-12">
+      <header className="max-w-3xl border-b border-oc-periwinkle pb-7">
         <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-oc-blue">Administration</p>
-        <h1 className="mt-3 text-4xl font-black tracking-tight text-oc-ink md:text-5xl">Control what earns public trust.</h1>
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-oc-ink md:text-4xl">Control what earns public trust.</h1>
         <p className="mt-4 max-w-[62ch] text-sm leading-6 text-slate-600">
           Review events and manage verified OCID access. Every change is enforced by the server and invalidates existing sessions.
         </p>

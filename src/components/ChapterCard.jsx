@@ -16,7 +16,7 @@ export function ChapterCard({ chapter, linkTo }) {
   return (
     <Link
       to={href}
-      className="group flex items-center gap-3.5 rounded-xl border border-oc-periwinkle/50 p-3.5 transition-all hover:border-oc-blue/60 hover:bg-white/40"
+      className="group flex items-center gap-3.5 rounded-xl border border-oc-periwinkle/60 bg-white p-3.5 shadow-oc-sm transition-colors hover:border-oc-blue/40"
     >
       {/* Outline Icon Box — R_child = 16px - 14px padding = 2-4px (rounded-sm) */}
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-oc-periwinkle/70 group-hover:border-oc-blue/50 transition-colors">

@@ -23,7 +23,7 @@ export function Login() {
           Event Orbit
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Student Event & SBT Certification Portal
+          Student Events and Digital Credentials
         </p>
       </div>
 

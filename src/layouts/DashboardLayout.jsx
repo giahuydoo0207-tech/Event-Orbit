@@ -66,7 +66,7 @@ export function DashboardLayout({ children }) {
       {/* Sidebar Navigation - Open Campus Deep Navy theme */}
       <aside className={`
         fixed top-0 bottom-0 left-0 w-64 bg-oc-navy text-white border-r border-oc-navy/80 z-30 transition-transform duration-200 flex flex-col justify-between p-6
-        md:translate-x-0 md:sticky md:top-0 md:h-screen shrink-0
+        md:translate-x-0 md:sticky md:top-0 md:h-[100dvh] shrink-0
         ${mobileMenuOpen ? 'translate-x-0 pt-20 md:pt-6' : '-translate-x-full'}
       `}>
         <div className="space-y-8">
@@ -130,8 +130,8 @@ export function DashboardLayout({ children }) {
       </aside>
 
       {/* Main Page Area — Suspense scoped strictly inside main container to keep sidebar stationary */}
-      <main id="main-content" className="flex-grow h-screen overflow-y-auto pt-16 md:pt-0 bg-oc-mist">
-        <div className="max-w-6xl mx-auto p-6 md:p-10">
+      <main id="main-content" className="h-[100dvh] min-w-0 flex-grow overflow-y-auto bg-oc-mist pt-16 md:pt-0">
+        <div className="mx-auto max-w-6xl p-4 sm:p-6 md:p-10">
           <Suspense fallback={
             <div className="py-24 text-center space-y-4 max-w-sm mx-auto font-sans">
               <div className="badge-kicker text-[10px] text-slate-400">Loading page...</div>

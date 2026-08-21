@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { useOCAuth } from '@opencampus/ocid-connect-js';
 import useToastStore from '../store/useToastStore';
 import { getCheckinLookupFailureState } from '../lib/checkinState';
+import { hasRealTransaction } from '../lib/credentialPresentation';
 
 export function StudentCheckin() {
   const [searchParams] = useSearchParams();
@@ -103,7 +104,7 @@ export function StudentCheckin() {
       if (res.success) {
         setTxHash(res.txHash);
         setStatusState('success');
-        showToast('Attendance confirmed! Credential issued.', 'success');
+        showToast('Attendance confirmed. Your credential record is ready.', 'success');
       } else {
         if (getCheckinLookupFailureState({ status: res.status }, true) === 'connect') {
           setStatusState('connect');
@@ -208,7 +209,7 @@ export function StudentCheckin() {
                 <span className="text-[9px] block uppercase leading-none">pts</span>
               </div>
               <p className="text-xs text-text-secondary">
-                Confirming attendance issues a verified digital credential directly to your student profile.
+                Confirming attendance adds a credential record to your student profile.
               </p>
             </div>
 
@@ -281,7 +282,7 @@ export function StudentCheckin() {
             <div className="space-y-2">
               <h2 className="text-lg font-bold text-navy">Attendance Logged!</h2>
               <p className="text-xs text-text-secondary">
-                Your credentials have been authenticated and recorded.
+                Your attendance and credential record have been saved.
               </p>
             </div>
 
@@ -292,7 +293,7 @@ export function StudentCheckin() {
               </div>
               <div className="text-xs font-semibold text-navy">{event?.name}</div>
               
-              {txHash && (
+              {hasRealTransaction({ txHash }) && (
                 <div className="text-[10px] space-y-1">
                   <span className="text-text-secondary block">Transaction Receipt</span>
                   <a

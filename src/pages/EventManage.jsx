@@ -198,7 +198,7 @@ export function EventManage() {
         
         <div className="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-navy">{event.name}</h1>
+            <h1 className="page-title">{event.name}</h1>
             <p className="text-xs text-text-secondary mt-1">
               {new Date(event.datetime).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })} &bull; {event.location}
             </p>
@@ -207,14 +207,14 @@ export function EventManage() {
           <div className="flex gap-2">
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="px-3 py-2 bg-navy text-white text-xs font-bold rounded shadow-sm hover:bg-navy-light transition-colors"
+              className="action-primary"
             >
               Import Attendees CSV
             </button>
             
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded shadow-sm transition-colors"
+              className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-700 transition-colors hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30"
             >
               Delete Event
             </button>
@@ -224,7 +224,7 @@ export function EventManage() {
 
       <div className="space-y-10">
         {/* Open Campus check-in station */}
-        <section className="overflow-hidden rounded-2xl bg-oc-navy text-white shadow-oc-lg">
+        <section className="overflow-hidden rounded-xl bg-oc-navy text-white shadow-oc-md">
           <div className="grid grid-cols-1 items-center gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(288px,0.8fr)_1.2fr] lg:gap-14 lg:p-12">
             <div className="flex flex-col items-center lg:items-start">
               <div className="relative flex min-h-[272px] min-w-[272px] items-center justify-center rounded-xl border border-oc-turquoise/30 bg-white p-4 shadow-[0_18px_50px_rgba(0,237,190,0.08)]">
@@ -291,11 +291,12 @@ export function EventManage() {
           </div>
 
           {attendees.length === 0 ? (
-            <div className="bg-surface border border-dashed border-border rounded-xl p-8 text-center text-xs text-text-secondary">
-              No registrations yet for this event.
+            <div className="empty-state text-xs text-text-secondary">
+              <p className="text-sm font-bold text-oc-ink">No registrations yet</p>
+              <p className="mt-1">Registrations and check-ins will appear here.</p>
             </div>
           ) : (
-            <div className="bg-white border border-border rounded-xl overflow-hidden shadow-sm">
+            <div className="surface-card overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>

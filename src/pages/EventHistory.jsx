@@ -6,6 +6,7 @@ import { LoadingBar } from '../components/LoadingBar';
 import { StatusBadge } from '../components/StatusBadge';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
+import { hasRealTransaction } from '../lib/credentialPresentation';
 
 export function EventHistory() {
   const { chapterId, eventId: paramEventId } = useParams();
@@ -280,15 +281,19 @@ export function EventHistory() {
 
                         <td className="p-4 text-center">
                           <StatusBadge
-                            status={att.mintStatus || (att.checkedIn ? 'success' : 'not_issued')}
+                            status={(att.mintStatus === 'success' || att.mintStatus === 'minted_onchain') && !hasRealTransaction(att) ? 'not_issued' : att.mintStatus || 'not_issued'}
                             label={
-                              att.mintStatus === 'success' || att.mintStatus === 'minted_onchain'
-                                ? 'CREDENTIAL ISSUED'
+                              (att.mintStatus === 'success' || att.mintStatus === 'minted_onchain') && hasRealTransaction(att)
+                                ? 'ON-CHAIN ISSUED'
                                 : att.mintStatus === 'skipped_no_wallet' || att.mintStatus === 'off_chain'
-                                ? 'OFF-CHAIN (REGISTERED)'
+                                ? 'OFF-CHAIN ONLY'
                                 : att.mintStatus === 'pending' || att.mintStatus === 'minting'
-                                ? 'ISSUING...'
-                                : 'NOT ISSUED'
+                                ? 'ISSUANCE PENDING'
+                                : att.mintStatus === 'failed'
+                                ? 'MINT FAILED'
+                                : String(att.mintStatus || '').startsWith('skipped_')
+                                ? 'ON-CHAIN NOT AVAILABLE'
+                                : 'NOT AVAILABLE'
                             }
                           />
                         </td>

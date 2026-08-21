@@ -48,13 +48,13 @@ export function ChapterList() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10 font-sans">
+    <div className="page-shell max-w-5xl font-sans">
       {/* Header */}
-      <h1 className="text-2xl font-black text-oc-ink sm:text-3xl">
+      <h1 className="page-title">
         Campus Chapters
       </h1>
-      <p className="mt-1 max-w-2xl text-xs text-slate-500 font-medium">
-        Follow a chapter to stay updated on their upcoming workshops, hackathons, and community events on EDU Chain.
+      <p className="page-summary">
+        Follow a chapter to stay updated on upcoming workshops, hackathons, and community events.
       </p>
 
       {/* Category Tabs */}
@@ -79,7 +79,7 @@ export function ChapterList() {
 
       {/* Chapter Grid or Empty State */}
       {filteredChapters.length === 0 ? (
-        <div className="mt-12 text-center py-16 bg-white border border-dashed border-oc-periwinkle rounded-2xl space-y-2">
+        <div className="empty-state mt-12 space-y-2">
           <p className="text-sm font-bold text-oc-ink">
             No chapters found in this category
           </p>

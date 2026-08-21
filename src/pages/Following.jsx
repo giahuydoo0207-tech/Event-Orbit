@@ -41,32 +41,32 @@ export function Following() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10 font-sans">
+    <div className="page-shell max-w-5xl font-sans">
       {/* Header — same editorial style as Campus Chapters */}
-      <h1 className="text-2xl font-black text-oc-ink sm:text-3xl">
+      <h1 className="page-title">
         Following
       </h1>
-      <p className="mt-1 max-w-2xl text-xs text-slate-500 font-medium">
+      <p className="page-summary">
         Chapters you follow. Their events appear in your personalized Home feed.
       </p>
             <div className="mt-4">
         <Link
           to="/chapters"
-          className="inline-block px-4 py-2 bg-oc-blue text-white text-xs font-bold rounded-md shadow-sm hover:bg-oc-indigo transition-colors"
+          className="action-primary"
         >
           + Follow More Chapters
         </Link>
       </div>
       {followedChapters.length === 0 ? (
         /* Empty State — editorial, no heavy bordered box */
-        <div className="text-center py-20 mt-8">
+        <div className="empty-state mt-8">
           <h2 className="text-sm font-bold text-oc-ink">No followed chapters yet</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
             Browse campus chapters and follow them to populate your personalized event feed.
           </p>
           <Link
             to="/chapters"
-            className="inline-block mt-5 px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-md shadow-sm hover:bg-oc-indigo transition-colors"
+            className="action-primary mt-5"
           >
             Browse Chapters
           </Link>

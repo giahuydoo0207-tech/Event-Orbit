@@ -108,14 +108,14 @@ export function EventFeed() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 font-sans space-y-8">
+    <div className="page-shell font-sans space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black text-oc-ink sm:text-3xl">
+        <h1 className="page-title">
           Explore Campus Events
         </h1>
-        <p className="text-xs text-slate-500 mt-1 font-medium">
-          Discover upcoming workshops, hackathons, and seminars verified on EDU Chain.
+        <p className="page-summary">
+          Discover upcoming workshops, hackathons, and seminars with trusted participation records.
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export function EventFeed() {
         <select
           value={selectedChapterId}
           onChange={(e) => setSelectedChapterId(e.target.value)}
-          className="rounded-xl border border-oc-periwinkle/70 bg-white px-3.5 py-2 text-xs font-bold text-oc-ink focus:border-oc-blue focus:outline-none shadow-sm"
+          className="control-field"
         >
           <option value="">All Chapters</option>
           {chapters.map((ch) => (
@@ -181,7 +181,7 @@ export function EventFeed() {
 
       {/* Events Grid */}
       {filteredEvents.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-oc-periwinkle bg-white p-16 text-center">
+        <div className="empty-state mt-8">
           <h3 className="text-sm font-bold text-oc-ink">No events found</h3>
           <p className="mt-1 text-xs text-slate-500">
             Try selecting a different category or clear your chapter filter.
@@ -195,7 +195,7 @@ export function EventFeed() {
               <Link
                 key={event.id}
                 to={`/e/${event.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-oc-periwinkle/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                className="group flex flex-col overflow-hidden rounded-xl border border-oc-periwinkle/60 bg-white shadow-oc-sm transition-colors hover:border-oc-blue/35"
               >
                 {/* Cover Image */}
                 <div className="relative h-44 overflow-hidden bg-oc-navy">
@@ -204,21 +204,15 @@ export function EventFeed() {
                     alt={event.name}
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    <span className="badge-kicker rounded-lg bg-oc-navy/80 backdrop-blur-md px-2.5 py-1 text-[9px] text-oc-turquoise border border-oc-turquoise/30">
-                      +{event.points} PTS
-                    </span>
-                  </div>
-                  {event.category && (
-                    <span className="absolute top-3 right-3 badge-kicker rounded-lg bg-white/90 backdrop-blur-md px-2.5 py-1 text-[9px] text-oc-blue font-bold shadow-sm">
-                      {event.category}
-                    </span>
-                  )}
                 </div>
 
                 {/* Event Details */}
                 <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
                   <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3 text-[11px] font-bold">
+                      <span className="text-oc-blue">{event.category || 'Campus event'}</span>
+                      <span className="num text-slate-500">+{event.points} pts</span>
+                    </div>
                     <div className="text-[11px] font-bold text-oc-blue">
                       {formatDate(event.datetime)} &bull; {event.locationType || 'In-person'}
                     </div>

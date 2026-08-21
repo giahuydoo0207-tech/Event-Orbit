@@ -65,7 +65,7 @@ export function Homepage() {
     <div className="space-y-8">
       {/* Welcome header */}
       <div className="space-y-2 border-b border-border pb-6">
-        <h1 className="text-2xl font-extrabold text-navy tracking-tight">
+        <h1 className="page-title">
           Welcome back, {user.fullName || 'Student'}
         </h1>
         <p className="text-sm text-text-secondary">
@@ -75,7 +75,7 @@ export function Homepage() {
 
       {/* Feed Content */}
       {feedEvents.length === 0 ? (
-        <div className="text-center py-20 bg-surface border border-dashed border-border rounded-xl p-8 space-y-6">
+        <div className="empty-state space-y-6">
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-navy">Your feed is empty</h2>
             <p className="text-xs text-text-secondary max-w-xs mx-auto">
@@ -85,13 +85,13 @@ export function Homepage() {
           <div className="flex justify-center gap-3">
             <Link
               to="/chapters"
-              className="inline-block py-2.5 px-6 bg-navy text-white text-xs font-semibold rounded-md hover:bg-navy-light uppercase tracking-wider transition-all"
+              className="action-primary"
             >
               Browse Chapters
             </Link>
             <Link
               to="/events"
-              className="inline-block py-2.5 px-6 bg-white border border-border text-navy text-xs font-semibold rounded-md hover:bg-slate-50 uppercase tracking-wider transition-all"
+              className="action-secondary"
             >
               Explore Events
             </Link>
@@ -112,7 +112,7 @@ export function Homepage() {
               <Link
                 key={event.id}
                 to={`/e/${event.slug}`}
-                className="group bg-white border border-border rounded-xl overflow-hidden hover:shadow-lg transition-all flex flex-col justify-between"
+                className="group surface-card overflow-hidden transition-colors hover:border-oc-blue/35 flex flex-col justify-between"
               >
                 <div>
                   {/* Cover Photo */}
@@ -145,7 +145,7 @@ export function Homepage() {
                 <div className="px-6 pb-6 pt-4 border-t border-border flex justify-between items-center text-xs text-text-secondary">
                   <span>{dateStr}</span>
                   <span className="font-semibold text-navy">
-                    SBT: +{event.points} pts
+                    +{event.points} points
                   </span>
                 </div>
               </Link>

@@ -24,14 +24,14 @@ export function Landing() {
         'Follow your department\u2019s chapter to stay updated on workshops, hackathons, and meetups.',
     },
     {
-      title: 'Verified Attendance',
+      title: 'Confirmed Attendance',
       description:
-        'Check in with QR codes. Receive verified digital credentials issued on Open Campus ID as proof.',
+        'Check in with QR codes and keep a trusted participation record linked to your Open Campus ID.',
     },
     {
       title: 'Achievement Portfolio',
       description:
-        'Build a public OCID-linked profile showcasing all your verified campus credentials.',
+        'Build a public OCID-linked profile showcasing your campus participation credentials.',
     },
   ];
 
@@ -60,13 +60,13 @@ export function Landing() {
               <h1 className="text-3xl font-black leading-[1.25] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 <span className="hero-enter hero-enter-line-one block">Campus Events.</span>
                 <span className="hero-enter hero-enter-line-two text-oc-turquoise block mt-2 sm:mt-3">
-                  Verified on Chain.
+                  Credentials You Can Trust.
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="hero-enter hero-enter-subtitle mx-auto lg:mx-0 max-w-xl text-sm leading-relaxed text-oc-periwinkle/90 sm:text-lg font-medium">
-                Event Orbit connects students with campus chapters, verifies attendance, and builds certified digital credential profiles, all powered by Open Campus.
+                Discover campus events, confirm attendance, and build a trusted credential profile with Open Campus.
               </p>
 
               {/* CTA Buttons */}
@@ -110,11 +110,10 @@ export function Landing() {
             {valueProps.map((prop, idx) => (
               <div
                 key={idx}
-                className={`reveal reveal-delay-${idx + 1} hover-lift rounded-2xl border border-oc-periwinkle/70 bg-white p-8 shadow-sm space-y-3`}
+                className={`reveal reveal-delay-${idx + 1} rounded-xl border border-oc-periwinkle/60 bg-white p-7 shadow-oc-sm space-y-3 transition-colors hover:border-oc-blue/35`}
               >
-                <div className="badge-kicker text-oc-blue">0{idx + 1} &bull; Feature</div>
                 <h3 className="text-lg font-bold text-oc-ink">{prop.title}</h3>
-                <p className="text-xs leading-relaxed text-slate-500 font-medium">
+                <p className="text-sm leading-6 text-slate-600 font-medium">
                   {prop.description}
                 </p>
               </div>
@@ -130,7 +129,7 @@ export function Landing() {
             <StatCounter value={500} suffix="+" label="Students" />
             <StatCounter value={12} label="Chapters" />
             <StatCounter value={48} label="Events Hosted" />
-            <StatCounter value={156} label="Credentials Issued" />
+            <StatCounter value={156} label="Credential Records" />
           </div>
         </div>
       </section>
@@ -141,7 +140,7 @@ export function Landing() {
           <div className="badge-kicker text-oc-blue">Open Campus Ecosystem</div>
           <h2 className="text-2xl font-black text-oc-ink">Decentralized Credentials for Education</h2>
           <p className="text-xs text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
-            Every event check-in issues a verified digital credential linked directly to your Open Campus ID (OCID).
+            Confirmed event participation can become a digital credential linked to your Open Campus ID (OCID).
           </p>
         </div>
       </section>

@@ -12,6 +12,40 @@
   }
 }
 
+@layer components {
+  .page-shell {
+    @apply mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10;
+  }
+
+  .page-title {
+    @apply text-2xl font-black leading-tight tracking-tight text-oc-ink sm:text-3xl;
+  }
+
+  .page-summary {
+    @apply mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600;
+  }
+
+  .surface-card {
+    @apply rounded-xl border border-oc-periwinkle/60 bg-white shadow-oc-sm;
+  }
+
+  .empty-state {
+    @apply rounded-xl border border-dashed border-oc-periwinkle bg-white px-6 py-12 text-center shadow-oc-sm sm:px-10 sm:py-14;
+  }
+
+  .action-primary {
+    @apply inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg bg-oc-blue px-5 py-2.5 text-sm font-bold text-white shadow-oc-sm transition-colors hover:bg-oc-indigo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue focus-visible:ring-offset-2 active:translate-y-px;
+  }
+
+  .action-secondary {
+    @apply inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-lg border border-oc-blue/30 bg-white px-5 py-2.5 text-sm font-bold text-oc-blue transition-colors hover:border-oc-blue hover:bg-oc-mist focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue focus-visible:ring-offset-2 active:translate-y-px;
+  }
+
+  .control-field {
+    @apply min-h-10 rounded-lg border border-oc-periwinkle/70 bg-white px-3.5 py-2 text-sm font-semibold text-oc-ink shadow-oc-sm outline-none transition-colors focus:border-oc-blue focus:ring-2 focus:ring-oc-blue/15;
+  }
+}
+
 /* Hide scrollbars cross-browser while maintaining scroll functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -38,7 +72,8 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 0.65rem;
+  font-size: 0.6875rem;
+  line-height: 1.35;
 }
 
 /* Global number font — all numeric values use Poppins + tabular-nums for consistent alignment */

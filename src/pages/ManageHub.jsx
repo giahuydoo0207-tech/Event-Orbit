@@ -74,8 +74,8 @@ export function ManageHub() {
   return (
     <div className="space-y-10 font-sans max-w-5xl">
       <div>
-        <h1 className="text-2xl font-black text-oc-ink">Manage Chapters</h1>
-        <p className="text-sm text-slate-400 mt-2 font-medium max-w-2xl leading-relaxed">
+        <h1 className="page-title">Manage Chapters</h1>
+        <p className="page-summary">
           Select a chapter to view its events and open the available organizer tools.
         </p>
       </div>
@@ -99,7 +99,7 @@ export function ManageHub() {
       )}
 
       {filteredChapters.length === 0 ? (
-        <div className="text-center py-20" role="status">
+        <div className="empty-state" role="status">
           <p className="text-sm font-bold text-oc-ink">{searchQuery ? 'No chapters match your search' : 'No chapters available'}</p>
           <p className="text-xs text-slate-400 mt-1">Try a different search term or clear the filter.</p>
         </div>

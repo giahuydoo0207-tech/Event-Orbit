@@ -101,12 +101,12 @@ export function MyEvents() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="page-shell max-w-5xl">
       {/* Header */}
-      <h1 className="text-2xl font-bold text-text-primary sm:text-3xl">
+      <h1 className="page-title">
         My Events
       </h1>
-      <p className="mt-1 text-text-secondary">
+      <p className="page-summary">
         Your personal event calendar
       </p>
 
@@ -137,7 +137,7 @@ export function MyEvents() {
 
       {/* Event Grid or Empty State */}
       {filteredEvents.length === 0 ? (
-        <div className="mt-20 text-center">
+        <div className="empty-state mt-12">
           <p className="text-lg font-semibold text-text-primary">
             {activeTab === 'Past'
               ? 'No past events'
@@ -150,7 +150,7 @@ export function MyEvents() {
           </p>
           <Link
             to="/events"
-            className="mt-6 inline-flex h-10 items-center rounded-lg border border-accent-blue px-6 text-sm font-semibold text-accent-blue transition hover:bg-accent-blue hover:text-white focus:outline-none focus:ring-2 focus:ring-accent-blue/40"
+            className="action-secondary mt-6"
           >
             Explore Events
           </Link>
@@ -163,7 +163,7 @@ export function MyEvents() {
               <Link
                 key={event.id}
                 to={`/e/${event.slug}`}
-                className={`group flex flex-col rounded-xl border bg-white shadow-sm transition hover:shadow-md hover:border-accent-blue/30 ${
+                className={`group flex flex-col rounded-xl border bg-white shadow-oc-sm transition-colors hover:border-accent-blue/30 ${
                   isPast
                     ? 'border-border/60 opacity-75 hover:opacity-100'
                     : 'border-border'
@@ -185,11 +185,6 @@ export function MyEvents() {
                     </div>
                   )}
 
-                  {isPast && (
-                    <span className="absolute right-3 top-3 rounded-full bg-navy/80 px-2.5 py-0.5 text-xs font-semibold text-white backdrop-blur">
-                      Past
-                    </span>
-                  )}
                 </div>
 
                 {/* Body */}
@@ -202,15 +197,15 @@ export function MyEvents() {
                     {formatDate(event.datetime)}
                   </p>
 
-                  <div className="mt-auto flex items-center justify-between pt-4">
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-4">
                     {event.category && (
                       <span className="text-xs font-medium text-text-secondary">
-                        {event.category}
+                        {event.category}{isPast ? ' - Past' : ''}
                       </span>
                     )}
                     {event.points != null && (
                       <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 text-xs font-bold text-navy">
-                        {event.points} SBT
+                        {event.points} points
                       </span>
                     )}
                   </div>

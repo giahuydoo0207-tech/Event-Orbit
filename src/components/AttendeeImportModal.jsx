@@ -224,7 +224,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
 
       setResults(aggregatedResults);
       setStep('results');
-      showToast(`Processing complete! Issued ${aggregatedResults.issuedList.length} credentials.`, 'success');
+      showToast(`Processing complete. Created ${aggregatedResults.issuedList.length} credential records.`, 'success');
       
       if (handleSuccessCallback) {
         handleSuccessCallback();
@@ -250,13 +250,13 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
   const invalidRowsCount = mappedData.length - validRowsCount;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-      <div className="bg-white border border-border rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy/60 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="attendee-import-title" className="flex max-h-[94dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-border bg-white shadow-oc-lg sm:max-h-[90dvh] sm:rounded-xl">
         
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-slate-50">
+        <div className="flex items-start justify-between gap-4 border-b border-border bg-slate-50 px-4 py-4 sm:px-6">
           <div>
-            <h2 className="text-base font-bold text-navy flex items-center gap-2">
+            <h2 id="attendee-import-title" className="text-base font-bold text-navy flex items-center gap-2">
               Import Participant Records
             </h2>
             <p className="text-xs text-text-secondary mt-0.5">
@@ -265,14 +265,15 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:bg-slate-200 transition-colors text-lg"
+            aria-label="Close attendee import"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-lg text-text-secondary transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue/30"
           >
             &times;
           </button>
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
 
           {/* Event Selector */}
           {step !== 'results' && (
@@ -311,7 +312,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
+                className={`cursor-pointer rounded-xl border-2 border-dashed p-6 text-center transition-colors sm:p-10 ${
                   isDragOver
                     ? 'border-accent-blue bg-accent-blue/5 scale-[0.99]'
                     : 'border-border bg-slate-50 hover:bg-slate-100/80 hover:border-accent-blue/50'
@@ -454,7 +455,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
             <div className="py-12 text-center space-y-6">
               <div className="w-12 h-12 border-4 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto"></div>
               <div className="space-y-2">
-                <h3 className="text-base font-bold text-navy">Processing & Issuing Credentials...</h3>
+                <h3 className="text-base font-bold text-navy">Processing Credential Records...</h3>
                 <p className="text-xs text-text-secondary font-medium">{statusText}</p>
               </div>
 
@@ -477,7 +478,7 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
           {step === 'results' && (
             <div className="space-y-6 pt-4">
               <div className="border-b border-border pb-4">
-                <h3 className="text-lg font-extrabold text-navy">Import & Credential Issuance Summary</h3>
+                <h3 className="text-lg font-extrabold text-navy">Import and Credential Record Summary</h3>
                 <p className="text-xs text-text-secondary">
                   Processed <span className="num font-bold text-oc-blue">{results.totalProcessed}</span> records from the uploaded file.
                 </p>
@@ -485,10 +486,10 @@ export function AttendeeImportModal({ isOpen, onClose, events = [], eventId, cha
               </div>
 
               <div className="grid grid-cols-1 overflow-hidden rounded-lg border border-oc-periwinkle bg-oc-mist sm:grid-cols-3 sm:divide-x sm:divide-oc-periwinkle">
-                {[['ISSUED', results.issuedList.length], ['ALREADY ISSUED', results.alreadyIssuedList.length], ['CLAIM LINKS', results.unmatchedList.filter((item) => item.claimUrl).length]].map(([label, value]) => <div key={label} className="flex items-center justify-between px-4 py-2.5"><span className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">{label}</span><span className="font-mono text-xl font-extrabold text-oc-blue">{value}</span></div>)}
+                {[['RECORDS CREATED', results.issuedList.length], ['ALREADY RECORDED', results.alreadyIssuedList.length], ['CLAIM LINKS', results.unmatchedList.filter((item) => item.claimUrl).length]].map(([label, value]) => <div key={label} className="flex items-center justify-between px-4 py-2.5"><span className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">{label}</span><span className="font-mono text-xl font-extrabold text-oc-blue">{value}</span></div>)}
               </div>
 
-              {results.alreadyIssuedList.length > 0 && <section className="space-y-3"><h4 className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">ALREADY ISSUED</h4><div className="overflow-x-auto rounded-lg border border-oc-periwinkle"><table className="w-full text-left text-xs"><thead className="bg-oc-mist"><tr><th className="p-2.5">Name</th><th className="p-2.5">MSSV</th><th className="p-2.5">Email</th><th className="p-2.5">Reason</th></tr></thead><tbody>{results.alreadyIssuedList.map((item, idx) => <tr key={idx} className="border-t border-oc-periwinkle"><td className="p-2.5 font-semibold text-oc-navy">{item.name}</td><td className="p-2.5 font-mono">{item.mssv}</td><td className="p-2.5">{item.email}</td><td className="p-2.5 text-text-secondary">{item.reason}</td></tr>)}</tbody></table></div></section>}
+              {results.alreadyIssuedList.length > 0 && <section className="space-y-3"><h4 className="font-mono text-[10px] font-bold tracking-wider text-oc-navy">ALREADY RECORDED</h4><div className="overflow-x-auto rounded-lg border border-oc-periwinkle"><table className="w-full text-left text-xs"><thead className="bg-oc-mist"><tr><th className="p-2.5">Name</th><th className="p-2.5">MSSV</th><th className="p-2.5">Email</th><th className="p-2.5">Reason</th></tr></thead><tbody>{results.alreadyIssuedList.map((item, idx) => <tr key={idx} className="border-t border-oc-periwinkle"><td className="p-2.5 font-semibold text-oc-navy">{item.name}</td><td className="p-2.5 font-mono">{item.mssv}</td><td className="p-2.5">{item.email}</td><td className="p-2.5 text-text-secondary">{item.reason}</td></tr>)}</tbody></table></div></section>}
 
               {/* Unmatched List Breakdown Table */}
               {results.unmatchedList.length > 0 && (

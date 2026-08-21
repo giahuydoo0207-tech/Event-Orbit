@@ -6,6 +6,7 @@ import { THEMES } from '../constants/themes';
 import NotFoundState from '../components/NotFoundState';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { hasRealTransaction } from '../lib/credentialPresentation';
 
 export function EventDetail() {
   const { slug } = useParams();
@@ -171,7 +172,7 @@ export function EventDetail() {
         setIsCheckedIn(true);
         setTxHash(res.txHash);
         loadData();
-        showToast("Attendance confirmed! Credential issued.", "success");
+        showToast("Attendance confirmed. Your credential record is ready.", "success");
       } else {
         showToast(res.error || "Check-in failed", "error");
       }
@@ -414,8 +415,8 @@ export function EventDetail() {
 
                   {isCheckedIn && (
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-success">Credential Issued</span>
-                      {txHash && (
+                      <span className="text-xs font-bold text-success">Attendance Confirmed</span>
+                      {hasRealTransaction({ txHash }) && (
                         <a
                           href={`https://edu-chain-testnet.blockscout.com/tx/${txHash}`}
                           target="_blank"

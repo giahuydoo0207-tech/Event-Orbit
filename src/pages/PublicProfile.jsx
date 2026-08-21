@@ -70,7 +70,7 @@ export function PublicProfile() {
       <div className="bg-surface border border-border rounded-xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex items-center gap-4">
           {/* Avatar circle */}
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-white font-extrabold text-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-sm shrink-0">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-oc-navy text-xl font-extrabold text-white shadow-oc-sm">
             {nameInitials}
           </div>
           <div className="space-y-1">
@@ -100,8 +100,8 @@ export function PublicProfile() {
       {/* Credentials gallery */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-md font-bold uppercase tracking-wider text-navy">Verified Credentials</h2>
-          <p className="text-xs text-text-secondary mt-1">Digital credentials verified on Open Campus ID.</p>
+          <h2 className="text-md font-bold uppercase tracking-wider text-navy">Credentials</h2>
+          <p className="text-xs text-text-secondary mt-1">Digital credential records linked to this Open Campus ID.</p>
         </div>
 
         {achievements.length === 0 ? (
@@ -137,7 +137,7 @@ export function PublicProfile() {
       {achievements.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-md font-bold uppercase tracking-wider text-navy">Public Transaction Ledger</h2>
+            <h2 className="text-base font-bold text-navy">Credential Evidence</h2>
             <p className="text-xs text-text-secondary mt-1">Independent receipts verifying credentials on block explorer.</p>
           </div>
 

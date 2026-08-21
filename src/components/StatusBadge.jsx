@@ -13,7 +13,7 @@ export function StatusBadge({ status, label, className = '' }) {
 
   if (['checked-in', 'checkedin', 'success', 'sbt minted', 'minted_onchain', 'active', 'completed'].includes(key)) {
     textClass = 'text-emerald-700 font-extrabold';
-    dotClass = 'bg-emerald-500 animate-pulse';
+    dotClass = 'bg-emerald-500';
     displayLabel = label || (key === 'active' ? 'ACTIVE' : key === 'completed' ? 'COMPLETED' : 'CHECKED-IN');
   } else if (['off-chain (no wallet)', 'off_chain', 'skipped_no_wallet', 'warning', 'already_issued', 'unmatched'].includes(key)) {
     textClass = 'text-amber-700 font-extrabold';
@@ -23,13 +23,13 @@ export function StatusBadge({ status, label, className = '' }) {
     textClass = 'text-oc-blue font-extrabold';
     dotClass = 'bg-oc-blue';
     displayLabel = label || (key.includes('excel') ? 'EXCEL IMPORT' : 'QR CHECK-IN');
-  } else if (['deleted', 'soft deleted', 'archived'].includes(key)) {
+  } else if (['deleted', 'soft deleted', 'archived', 'failed'].includes(key)) {
     textClass = 'text-rose-700 font-extrabold';
     dotClass = 'bg-rose-600';
-    displayLabel = label || 'SOFT DELETED';
+    displayLabel = label || (key === 'failed' ? 'FAILED' : 'SOFT DELETED');
   } else if (['pending', 'minting'].includes(key)) {
     textClass = 'text-sky-700 font-extrabold';
-    dotClass = 'bg-sky-500 animate-ping';
+    dotClass = 'bg-sky-500';
     displayLabel = label || 'MINTING...';
   }
 

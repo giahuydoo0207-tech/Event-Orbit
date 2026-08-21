@@ -24,7 +24,7 @@ export function CredentialCard({ credential, recipientName, recipientOcid, onVie
   const realTransaction = hasRealTransaction(credential);
 
   return (
-    <article className="group flex h-full min-h-[440px] flex-col rounded-2xl border border-oc-periwinkle/70 bg-white p-5 shadow-[0_14px_34px_rgba(20,27,235,0.06)] transition duration-200 hover:-translate-y-0.5 hover:border-oc-blue/35">
+    <article className="group flex h-full flex-col rounded-xl border border-oc-periwinkle/60 bg-white p-5 shadow-oc-sm transition-colors hover:border-oc-blue/35 sm:min-h-[440px]">
       <header className="flex min-h-[56px] items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3"><div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-oc-blue/25 bg-oc-mist text-oc-blue"><div className="absolute inset-1.5 rounded-full border border-dashed border-oc-blue/30" /><CategoryIcon category={credential.category || 'Tech'} className="h-5 w-5" /></div><div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-oc-blue">Event Orbit Credential</p><p className="mt-1 truncate text-[11px] font-semibold text-slate-500">{credential.issuerName || 'Issuer not recorded'}</p></div></div>
         <span className={`inline-flex min-h-7 max-w-[112px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-center text-[9px] font-bold leading-tight ${toneClasses[claim.tone]}`}>{claim.label}</span>
@@ -47,7 +47,7 @@ export function CredentialCard({ credential, recipientName, recipientOcid, onVie
         <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2"><span className="font-bold text-slate-400">Transaction</span><span className={`truncate font-mono ${realTransaction ? 'text-oc-blue' : 'text-slate-500'}`} title={realTransaction ? credential.txHash : 'Not available'}>{realTransaction ? credential.txHash : 'Not available'}</span></div>
       </div>
 
-      <div className="mt-auto pt-5"><button type="button" onClick={() => onViewDetails?.(credential)} className="w-full whitespace-nowrap rounded-lg border border-oc-blue/25 bg-oc-mist px-4 py-2.5 text-xs font-bold text-oc-blue transition hover:bg-oc-blue hover:text-white active:translate-y-px">View details</button></div>
+      <div className="mt-auto pt-5"><button type="button" onClick={() => onViewDetails?.(credential)} className="action-secondary w-full">View details</button></div>
     </article>
   );
 }

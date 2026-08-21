@@ -109,7 +109,6 @@ export const initialAchievements = [
     eventId: '101',
     points: 5,
     earnedAt: '2026-07-10T14:15',
-    txHash: '0x7f14e9a38f32145b20a1081512bb673e4d9c72e1',
     badgeImage: 'https://picsum.photos/seed/badge-101/150/150'
   },
   {
@@ -120,7 +119,6 @@ export const initialAchievements = [
     eventId: '102',
     points: 3,
     earnedAt: '2026-07-15T09:10',
-    txHash: '0x8c71e3cf5a2a1975e533c3a4439c2d1b73c4f9a2',
     badgeImage: 'https://picsum.photos/seed/badge-102/150/150'
   },
   {
@@ -131,7 +129,6 @@ export const initialAchievements = [
     eventId: '101',
     points: 5,
     earnedAt: '2026-07-10T14:05',
-    txHash: '0xa4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6b5',
     badgeImage: 'https://picsum.photos/seed/badge-101/150/150'
   }
 ];

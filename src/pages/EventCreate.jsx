@@ -134,7 +134,7 @@ export function EventCreate() {
       <div>
         <h1 className="text-2xl font-black text-oc-ink">Create New Event</h1>
         <p className="text-xs text-slate-500 mt-1 font-medium">
-          Draft your event details and configure your verified digital credential reward structures on Open Campus ID.
+          Draft your event details and configure participation points and credential records for Open Campus ID.
         </p>
       </div>
 

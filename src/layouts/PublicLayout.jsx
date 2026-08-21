@@ -33,7 +33,7 @@ export function PublicLayout({ children }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-oc-mist text-oc-ink font-sans">
+    <div className="flex min-h-[100dvh] flex-col bg-oc-mist text-oc-ink font-sans">
       {/* Accessibility Skip Link */}
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
 
@@ -49,7 +49,7 @@ export function PublicLayout({ children }) {
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex items-center space-x-3 sm:space-x-6">
+            <nav className="flex min-w-0 items-center gap-2 sm:gap-6">
               <button
                 onClick={() => setSearchOpen(true)}
                 className="text-xs font-medium text-slate-600 hover:text-oc-blue transition-colors flex items-center gap-1.5 bg-oc-mist px-3 py-1.5 rounded-md border border-oc-periwinkle/50 shadow-sm active:scale-95"
@@ -111,7 +111,7 @@ export function PublicLayout({ children }) {
             &copy; 2026 Event Orbit. Built for the Open Campus Ecosystem.
           </p>
           <p className="text-xs text-slate-500 mt-2 sm:mt-0 font-medium">
-            Powered by <span className="font-bold text-oc-blue">Open Campus</span> &bull; Verified on <span className="font-bold text-oc-blue">EDU Chain</span>
+            Powered by <span className="font-bold text-oc-blue">Open Campus</span> and built for trusted participation records.
           </p>
         </div>
       </footer>
