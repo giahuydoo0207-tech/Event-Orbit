@@ -6,6 +6,12 @@ import { LoadingBar } from '../components/LoadingBar';
 import { resolveChapterFromEvents } from '../lib/chapterResolution';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
 import { getOrganizerChapterRedirect } from '../lib/organizerNavigation';
+import {
+  countOrganizerEventsByTab,
+  filterOrganizerEventsByTab,
+  getOrganizerEventTimeStatus,
+  isOrganizerEventManageable,
+} from '../lib/organizerEventFilters';
 import useToastStore from '../store/useToastStore';
 
 const AttendeeImportModal = lazy(() =>
@@ -72,38 +78,13 @@ export function ChapterManage() {
   }, [chapterId, isOwnedChapter]);
 
   // Helper to categorize event status (Bizcafe 4-state classifier)
-  const getEventStatus = (event) => {
-    if (event.deletedAt) return 'deleted';
-    if (!event.datetime) return 'completed';
-
-    const eventDate = new Date(event.datetime);
-    const today = new Date();
-
-    const isToday =
-      eventDate.getDate() === today.getDate() &&
-      eventDate.getMonth() === today.getMonth() &&
-      eventDate.getFullYear() === today.getFullYear();
-
-    if (isToday) return 'ongoing';
-    if (eventDate > today) return 'upcoming';
-    return 'completed';
-  };
+  const getEventStatus = getOrganizerEventTimeStatus;
 
   // Tab counters (Bizcafe live tab numbers)
-  const tabCounts = {
-    all: allEvents.length,
-    upcoming: allEvents.filter(e => getEventStatus(e) === 'upcoming').length,
-    ongoing: allEvents.filter(e => getEventStatus(e) === 'ongoing').length,
-    completed: allEvents.filter(e => getEventStatus(e) === 'completed').length,
-    deleted: allEvents.filter(e => getEventStatus(e) === 'deleted').length,
-  };
+  const tabCounts = countOrganizerEventsByTab(allEvents);
 
   // Filtered event list based on selected tab
-  const filteredEvents = allEvents.filter(event => {
-    const status = getEventStatus(event);
-    if (activeTab === 'all') return true;
-    return status === activeTab;
-  });
+  const filteredEvents = filterOrganizerEventsByTab(allEvents, activeTab);
 
   // ── CSV Export ──
   const handleExportCSV = () => {
@@ -371,7 +352,7 @@ export function ChapterManage() {
                       </td>
 
                       <td className="py-4 text-right whitespace-nowrap">
-                        {isOwnedChapter && ['draft', 'rejected'].includes(event.status) && (
+                        {isOwnedChapter && isOrganizerEventManageable(event) && ['draft', 'rejected'].includes(event.status) && (
                           <button 
                             disabled={submittingEventId === event.id}
                             onClick={async () => { 
