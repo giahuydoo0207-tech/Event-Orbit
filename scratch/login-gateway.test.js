@@ -36,3 +36,15 @@ test('login gateway uses a calm identity-product visual treatment', async () => 
   assert.match(source, /hover:border-oc-turquoise/);
   assert.doesNotMatch(source, /h-\[620px\]|shadow-\[0_22px_60px_rgba\(0,230,195/);
 });
+
+test('login gateway fits desktop viewport and keeps the identity headline intact', async () => {
+  const source = await readFile(new URL('../src/pages/Login.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /lg:h-\[100dvh\]/);
+  assert.match(source, /lg:overflow-hidden/);
+  assert.match(source, /lg:h-full/);
+  assert.match(source, /lg:min-h-0/);
+  assert.match(source, /Open Campus ID/);
+  assert.match(source, /lg:whitespace-nowrap/);
+  assert.doesNotMatch(source, /lg:text-\[3\.5rem\]/);
+});

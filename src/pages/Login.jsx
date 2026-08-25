@@ -38,11 +38,11 @@ export function Login() {
   };
 
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#F5F7FF] px-4 py-5 font-sans text-[#070A3F] sm:px-6 sm:py-7 lg:px-8 lg:py-8">
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#F5F7FF] px-4 py-5 font-sans text-[#070A3F] sm:px-6 sm:py-7 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:p-6">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_8%,rgba(29,36,255,0.08),transparent_28%),radial-gradient(circle_at_92%_92%,rgba(0,230,195,0.09),transparent_25%),linear-gradient(135deg,#F8FAFF_0%,#EEF1FF_100%)]" />
 
-      <section className="relative mx-auto grid min-h-[calc(100dvh-2.5rem)] w-full max-w-7xl grid-cols-1 overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_24px_80px_rgba(7,10,63,0.11)] sm:min-h-[calc(100dvh-3.5rem)] lg:grid-cols-[0.78fr_1.22fr]" aria-labelledby="login-title">
-        <div className="relative flex min-h-[370px] flex-col overflow-hidden bg-[linear-gradient(150deg,#070A3F_0%,#081052_100%)] p-7 text-white sm:p-10 lg:min-h-full lg:p-12">
+      <section className="relative mx-auto grid min-h-[calc(100dvh-2.5rem)] w-full max-w-7xl grid-cols-1 overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_24px_80px_rgba(7,10,63,0.11)] sm:min-h-[calc(100dvh-3.5rem)] lg:h-full lg:min-h-0 lg:grid-cols-[0.92fr_1.08fr]" aria-labelledby="login-title">
+        <div className="relative flex min-h-[370px] flex-col overflow-hidden bg-[linear-gradient(150deg,#070A3F_0%,#081052_100%)] p-7 text-white sm:p-10 lg:min-h-0 lg:p-10 xl:p-12">
           <div className="pointer-events-none absolute -bottom-28 -right-24 h-72 w-72 rounded-full border border-white/[0.07]" />
           <div className="pointer-events-none absolute -bottom-10 -right-8 h-44 w-44 rounded-full border border-oc-turquoise/15" />
           <div className="pointer-events-none absolute right-20 top-24 h-2 w-2 rounded-full bg-oc-turquoise/60 shadow-[0_0_20px_rgba(0,230,195,0.35)]" />
@@ -52,10 +52,10 @@ export function Login() {
             <p className="mt-1.5 text-xs font-semibold text-oc-turquoise">Choose your workspace</p>
           </header>
 
-          <div className="relative my-auto max-w-xl py-12 lg:py-16">
-            <h1 id="login-title" className="text-4xl font-black leading-[1.08] tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.5rem]">
+          <div className="relative my-auto max-w-xl py-12 lg:py-8">
+            <h1 id="login-title" className="text-4xl font-black leading-[1.08] tracking-[-0.035em] text-white sm:text-5xl lg:text-[2.6rem] xl:text-5xl">
               <span className="block text-white">Connect with</span>
-              <span className="block text-oc-turquoise sm:whitespace-nowrap">Open Campus ID</span>
+              <span className="block text-oc-turquoise lg:whitespace-nowrap">Open Campus ID</span>
             </h1>
             <p className="mt-5 max-w-md text-sm font-medium leading-6 text-[#C7D0EC] sm:text-base">
               Choose how you want to continue into Event Orbit.
@@ -65,19 +65,19 @@ export function Login() {
           <p className="relative text-xs font-medium text-[#AAB6DB]">Open Campus ID access</p>
         </div>
 
-        <div className="flex min-w-0 flex-col justify-center bg-white p-6 sm:p-10 lg:p-12 xl:p-16">
+        <div className="flex min-w-0 flex-col justify-center bg-white p-6 sm:p-10 lg:p-10 xl:p-12">
           <div className="max-w-2xl">
             <p className="text-sm font-extrabold tracking-tight text-[#070A3F]">Select a workspace</p>
             <p className="mt-1.5 text-sm leading-6 text-[#63708A]">Use the role that matches what you want to do next.</p>
           </div>
 
-          <div className="mt-7 grid grid-cols-1 gap-3">
+          <div className="mt-5 grid grid-cols-1 gap-2.5">
               {roles.map((role) => (
                 <button
                   key={role.title}
                   type="button"
                   onClick={() => handleOCIDLogin(role.destination)}
-                  className="group relative w-full overflow-hidden rounded-2xl border border-[#DCE3F5] bg-[#FBFCFF] p-5 text-left shadow-[0_8px_24px_rgba(7,10,63,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-oc-turquoise hover:bg-white hover:shadow-[0_14px_34px_rgba(7,16,82,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-turquoise focus-visible:ring-offset-3 focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-6"
+                  className="group relative w-full overflow-hidden rounded-2xl border border-[#DCE3F5] bg-[#FBFCFF] p-5 text-left shadow-[0_8px_24px_rgba(7,10,63,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-oc-turquoise hover:bg-white hover:shadow-[0_14px_34px_rgba(7,16,82,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-turquoise focus-visible:ring-offset-3 focus-visible:ring-offset-white active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none sm:p-6 lg:p-5"
                   aria-label={`Continue as ${role.title}`}
                 >
                   <span className="flex items-start gap-4 sm:gap-5">
@@ -104,7 +104,7 @@ export function Login() {
               ))}
           </div>
 
-          <p className="mt-6 text-xs font-medium text-[#63708A]">Your role is verified after authentication.</p>
+          <p className="mt-4 text-xs font-medium text-[#63708A]">Your role is verified after authentication.</p>
         </div>
       </section>
     </main>
