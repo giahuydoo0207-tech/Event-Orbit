@@ -3,26 +3,34 @@ import { Link } from 'react-router-dom';
 import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
+import { getFeedViewState } from '../lib/feedViewState';
 
 export function Homepage() {
   const user = useStore((state) => state.user);
-  const [loading, setLoading] = useState(true);
   const [feedEvents, setFeedEvents] = useState([]);
   const [chapters, setChapters] = useState([]);
+  const [feedStatus, setFeedStatus] = useState('loading');
+  const [loadedFeedKey, setLoadedFeedKey] = useState(null);
+  const [feedError, setFeedError] = useState('');
+  const followedChapterKey = JSON.stringify(user.followedChapterIds || []);
 
   useEffect(() => {
+    let isCurrentRequest = true;
+    const followedIds = user.followedChapterIds || [];
+
     async function loadFeed() {
-      setLoading(true);
+      setFeedStatus('loading');
+      setFeedError('');
       try {
         const [allEvents, allChapters] = await Promise.all([
           fetchEvents(),
           fetchChapters()
         ]);
 
+        if (!isCurrentRequest) return;
         setChapters(allChapters);
 
         // Show events from followed chapters only
-        const followedIds = user.followedChapterIds || [];
         if (followedIds.length > 0) {
           const filtered = allEvents.filter(e => {
             return followedIds.some(chId => {
@@ -37,14 +45,29 @@ export function Homepage() {
         } else {
           setFeedEvents([]);
         }
+        setLoadedFeedKey(followedChapterKey);
+        setFeedStatus('ready');
       } catch (err) {
+        if (!isCurrentRequest) return;
         console.error('Failed to load feed', err);
-      } finally {
-        setLoading(false);
+        setFeedError('Unable to load your feed right now. Please try again in a moment.');
+        setLoadedFeedKey(followedChapterKey);
+        setFeedStatus('error');
       }
     }
     loadFeed();
-    }, [JSON.stringify(user.followedChapterIds)]);
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [followedChapterKey]);
+
+  const feedViewState = getFeedViewState({
+    requestedKey: followedChapterKey,
+    loadedKey: loadedFeedKey,
+    status: feedStatus,
+    eventCount: feedEvents.length
+  });
 
   const getChapterName = (event) => {
     if (event.chapter?.name) return event.chapter.name;
@@ -52,7 +75,7 @@ export function Homepage() {
     return ch ? ch.name : 'Campus Chapter';
   };
 
-  if (loading) {
+  if (feedViewState === 'loading') {
     return (
       <div className="py-24 text-center space-y-4 max-w-lg mx-auto font-sans">
         <div className="badge-kicker text-[10px] text-slate-400">Loading your personalized feed...</div>
@@ -74,7 +97,12 @@ export function Homepage() {
       </div>
 
       {/* Feed Content */}
-      {feedEvents.length === 0 ? (
+      {feedViewState === 'error' ? (
+        <div className="empty-state space-y-2" role="alert">
+          <h2 className="text-lg font-bold text-navy">Unable to load your feed</h2>
+          <p className="text-xs text-text-secondary max-w-xs mx-auto">{feedError}</p>
+        </div>
+      ) : feedViewState === 'empty' ? (
         <div className="empty-state space-y-6">
           <div className="space-y-2">
             <h2 className="text-lg font-bold text-navy">Your feed is empty</h2>
