@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { fetchServerSession } from '../api/mockApi';
 import { LoadingBar } from './LoadingBar';
 import { OrganizerSessionProvider } from '../contexts/OrganizerSessionContext';
+import { hasVerifiedPermission } from '../lib/authNavigation';
 
 export function ProtectedRoute({ children, requireRole }) {
   const user = useStore((state) => state.user);
@@ -33,7 +34,7 @@ export function ProtectedRoute({ children, requireRole }) {
   }
   if (requireRole) {
     if (!serverSession) return <Navigate to="/login" replace />;
-    if (serverSession.role !== requireRole && !(serverSession.role === 'admin' && requireRole === 'organizer' && serverSession.chapterId)) {
+    if (!hasVerifiedPermission(serverSession, requireRole)) {
       return <Navigate to={serverSession.role === 'student' ? '/dashboard' : serverSession.role === 'admin' ? '/admin' : '/manage'} replace />;
     }
     return (

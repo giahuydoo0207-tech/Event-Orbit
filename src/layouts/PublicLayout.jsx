@@ -22,14 +22,18 @@ export function PublicLayout({ children }) {
         setUser({ ...session, isAuthenticated: true, method: 'ocid' });
       })
       .catch(() => {
-        if (active) setVerifiedSession(null);
+        if (active) {
+          setVerifiedSession(null);
+          logout({ skipRequest: true });
+        }
       });
     return () => { active = false; };
-  }, [setUser]);
+  }, [logout, setUser]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    setVerifiedSession(null);
+    await logout();
+    navigate('/', { replace: true });
   };
 
   return (

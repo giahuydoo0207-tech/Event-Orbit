@@ -4,11 +4,14 @@ const DESTINATION_PERMISSION = {
   '/admin': 'admin',
 };
 
+export function hasVerifiedPermission(verifiedUser, permission) {
+  return verifiedUser?.permissions?.[permission] === true;
+}
+
 export function getPostLoginDestination(verifiedUser, requestedDestination) {
   const requiredPermission = DESTINATION_PERMISSION[requestedDestination];
-  const permissions = verifiedUser?.permissions || {};
 
-  return requiredPermission && permissions[requiredPermission] === true
+  return requiredPermission && hasVerifiedPermission(verifiedUser, requiredPermission)
     ? requestedDestination
     : '/home';
 }

@@ -17,6 +17,29 @@ const getInitialUser = () => {
   };
 };
 
+const clearStoredAuthContext = () => {
+  const storages = [
+    typeof sessionStorage !== 'undefined' ? sessionStorage : null,
+    typeof localStorage !== 'undefined' ? localStorage : null,
+  ];
+
+  storages.forEach((storage) => {
+    try {
+      storage?.removeItem('ocidReturnTo');
+    } catch {
+      // Storage can be unavailable in privacy-restricted browser contexts.
+    }
+  });
+
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('eduai-orbit-session');
+    }
+  } catch {
+    // In-memory state is still cleared below when persisted storage is unavailable.
+  }
+};
+
 export const useStore = create(
   persist(
     (set, get) => ({
@@ -28,27 +51,23 @@ export const useStore = create(
         return { user: newUser };
       }),
 
-      logout: ({ skipRequest = false } = {}) => {
-        // Clear session on backend in background
-        if (!skipRequest) fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(err => console.error('Backend logout failed:', err));
+      logout: async ({ skipRequest = false } = {}) => {
+        clearStoredAuthContext();
+        set({ user: getInitialUser() });
 
-        set(() => {
-          return {
-            user: {
-              isAuthenticated: false,
-              method: null,
-              ocid: null,
-              ethAddress: null,
-              mssv: null,
-              fullName: null,
-              email: null,
-              role: null,
-              permissions: null,
-              followedChapterIds: [],
-              joinedAt: 'September 2025'
-            }
-          };
-        });
+        if (skipRequest) return true;
+
+        try {
+          const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (!response.ok) console.error('Backend logout failed with status:', response.status);
+          return response.ok;
+        } catch (err) {
+          console.error('Backend logout failed:', err);
+          return false;
+        }
       },
 
       // ── Follow Chapter Actions ──
