@@ -31,7 +31,7 @@ export function DashboardLayout({ children }) {
     : isManageSection
     ? [
         { label: 'Manage Chapters', path: '/manage' },
-        { label: 'Explore Events', path: '/events' },
+        { label: 'Explore Events', path: '/manage/explore' },
       ]
     : [
         { label: 'Home', path: '/home' },
