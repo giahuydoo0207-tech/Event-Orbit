@@ -1,6 +1,8 @@
 import React from 'react';
 import { useOCAuth } from '@opencampus/ocid-connect-js';
 import { Link } from 'react-router-dom';
+import manageIllustration from '../assets/login-role-manage.png';
+import adminIllustration from '../assets/login-role-admin.png';
 import useToastStore from '../store/useToastStore';
 
 const roles = [
@@ -99,6 +101,19 @@ export function Login() {
                 Choose how you want to continue into Event Orbit.
               </p>
             </div>
+          </div>
+
+          <div aria-hidden="true" className="relative mx-auto mt-10 flex w-fit items-end justify-center -space-x-10 pb-1 sm:mt-12 lg:mx-0 lg:mt-auto lg:justify-start lg:pt-6">
+            <img
+              src={manageIllustration}
+              alt=""
+              className="relative z-10 h-32 w-32 -rotate-3 object-contain drop-shadow-[0_12px_18px_rgba(0,0,0,0.18)] sm:h-36 sm:w-36 lg:h-32 lg:w-32 xl:h-36 xl:w-36"
+            />
+            <img
+              src={adminIllustration}
+              alt=""
+              className="relative h-28 w-28 translate-y-1 rotate-3 object-contain opacity-95 drop-shadow-[0_12px_18px_rgba(0,0,0,0.16)] sm:h-32 sm:w-32 lg:h-28 lg:w-28 xl:h-32 xl:w-32"
+            />
           </div>
 
         </div>
