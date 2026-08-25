@@ -219,6 +219,55 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
   border-top: 3px solid rgba(0, 142, 123, 0.55);
 }
 
+/* Organizer Portal visual layer. Scoped to protected /manage routes. */
+.organizer-portal main {
+  background: linear-gradient(180deg, #f7f8ff 0%, #eff1ff 100%);
+}
+
+.organizer-portal aside {
+  background: #07094d;
+}
+
+.organizer-page-hero {
+  border-left: 4px solid rgba(0, 142, 123, 0.65);
+  background-image: linear-gradient(90deg, rgba(239, 241, 255, 0.72), rgba(255, 255, 255, 0.96));
+}
+
+.organizer-chapter-card {
+  min-height: 5.25rem;
+  border-top: 3px solid rgba(20, 27, 235, 0.72);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.organizer-chapter-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 27, 235, 0.35);
+  border-top-color: rgba(0, 142, 123, 0.72);
+  box-shadow: 0 8px 18px -10px rgba(7, 9, 77, 0.22);
+}
+
+.organizer-console-header {
+  border-top: 3px solid rgba(0, 142, 123, 0.62);
+}
+
+.organizer-events-panel tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.organizer-form-card label,
+.organizer-event-builder > div:first-child p {
+  letter-spacing: 0.04em;
+}
+
+.organizer-live-preview {
+  max-width: 38rem;
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .organizer-chapter-card:hover { transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .student-hub .student-nav-link:hover,
   .student-event-card:hover,

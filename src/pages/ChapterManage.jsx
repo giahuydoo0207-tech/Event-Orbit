@@ -155,7 +155,7 @@ export function ChapterManage() {
   }
 
   return (
-    <div className="space-y-12 font-sans max-w-4xl">
+    <div className="organizer-chapter-console space-y-8 font-sans max-w-5xl">
       {/* ── Navigation Breadcrumb ── */}
       <Link
         to="/manage"
@@ -165,7 +165,7 @@ export function ChapterManage() {
       </Link>
 
       {/* ── Chapter Identity + Hero Metric ── */}
-      <div className="space-y-8">
+      <div className="organizer-console-header space-y-6 rounded-xl border border-oc-periwinkle/60 bg-white p-6 shadow-oc-sm sm:p-8">
         {/* Chapter Identity Row */}
         <div className="flex items-start gap-4">
           {/* Monochrome outline icon — lighter than gradient-filled squares */}
@@ -197,25 +197,25 @@ export function ChapterManage() {
       </div>
 
       {/* ── Actions — text links for secondary, solid button for primary CTA ── */}
-      <div className="hairline pb-6">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-6">
+      <div className="rounded-xl border border-oc-periwinkle/60 bg-white p-4 shadow-oc-sm">
+        <div className="organizer-action-bar grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {isOwnedChapter && (
             <>
               <Link
                 to={`/manage/${encodeURIComponent(chapterId)}/events/create`}
-                className="px-5 py-2.5 bg-oc-blue text-white text-xs font-bold rounded-lg shadow-sm hover:bg-oc-indigo transition-colors"
+                className="action-primary w-full"
               >
                 Create New Event
               </Link>
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="text-xs font-bold text-oc-blue hover:underline transition-colors"
+                className="action-secondary w-full"
               >
                 Import &amp; Issue Credentials
               </button>
               <Link
                 to={`/manage/${encodeURIComponent(chapterId)}/history`}
-                className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
+                className="action-secondary w-full"
               >
                 Event History
               </Link>
@@ -223,7 +223,7 @@ export function ChapterManage() {
           )}
           <button
             onClick={handleExportCSV}
-            className="text-xs font-bold text-slate-500 hover:text-oc-blue hover:underline transition-colors"
+            className="action-secondary w-full"
           >
             Export CSV
           </button>
@@ -231,7 +231,7 @@ export function ChapterManage() {
       </div>
 
       {/* ── Events Console — sticky header + scrollable table ── */}
-      <div>
+      <div className="organizer-events-panel rounded-xl border border-oc-periwinkle/60 bg-white p-4 shadow-oc-sm sm:p-6">
         {/* Sticky header: title + tabs stay visible while table scrolls */}
         <div className="space-y-4 pb-4">
           <h2 className="text-sm font-black text-oc-ink uppercase tracking-wider">Events</h2>
@@ -267,7 +267,7 @@ export function ChapterManage() {
         </div>
 
         {/* Scrollable table container — scroll events, not the whole page */}
-        <div className="max-h-[560px] overflow-y-auto overflow-x-auto">
+        <div className="max-h-[560px] overflow-y-auto overflow-x-auto rounded-lg border border-oc-periwinkle/45">
           {filteredEvents.length === 0 ? (
             <div className="text-center py-20">
               <h3 className="text-sm font-bold text-oc-ink">No events in this view</h3>
@@ -277,7 +277,7 @@ export function ChapterManage() {
             </div>
           ) : (
             <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-oc-mist z-10">
+              <thead className="sticky top-0 bg-slate-50 z-10">
                 <tr className="border-b border-oc-periwinkle/40">
                   <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px]">Event</th>
                   <th className="pb-3 pt-1 pr-4 badge-kicker text-slate-400 text-[10px]">Date</th>

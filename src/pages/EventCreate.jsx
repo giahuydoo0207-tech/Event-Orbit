@@ -130,18 +130,18 @@ export function EventCreate() {
   const allTagsCombined = Array.from(new Set([...aiTags, ...customTags]));
 
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="organizer-event-builder space-y-6">
+      <div className="border-b border-oc-periwinkle/50 pb-5">
         <h1 className="text-2xl font-black text-oc-ink">Create New Event</h1>
         <p className="text-xs text-slate-500 mt-1 font-medium">
           Draft your event details and configure participation points and credential records for Open Campus ID.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         
         {/* Form Column */}
-        <div className="bg-white border border-oc-periwinkle/70 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
+        <div className="organizer-form-card space-y-6 rounded-xl border border-oc-periwinkle/70 bg-white p-6 shadow-oc-sm md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Title */}
             <div>
@@ -466,7 +466,7 @@ export function EventCreate() {
             <span className="text-[10px] text-accent-blue">{selectedTheme} Theme</span>
           </div>
 
-          <div className={`border rounded-2xl overflow-hidden shadow-lg transition-all ${themeStyle.bg} ${themeStyle.text} ${themeStyle.border}`}>
+          <div className={`organizer-live-preview overflow-hidden rounded-xl border shadow-oc-sm transition-all ${themeStyle.bg} ${themeStyle.text} ${themeStyle.border}`}>
             {/* Header Banner */}
             <div className="relative aspect-[2.4/1] w-full bg-slate-800 flex items-end p-6">
               <img

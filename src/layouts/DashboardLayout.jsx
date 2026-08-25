@@ -43,7 +43,7 @@ export function DashboardLayout({ children }) {
       ];
 
   return (
-    <div className={`flex min-h-[100dvh] overflow-hidden bg-oc-mist text-oc-ink font-sans ${isStudentSection ? 'student-hub' : ''}`}>
+    <div className={`flex min-h-[100dvh] overflow-hidden bg-oc-mist text-oc-ink font-sans ${isStudentSection ? 'student-hub' : isManageSection ? 'organizer-portal' : ''}`}>
       {/* Accessibility Skip Link */}
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       {/* Mobile Header Bar */}

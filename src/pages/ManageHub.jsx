@@ -66,19 +66,22 @@ export function ManageHub() {
   const chapterGrid = (items) => (
     <div className="grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((chapter) => (
-        <ChapterCard key={chapter.id} chapter={chapter} linkTo={`/manage/${encodeURIComponent(chapter.id)}`} />
+        <ChapterCard key={chapter.id} chapter={chapter} linkTo={`/manage/${encodeURIComponent(chapter.id)}`} variant="organizer" />
       ))}
     </div>
   );
 
   return (
-    <div className="space-y-10 font-sans max-w-5xl">
-      <div>
-        <h1 className="page-title">Manage Chapters</h1>
-        <p className="page-summary">
-          Select a chapter to view its events and open the available organizer tools.
-        </p>
-      </div>
+    <div className="organizer-manage-hub space-y-8 font-sans max-w-5xl">
+      <section className="organizer-page-hero rounded-xl border border-oc-periwinkle/60 bg-white p-6 shadow-oc-sm sm:p-8" aria-labelledby="manage-chapters-title">
+        <p className="text-xs font-bold text-oc-blue">Organizer workspace</p>
+        <h1 id="manage-chapters-title" className="mt-2 text-2xl font-black text-oc-navy sm:text-3xl">Manage Chapters</h1>
+        <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-600">Select a chapter to coordinate events, attendance, and credential operations.</p>
+        <div className="mt-5 flex flex-wrap gap-2" aria-label="Chapter overview">
+          <span className="rounded-lg border border-oc-periwinkle/60 bg-oc-mist px-3 py-1.5 text-xs font-bold text-oc-navy"><span className="num text-oc-blue">{chapters.length}</span> active chapter{chapters.length !== 1 ? 's' : ''}</span>
+          <span className="rounded-lg border border-oc-periwinkle/60 bg-white px-3 py-1.5 text-xs font-bold text-slate-600">Event operations</span>
+        </div>
+      </section>
 
       {chapters.length > 4 && (
         <div className="relative max-w-md">

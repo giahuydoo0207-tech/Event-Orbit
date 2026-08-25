@@ -13,14 +13,15 @@ import { CategoryIcon } from './CategoryIcon';
 export function ChapterCard({ chapter, linkTo, variant = 'default' }) {
   const href = linkTo || `/chapters/${chapter.slug}`;
   const isStudent = variant === 'student';
+  const isOrganizer = variant === 'organizer';
 
   return (
     <Link
       to={href}
-      className={`group flex items-center gap-3.5 rounded-xl border border-oc-periwinkle/60 bg-white p-3.5 shadow-oc-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue ${isStudent ? 'student-chapter-card' : 'transition-colors hover:border-oc-blue/40'}`}
+      className={`group flex items-center gap-3.5 rounded-xl border border-oc-periwinkle/60 bg-white p-3.5 shadow-oc-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue ${isStudent ? 'student-chapter-card' : isOrganizer ? 'organizer-chapter-card' : 'transition-colors hover:border-oc-blue/40'}`}
     >
       {/* Outline Icon Box — R_child = 16px - 14px padding = 2-4px (rounded-sm) */}
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center border border-oc-periwinkle/70 group-hover:border-oc-blue/50 transition-colors ${isStudent ? 'rounded-lg bg-oc-mist' : 'rounded-sm'}`}>
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center border border-oc-periwinkle/70 group-hover:border-oc-blue/50 transition-colors ${isStudent || isOrganizer ? 'rounded-lg bg-oc-mist' : 'rounded-sm'}`}>
         <CategoryIcon category={chapter.category} className="w-5 h-5 text-oc-blue" />
       </div>
 
