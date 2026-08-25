@@ -43,8 +43,8 @@ export function Following() {
   return (
     <div className="page-shell max-w-5xl font-sans">
       {/* Header — same editorial style as Campus Chapters */}
-      <div className="student-page-heading"><div><h1 className="page-title">Following</h1><p className="page-summary">Chapters you follow. Their events appear in your personalized Home feed.</p></div><div className="student-page-mark" aria-hidden="true" /></div>
-      <div className="mt-5 rounded-2xl border border-oc-turquoise/35 bg-gradient-to-r from-white to-emerald-50/70 p-5 shadow-oc-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+      <div className="student-page-heading"><div><h1 className="page-title">Following</h1><p className="page-summary">Chapters you follow. Their events appear in your personalized Home feed.</p></div></div>
+      <div className="mt-5 rounded-xl border border-oc-turquoise/35 bg-gradient-to-r from-white to-emerald-50/70 p-5 shadow-oc-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
         <div><h2 className="text-sm font-black text-oc-ink">Grow your campus circle</h2><p className="mt-1 text-xs leading-5 text-slate-600">Follow another chapter to bring more workshops, meetups, and activities into Home.</p></div>
         <Link
           to="/chapters"

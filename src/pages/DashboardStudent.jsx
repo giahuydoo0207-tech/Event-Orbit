@@ -36,7 +36,7 @@ export function DashboardStudent() {
 
   return (
     <div className="space-y-10 font-sans">
-      <div className="student-achievement-hero relative flex flex-col items-start justify-between gap-6 overflow-hidden rounded-3xl bg-oc-navy p-6 text-white shadow-oc-lg sm:p-8 md:flex-row md:items-center">
+      <div className="student-achievement-hero relative flex flex-col items-start justify-between gap-6 overflow-hidden rounded-xl bg-oc-navy p-6 text-white shadow-oc-lg sm:p-8 md:flex-row md:items-center">
         <div className="space-y-2">
           <div className="text-xs font-bold text-oc-turquoise">Open Campus ID Student</div>
           <h1 className="text-2xl font-black leading-tight text-white sm:text-3xl">My Achievements</h1>
@@ -44,7 +44,7 @@ export function DashboardStudent() {
           {user.ocid && <div className="font-mono text-xs font-bold text-oc-turquoise">{user.ocid}</div>}
           {user.mssv && <div className="text-xs text-oc-periwinkle">Student ID: {user.mssv}</div>}
         </div>
-        <div className="w-full rounded-2xl border border-white/15 bg-white/10 px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] md:w-auto md:min-w-[180px] md:text-center">
+        <div className="w-full rounded-xl border border-white/15 bg-white/10 px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] md:w-auto md:min-w-[180px] md:text-center">
           <div className="mb-1 text-xs font-bold text-oc-periwinkle">Total points earned</div>
           <div className="num text-3xl font-bold text-white">{totalPoints} <span className="text-xs font-bold text-oc-turquoise">PTS</span></div>
         </div>

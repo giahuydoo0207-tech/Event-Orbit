@@ -87,7 +87,7 @@ export function Homepage() {
   return (
     <div className="space-y-8">
       {/* Welcome header */}
-      <section className="student-welcome relative overflow-hidden rounded-3xl bg-oc-navy px-6 py-8 text-white shadow-oc-lg sm:px-8 sm:py-10" aria-labelledby="student-home-title">
+      <section className="student-welcome relative overflow-hidden rounded-xl bg-oc-navy px-6 py-8 text-white shadow-oc-lg sm:px-8 sm:py-10" aria-labelledby="student-home-title">
         <div className="relative max-w-2xl space-y-3">
           <p className="text-xs font-bold text-oc-turquoise">Your campus, in orbit</p>
           <h1 id="student-home-title" className="text-2xl font-black leading-tight tracking-tight text-white sm:text-4xl">

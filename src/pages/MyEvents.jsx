@@ -103,10 +103,10 @@ export function MyEvents() {
   return (
     <div className="page-shell max-w-5xl">
       {/* Header */}
-      <div className="student-page-heading"><div><h1 className="page-title">My Events</h1><p className="page-summary">Your personal event calendar</p></div><div className="student-page-mark" aria-hidden="true" /></div>
+      <div className="student-page-heading"><div><h1 className="page-title">My Events</h1><p className="page-summary">Your personal event calendar</p></div></div>
 
       {/* Tabs */}
-      <div className="mt-8 flex flex-wrap items-center gap-2 rounded-2xl border border-oc-periwinkle/50 bg-white p-2 shadow-oc-sm" role="tablist" aria-label="Event timing">
+      <div className="mt-8 flex flex-wrap items-center gap-2 rounded-xl border border-oc-periwinkle/50 bg-white p-2 shadow-oc-sm" role="tablist" aria-label="Event timing">
         {TAB_OPTIONS.map((tab) => {
           const isActive = activeTab === tab;
           return (
@@ -115,7 +115,7 @@ export function MyEvents() {
               onClick={() => setActiveTab(tab)}
               role="tab"
               aria-selected={isActive}
-              className={`rounded-xl border px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-accent-blue/40 ${
+              className={`rounded-lg border px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-accent-blue/40 ${
                 isActive
                   ? 'border-accent-blue bg-accent-blue text-white'
                   : 'border-border bg-white text-text-secondary hover:border-accent-blue/40 hover:text-text-primary'

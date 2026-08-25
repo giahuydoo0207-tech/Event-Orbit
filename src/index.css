@@ -210,16 +210,6 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
   padding-bottom: 1.5rem;
   border-bottom: 1px solid rgba(194, 199, 251, 0.55);
 }
-.student-page-mark {
-  width: 3.25rem;
-  height: 3.25rem;
-  flex: none;
-  border: 0.65rem solid rgba(20, 27, 235, 0.1);
-  border-right-color: #00edbe;
-  border-radius: 999px;
-  transform: rotate(-22deg);
-}
-
 .student-event-card,
 .student-chapter-card,
 .student-credential-card {
@@ -268,7 +258,6 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 
 @media (max-width: 640px) {
   .student-orbit-motif { right: -7rem; opacity: 0.62; }
-  .student-page-mark { width: 2.75rem; height: 2.75rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
