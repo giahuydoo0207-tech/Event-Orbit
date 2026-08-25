@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { CredentialCard } from '../components/CredentialCard';
 import { CredentialDetailModal } from '../components/CredentialDetailModal';
-import studentAchievementsSticker from '../assets/feature-achievement-portfolio.png';
+import studentAchievementsSticker from '../assets/student-achievement-portfolio-sticker.png';
 
 export function DashboardStudent() {
   const user = useStore((state) => state.user);

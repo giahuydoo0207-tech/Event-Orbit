@@ -41,13 +41,25 @@ for (const [name, source] of [['Home', home], ['My Events', myEvents], ['Achieve
 }
 
 for (const [name, source, asset] of [
-  ['Home', home, 'login-role-student.png'],
-  ['My Events', myEvents, 'feature-confirmed-attendance.png'],
-  ['Achievements', dashboardStudent, 'feature-achievement-portfolio.png'],
-  ['Following', following, 'feature-chapter-communities.png'],
+  ['Home', home, 'student-home-activity-sticker.png'],
+  ['My Events', myEvents, 'student-my-events-pass-sticker.png'],
+  ['Achievements', dashboardStudent, 'student-achievement-portfolio-sticker.png'],
+  ['Following', following, 'student-following-community-sticker.png'],
 ]) {
   assert.ok(source.includes(asset), `${name} must use its contextual campus illustration`);
   assert.match(source, /alt="" aria-hidden="true"/, `${name} illustration must remain decorative`);
+}
+
+for (const oldAsset of [
+  'login-role-student.png',
+  'feature-confirmed-attendance.png',
+  'feature-achievement-portfolio.png',
+  'feature-chapter-communities.png',
+]) {
+  assert.ok(
+    [home, myEvents, dashboardStudent, following].every((source) => !source.includes(oldAsset)),
+    `Student Hub should not reuse legacy sticker ${oldAsset}`,
+  );
 }
 assert.match(chapter, /<CategoryIcon[\s\S]*?aria-hidden="true"|aria-hidden="true"[\s\S]*?<CategoryIcon/, 'Student chapter detail must use a contextual category marker');
 

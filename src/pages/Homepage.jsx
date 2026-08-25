@@ -4,7 +4,7 @@ import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { getFeedViewState } from '../lib/feedViewState';
-import studentHomeSticker from '../assets/login-role-student.png';
+import studentHomeSticker from '../assets/student-home-activity-sticker.png';
 
 export function Homepage() {
   const user = useStore((state) => state.user);

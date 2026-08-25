@@ -4,7 +4,7 @@ import { fetchChapters } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { ChapterCard } from '../components/ChapterCard';
 import { LoadingBar } from '../components/LoadingBar';
-import studentFollowingSticker from '../assets/feature-chapter-communities.png';
+import studentFollowingSticker from '../assets/student-following-community-sticker.png';
 
 export function Following() {
   const user = useStore((state) => state.user);

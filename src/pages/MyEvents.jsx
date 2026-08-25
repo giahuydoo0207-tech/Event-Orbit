@@ -4,7 +4,7 @@ import { fetchEvents, fetchMyEventRegistrations } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { classifyEventTiming } from '../lib/eventTiming';
-import studentEventsSticker from '../assets/feature-confirmed-attendance.png';
+import studentEventsSticker from '../assets/student-my-events-pass-sticker.png';
 
 const TAB_OPTIONS = ['Upcoming', 'Past', 'All Events'];
 
