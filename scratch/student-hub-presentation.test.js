@@ -11,6 +11,7 @@ const achievements = read('src/components/CredentialCard.jsx');
 const following = read('src/pages/Following.jsx');
 const chapter = read('src/pages/ChapterProfile.jsx');
 const studentStyles = read('src/index.css');
+const dashboardStudent = read('src/pages/DashboardStudent.jsx');
 
 for (const [label, path] of [
   ['Home', '/home'],
@@ -39,6 +40,17 @@ for (const [name, source] of [['Home', home], ['My Events', myEvents], ['Achieve
   assert.doesNotMatch(source, /rounded-3xl|rounded-\[(?:32|36)px\]/, `${name} must use the disciplined Student Hub radius scale`);
 }
 
+for (const [name, source, asset] of [
+  ['Home', home, 'login-role-student.png'],
+  ['My Events', myEvents, 'feature-confirmed-attendance.png'],
+  ['Achievements', dashboardStudent, 'feature-achievement-portfolio.png'],
+  ['Following', following, 'feature-chapter-communities.png'],
+]) {
+  assert.ok(source.includes(asset), `${name} must use its contextual campus illustration`);
+  assert.match(source, /alt="" aria-hidden="true"/, `${name} illustration must remain decorative`);
+}
+assert.match(chapter, /<CategoryIcon[\s\S]*?aria-hidden="true"|aria-hidden="true"[\s\S]*?<CategoryIcon/, 'Student chapter detail must use a contextual category marker');
+
 for (const tab of ['Upcoming', 'Past', 'All Events']) {
   assert.ok(myEvents.includes(`'${tab}'`), `Missing My Events tab: ${tab}`);
 }
@@ -54,5 +66,8 @@ assert.ok(chapter.includes("isStudentFollowingRoute ? '/following' : '/chapters'
 
 const studentNavBlock = layout.slice(layout.indexOf(": [\n        { label: 'Home'"), layout.indexOf('  return ('));
 assert.doesNotMatch(studentNavBlock, /Organizer Portal|Admin Console/);
+assert.match(layout, /: 'Student Hub'/);
+assert.ok(layout.includes("? 'Organizer Portal'"));
+assert.doesNotMatch(layout, /student-nav-link/, 'Student nav should share the same treatment as Organizer nav');
 
 console.log('Student Hub presentation regression checks passed.');

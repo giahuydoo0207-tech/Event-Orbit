@@ -4,6 +4,7 @@ import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { getFeedViewState } from '../lib/feedViewState';
+import studentHomeSticker from '../assets/login-role-student.png';
 
 export function Homepage() {
   const user = useStore((state) => state.user);
@@ -88,12 +89,15 @@ export function Homepage() {
     <div className="space-y-8">
       {/* Welcome header */}
       <section className="student-welcome relative overflow-hidden rounded-xl border border-oc-periwinkle/70 bg-white px-6 py-8 shadow-oc-sm sm:px-8 sm:py-10" aria-labelledby="student-home-title">
-        <div className="relative max-w-2xl space-y-3">
+        <div className="relative flex items-center justify-between gap-6">
+          <div className="max-w-2xl space-y-3">
           <p className="text-xs font-bold text-oc-blue">Your campus, in orbit</p>
           <h1 id="student-home-title" className="text-2xl font-black leading-tight tracking-tight text-oc-navy sm:text-4xl">
           Welcome back, {user.fullName || 'Student'}
           </h1>
           <p className="max-w-xl text-sm font-medium leading-6 text-slate-600">Catch the next activity from the chapters you follow and keep building your campus record.</p>
+          </div>
+          <img src={studentHomeSticker} alt="" aria-hidden="true" className="student-header-sticker hidden h-24 w-24 shrink-0 object-contain sm:block lg:h-28 lg:w-28" />
         </div>
       </section>
 

@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { CredentialCard } from '../components/CredentialCard';
 import { CredentialDetailModal } from '../components/CredentialDetailModal';
+import studentAchievementsSticker from '../assets/feature-achievement-portfolio.png';
 
 export function DashboardStudent() {
   const user = useStore((state) => state.user);
@@ -44,9 +45,12 @@ export function DashboardStudent() {
           {user.ocid && <div className="font-mono text-xs font-bold text-oc-turquoise">{user.ocid}</div>}
           {user.mssv && <div className="text-xs text-oc-periwinkle">Student ID: {user.mssv}</div>}
         </div>
-        <div className="w-full rounded-xl border border-white/15 bg-white/[0.07] px-5 py-4 text-left md:w-auto md:min-w-[180px] md:text-center">
-          <div className="mb-1 text-xs font-bold text-oc-periwinkle">Total points earned</div>
-          <div className="num text-3xl font-bold text-white">{totalPoints} <span className="text-xs font-bold text-oc-turquoise">PTS</span></div>
+        <div className="flex w-full items-center gap-4 md:w-auto">
+          <img src={studentAchievementsSticker} alt="" aria-hidden="true" className="student-header-sticker hidden h-20 w-24 shrink-0 object-contain sm:block" />
+          <div className="min-w-[180px] flex-1 rounded-xl border border-white/15 bg-white/[0.07] px-5 py-4 text-left md:text-center">
+            <div className="mb-1 text-xs font-bold text-oc-periwinkle">Total points earned</div>
+            <div className="num text-3xl font-bold text-white">{totalPoints} <span className="text-xs font-bold text-oc-turquoise">PTS</span></div>
+          </div>
         </div>
       </div>
 

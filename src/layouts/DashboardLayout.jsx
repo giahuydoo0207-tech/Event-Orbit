@@ -47,7 +47,7 @@ export function DashboardLayout({ children }) {
       {/* Accessibility Skip Link */}
       <a href="#main-content" className="skip-to-content">Skip to main content</a>
       {/* Mobile Header Bar */}
-      <div className={`md:hidden fixed top-0 left-0 right-0 h-16 bg-oc-navy text-white flex justify-between items-center px-4 z-40 ${isStudentSection ? 'border-b border-white/10 shadow-oc-md' : 'border-b border-oc-navy/80'}`}>
+      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-oc-navy text-white flex justify-between items-center px-4 z-40 border-b border-oc-navy/80">
         <span className="font-extrabold text-lg text-white">Event Orbit</span>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -68,7 +68,7 @@ export function DashboardLayout({ children }) {
       {/* Sidebar Navigation - Open Campus Deep Navy theme */}
       <aside className={`
         fixed top-0 bottom-0 left-0 w-64 bg-oc-navy text-white z-30 transition-transform duration-200 flex flex-col justify-between p-6
-        ${isStudentSection ? 'border-r border-white/10' : 'border-r border-oc-navy/80'}
+        border-r border-oc-navy/80
         md:translate-x-0 md:sticky md:top-0 md:h-[100dvh] shrink-0
         ${mobileMenuOpen ? 'translate-x-0 pt-20 md:pt-6' : '-translate-x-full'}
       `}>
@@ -94,7 +94,7 @@ export function DashboardLayout({ children }) {
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`${isStudentSection ? 'student-nav-link rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-turquoise focus-visible:ring-offset-2 focus-visible:ring-offset-oc-navy' : 'rounded-md transition-colors'} px-4 py-3 text-xs font-semibold flex items-center justify-between
+                  className={`rounded-md px-4 py-3 text-xs font-semibold flex items-center justify-between transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-turquoise focus-visible:ring-offset-2 focus-visible:ring-offset-oc-navy
                     ${isActive
                       ? 'bg-oc-blue text-white font-bold shadow-sm'
                       : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -103,7 +103,7 @@ export function DashboardLayout({ children }) {
                 >
                   <span>{link.label}</span>
                   {isActive && (
-                    <span className={`${isStudentSection ? 'h-5 w-1' : 'h-1.5 w-1.5'} rounded-full bg-oc-turquoise`} aria-hidden="true"></span>
+                    <span className="h-1.5 w-1.5 rounded-full bg-oc-turquoise" aria-hidden="true"></span>
                   )}
                 </Link>
               );
@@ -113,7 +113,7 @@ export function DashboardLayout({ children }) {
 
         {/* Sidebar Footer Account info */}
         <div className="border-t border-white/10 pt-4 mt-6">
-          <div className={`${isStudentSection ? 'bg-white/[0.07] rounded-xl p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]' : 'bg-white/5 rounded-lg p-3'} border border-white/10 mb-4 text-xs space-y-1`}>
+          <div className="bg-white/5 rounded-lg p-3 border border-white/10 mb-4 text-xs space-y-1">
             <div className="text-white/40 uppercase tracking-widest text-[9px] font-bold">Logged in as</div>
             <div className="font-bold text-white truncate">{user.fullName || 'User'}</div>
             {user.ocid && (
@@ -125,7 +125,7 @@ export function DashboardLayout({ children }) {
           </div>
           <button
             onClick={handleLogout}
-            className={`${isStudentSection ? 'text-rose-300 bg-rose-400/10 hover:bg-rose-500/20 border-rose-300/20 py-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300' : 'text-red-400 bg-red-500/10 hover:bg-red-600/30 border-red-500/20 py-2 rounded-md'} w-full text-center text-xs font-semibold hover:text-white border transition-all`}
+            className="w-full text-center text-xs font-semibold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-600/30 border border-red-500/20 py-2 rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
           >
             Sign Out
           </button>

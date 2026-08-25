@@ -4,6 +4,7 @@ import { fetchChapters } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { ChapterCard } from '../components/ChapterCard';
 import { LoadingBar } from '../components/LoadingBar';
+import studentFollowingSticker from '../assets/feature-chapter-communities.png';
 
 export function Following() {
   const user = useStore((state) => state.user);
@@ -43,7 +44,7 @@ export function Following() {
   return (
     <div className="page-shell max-w-5xl font-sans">
       {/* Header — same editorial style as Campus Chapters */}
-      <div className="student-page-heading"><div><h1 className="page-title">Following</h1><p className="page-summary">Chapters you follow. Their events appear in your personalized Home feed.</p></div></div>
+      <div className="student-page-heading"><div><h1 className="page-title">Following</h1><p className="page-summary">Chapters you follow. Their events appear in your personalized Home feed.</p></div><img src={studentFollowingSticker} alt="" aria-hidden="true" className="student-header-sticker hidden h-20 w-24 shrink-0 object-contain sm:block" /></div>
       <div className="mt-5 rounded-xl border border-oc-periwinkle/60 border-l-4 border-l-oc-turquoise bg-white p-5 shadow-oc-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
         <div><h2 className="text-sm font-black text-oc-ink">Grow your campus circle</h2><p className="mt-1 text-xs leading-5 text-slate-600">Follow another chapter to bring more workshops, meetups, and activities into Home.</p></div>
         <Link

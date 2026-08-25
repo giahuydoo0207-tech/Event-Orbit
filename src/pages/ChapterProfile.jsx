@@ -142,7 +142,7 @@ export function ChapterProfile() {
           {/* Left: Avatar + Info */}
           <div className="flex items-center gap-4">
             {/* Outline Icon Box: matching ChapterCard design & CategoryIcon scale */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-sm border border-oc-periwinkle/70 bg-oc-mist/40 shadow-sm transition-colors">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-oc-periwinkle/70 bg-oc-mist shadow-oc-sm transition-colors" aria-hidden="true">
               <CategoryIcon category={chapter.category} className="w-8 h-8 text-oc-blue" />
             </div>
             <div className="space-y-1">
