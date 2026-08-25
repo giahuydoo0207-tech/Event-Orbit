@@ -15,7 +15,7 @@ function MetadataItem({ label, value, valueClassName = '' }) {
   return <div className="min-w-0"><dt className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">{label}</dt><dd className={`mt-1 truncate text-xs font-semibold text-slate-700 ${valueClassName}`}>{displayedValue}</dd></div>;
 }
 
-export function CredentialCard({ credential, recipientName, recipientOcid, onViewDetails }) {
+export function CredentialCard({ credential, recipientName, recipientOcid, onViewDetails, variant = 'default' }) {
   if (!credential) return null;
   const claim = getClaimPresentation(credential);
   const issuance = getCredentialPresentation(credential);
@@ -24,7 +24,7 @@ export function CredentialCard({ credential, recipientName, recipientOcid, onVie
   const realTransaction = hasRealTransaction(credential);
 
   return (
-    <article className="group flex h-full flex-col rounded-xl border border-oc-periwinkle/60 bg-white p-5 shadow-oc-sm transition-colors hover:border-oc-blue/35 sm:min-h-[440px]">
+    <article className={`${variant === 'student' ? 'student-credential-card overflow-hidden' : 'transition-colors hover:border-oc-blue/35'} group flex h-full flex-col rounded-xl border border-oc-periwinkle/60 bg-white p-5 shadow-oc-sm sm:min-h-[440px]`}>
       <header className="flex min-h-[56px] items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3"><div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-oc-blue/25 bg-oc-mist text-oc-blue"><div className="absolute inset-1.5 rounded-full border border-dashed border-oc-blue/30" /><CategoryIcon category={credential.category || 'Tech'} className="h-5 w-5" /></div><div className="min-w-0"><p className="text-[9px] font-extrabold uppercase tracking-[0.14em] text-oc-blue">Event Orbit Credential</p><p className="mt-1 truncate text-[11px] font-semibold text-slate-500">{credential.issuerName || 'Issuer not recorded'}</p></div></div>
         <span className={`inline-flex min-h-7 max-w-[112px] shrink-0 items-center justify-center rounded-full border px-2.5 py-1 text-center text-[9px] font-bold leading-tight ${toneClasses[claim.tone]}`}>{claim.label}</span>

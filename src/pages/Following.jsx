@@ -43,23 +43,20 @@ export function Following() {
   return (
     <div className="page-shell max-w-5xl font-sans">
       {/* Header — same editorial style as Campus Chapters */}
-      <h1 className="page-title">
-        Following
-      </h1>
-      <p className="page-summary">
-        Chapters you follow. Their events appear in your personalized Home feed.
-      </p>
-            <div className="mt-4">
+      <div className="student-page-heading"><div><h1 className="page-title">Following</h1><p className="page-summary">Chapters you follow. Their events appear in your personalized Home feed.</p></div><div className="student-page-mark" aria-hidden="true" /></div>
+      <div className="mt-5 rounded-2xl border border-oc-turquoise/35 bg-gradient-to-r from-white to-emerald-50/70 p-5 shadow-oc-sm sm:flex sm:items-center sm:justify-between sm:gap-6">
+        <div><h2 className="text-sm font-black text-oc-ink">Grow your campus circle</h2><p className="mt-1 text-xs leading-5 text-slate-600">Follow another chapter to bring more workshops, meetups, and activities into Home.</p></div>
         <Link
           to="/chapters"
-          className="action-primary"
+          className="action-primary mt-4 sm:mt-0"
         >
-          + Follow More Chapters
+          Follow More Chapters
         </Link>
       </div>
       {followedChapters.length === 0 ? (
         /* Empty State — editorial, no heavy bordered box */
-        <div className="empty-state mt-8">
+        <div className="empty-state student-empty-state mt-8">
+          <div className="student-empty-icon" aria-hidden="true"><span /></div>
           <h2 className="text-sm font-bold text-oc-ink">No followed chapters yet</h2>
           <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
             Browse campus chapters and follow them to populate your personalized event feed.
@@ -79,6 +76,7 @@ export function Following() {
               key={chapter.id}
               chapter={chapter}
               linkTo={`/following/chapters/${chapter.slug}`}
+              variant="student"
             />
           ))}
         </div>

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test:student-hub": "node scratch/student-hub-presentation.test.js",
     "test:claim": "node scratch/test_5_claim_cases.js",
     "test:credential-presentation": "node scratch/credential-presentation.test.js"
   },

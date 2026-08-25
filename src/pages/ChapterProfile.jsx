@@ -127,7 +127,7 @@ export function ChapterProfile() {
   const isStudentFollowingRoute = location.pathname.startsWith('/following/chapters/');
 
   return (
-    <div className="max-w-4xl mx-auto py-10 space-y-12">
+    <div className={`max-w-4xl mx-auto py-10 space-y-12 ${isStudentFollowingRoute ? 'student-chapter-detail' : ''}`}>
       {/* Back Link */}
       <Link
         to={isStudentFollowingRoute ? '/following' : '/chapters'}
@@ -137,7 +137,7 @@ export function ChapterProfile() {
       </Link>
 
       {/* Header Info Card */}
-      <div className="bg-surface border border-border rounded-xl p-6 md:p-8">
+      <div className={`border border-border rounded-xl p-6 md:p-8 ${isStudentFollowingRoute ? 'student-chapter-hero bg-white shadow-oc-md' : 'bg-surface'}`}>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           {/* Left: Avatar + Info */}
           <div className="flex items-center gap-4">
@@ -175,7 +175,7 @@ export function ChapterProfile() {
               <button
                 disabled={isActionLoading}
                 onClick={handleFollowToggle}
-                className={`px-6 py-2.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm ${
+                className={`px-6 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue focus-visible:ring-offset-2 ${
                   followingState
                     ? 'bg-white border border-navy text-navy hover:bg-slate-50'
                     : 'bg-navy text-white hover:bg-navy-light'
@@ -262,7 +262,7 @@ export function ChapterProfile() {
                 <Link
                   key={event.id}
                   to={`/e/${event.slug}`}
-                  className={`bg-white border border-border rounded-xl p-5 hover:shadow-md transition-all block ${
+                  className={`${isStudentFollowingRoute ? 'student-event-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue' : 'hover:shadow-md transition-all'} bg-white border border-border rounded-xl p-5 block ${
                     activeTab === 'past' ? 'opacity-80 hover:opacity-100' : ''
                   }`}
                 >

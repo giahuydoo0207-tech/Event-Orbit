@@ -87,14 +87,16 @@ export function Homepage() {
   return (
     <div className="space-y-8">
       {/* Welcome header */}
-      <div className="space-y-2 border-b border-border pb-6">
-        <h1 className="page-title">
+      <section className="student-welcome relative overflow-hidden rounded-3xl bg-oc-navy px-6 py-8 text-white shadow-oc-lg sm:px-8 sm:py-10" aria-labelledby="student-home-title">
+        <div className="relative max-w-2xl space-y-3">
+          <p className="text-xs font-bold text-oc-turquoise">Your campus, in orbit</p>
+          <h1 id="student-home-title" className="text-2xl font-black leading-tight tracking-tight text-white sm:text-4xl">
           Welcome back, {user.fullName || 'Student'}
-        </h1>
-        <p className="text-sm text-text-secondary">
-          Events from chapters you follow. Follow more chapters to see more events here.
-        </p>
-      </div>
+          </h1>
+          <p className="max-w-xl text-sm font-medium leading-6 text-oc-periwinkle">Catch the next activity from the chapters you follow and keep building your campus record.</p>
+        </div>
+        <div className="student-orbit-motif" aria-hidden="true"><span /><span /><span /></div>
+      </section>
 
       {/* Feed Content */}
       {feedViewState === 'error' ? (
@@ -126,7 +128,12 @@ export function Homepage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <section aria-labelledby="followed-events-title">
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div><h2 id="followed-events-title" className="text-xl font-black text-oc-ink">From chapters you follow</h2><p className="mt-1 text-sm text-slate-600">Fresh opportunities selected by your campus communities.</p></div>
+            <Link to="/following" className="hidden text-xs font-bold text-oc-blue hover:text-oc-indigo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue sm:inline-flex">Manage following</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {feedEvents.map((event) => {
             const dateStr = new Date(event.datetime).toLocaleDateString('en-US', {
               month: 'short',
@@ -140,11 +147,11 @@ export function Homepage() {
               <Link
                 key={event.id}
                 to={`/e/${event.slug}`}
-                className="group surface-card overflow-hidden transition-colors hover:border-oc-blue/35 flex flex-col justify-between"
+                className="student-event-card group surface-card overflow-hidden flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue focus-visible:ring-offset-2"
               >
                 <div>
                   {/* Cover Photo */}
-                  <div className="aspect-[2/1] w-full bg-surface overflow-hidden relative border-b border-border">
+                  <div className="aspect-[16/9] w-full bg-surface overflow-hidden relative border-b border-border">
                     <img
                       src={event.coverImage}
                       alt={event.name}
@@ -153,7 +160,7 @@ export function Homepage() {
                     />
                   </div>
                   {/* Metadata & Title */}
-                  <div className="p-6 space-y-3">
+                  <div className="p-5 space-y-3">
                     <div className="flex justify-between items-center text-xs">
                       <span className="uppercase tracking-widest font-bold text-accent-blue">
                         {event.category}
@@ -170,7 +177,7 @@ export function Homepage() {
                 </div>
                 
                 {/* Footer Stats info */}
-                <div className="px-6 pb-6 pt-4 border-t border-border flex justify-between items-center text-xs text-text-secondary">
+                <div className="mx-5 flex items-center justify-between border-t border-oc-periwinkle/40 py-4 text-xs text-text-secondary">
                   <span>{dateStr}</span>
                   <span className="font-semibold text-navy">
                     +{event.points} points
@@ -179,7 +186,8 @@ export function Homepage() {
               </Link>
             );
           })}
-        </div>
+          </div>
+        </section>
       )}
     </div>
   );

@@ -103,22 +103,19 @@ export function MyEvents() {
   return (
     <div className="page-shell max-w-5xl">
       {/* Header */}
-      <h1 className="page-title">
-        My Events
-      </h1>
-      <p className="page-summary">
-        Your personal event calendar
-      </p>
+      <div className="student-page-heading"><div><h1 className="page-title">My Events</h1><p className="page-summary">Your personal event calendar</p></div><div className="student-page-mark" aria-hidden="true" /></div>
 
       {/* Tabs */}
-      <div className="mt-8 flex flex-wrap gap-2">
+      <div className="mt-8 flex flex-wrap items-center gap-2 rounded-2xl border border-oc-periwinkle/50 bg-white p-2 shadow-oc-sm" role="tablist" aria-label="Event timing">
         {TAB_OPTIONS.map((tab) => {
           const isActive = activeTab === tab;
           return (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-accent-blue/40 ${
+              role="tab"
+              aria-selected={isActive}
+              className={`rounded-xl border px-4 py-2 text-sm font-bold transition focus:outline-none focus:ring-2 focus:ring-accent-blue/40 ${
                 isActive
                   ? 'border-accent-blue bg-accent-blue text-white'
                   : 'border-border bg-white text-text-secondary hover:border-accent-blue/40 hover:text-text-primary'
@@ -137,7 +134,8 @@ export function MyEvents() {
 
       {/* Event Grid or Empty State */}
       {filteredEvents.length === 0 ? (
-        <div className="empty-state mt-12">
+        <div className="empty-state student-empty-state mt-8">
+          <div className="student-empty-icon" aria-hidden="true"><span /></div>
           <p className="text-lg font-semibold text-text-primary">
             {activeTab === 'Past'
               ? 'No past events'
@@ -163,7 +161,7 @@ export function MyEvents() {
               <Link
                 key={event.id}
                 to={`/e/${event.slug}`}
-                className={`group flex flex-col rounded-xl border bg-white shadow-oc-sm transition-colors hover:border-accent-blue/30 ${
+                className={`student-event-card group flex flex-col overflow-hidden rounded-xl border bg-white shadow-oc-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-blue ${
                   isPast
                     ? 'border-border/60 opacity-75 hover:opacity-100'
                     : 'border-border'

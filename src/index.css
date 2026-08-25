@@ -147,6 +147,137 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
   box-shadow: 0 16px 36px -6px rgba(7, 9, 77, 0.12), 0 8px 20px -4px rgba(20, 27, 235, 0.08);
 }
 
+/* Student Hub visual layer. Scoped to protected student routes by DashboardLayout. */
+.student-hub main {
+  background:
+    radial-gradient(circle at 96% 2%, rgba(0, 237, 190, 0.08), transparent 22rem),
+    linear-gradient(145deg, #f7f8ff 0%, #eff1ff 54%, #f7fbff 100%);
+}
+
+.student-hub aside {
+  background:
+    radial-gradient(circle at 25% 8%, rgba(20, 27, 235, 0.4), transparent 15rem),
+    linear-gradient(180deg, #07094d 0%, #080b3f 100%);
+}
+
+.student-hub .student-nav-link:hover {
+  transform: translateX(2px);
+}
+
+.student-welcome,
+.student-achievement-hero {
+  background-image:
+    radial-gradient(circle at 86% 18%, rgba(0, 237, 190, 0.17), transparent 17rem),
+    linear-gradient(135deg, #07094d 0%, #111789 100%);
+}
+
+.student-orbit-motif {
+  position: absolute;
+  right: -2.5rem;
+  top: 50%;
+  width: 13rem;
+  height: 13rem;
+  transform: translateY(-50%);
+  border: 1px solid rgba(194, 199, 251, 0.24);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.student-orbit-motif::before,
+.student-orbit-motif::after {
+  content: '';
+  position: absolute;
+  inset: 1.8rem;
+  border: 1px solid rgba(194, 199, 251, 0.2);
+  border-radius: inherit;
+}
+.student-orbit-motif::after { inset: 3.8rem; }
+.student-orbit-motif span {
+  position: absolute;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: #00edbe;
+}
+.student-orbit-motif span:nth-child(1) { left: 0.65rem; top: 4.2rem; }
+.student-orbit-motif span:nth-child(2) { right: 2.4rem; top: 1.35rem; background: #7075ff; }
+.student-orbit-motif span:nth-child(3) { bottom: 2.3rem; right: 4rem; width: 0.45rem; height: 0.45rem; }
+
+.student-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(194, 199, 251, 0.55);
+}
+.student-page-mark {
+  width: 3.25rem;
+  height: 3.25rem;
+  flex: none;
+  border: 0.65rem solid rgba(20, 27, 235, 0.1);
+  border-right-color: #00edbe;
+  border-radius: 999px;
+  transform: rotate(-22deg);
+}
+
+.student-event-card,
+.student-chapter-card,
+.student-credential-card {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease, box-shadow 220ms ease;
+}
+.student-event-card:hover,
+.student-chapter-card:hover,
+.student-credential-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(20, 27, 235, 0.35);
+  box-shadow: 0 18px 36px -18px rgba(7, 9, 77, 0.32), 0 8px 18px -10px rgba(20, 27, 235, 0.15);
+}
+.student-chapter-card { border-left: 3px solid rgba(0, 237, 190, 0.72); }
+.student-credential-card { position: relative; }
+.student-credential-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, #141beb, #00edbe);
+}
+
+.student-empty-state { position: relative; overflow: hidden; }
+.student-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto 1rem;
+  border-radius: 1rem;
+  background: #eff1ff;
+  border: 1px solid rgba(194, 199, 251, 0.75);
+  transform: rotate(-5deg);
+}
+.student-empty-icon span {
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 0.3rem solid #141beb;
+  border-right-color: #00edbe;
+  border-radius: 999px;
+}
+
+.student-chapter-hero {
+  background-image: radial-gradient(circle at 100% 0%, rgba(0, 237, 190, 0.1), transparent 18rem);
+}
+
+@media (max-width: 640px) {
+  .student-orbit-motif { right: -7rem; opacity: 0.62; }
+  .student-page-mark { width: 2.75rem; height: 2.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-hub .student-nav-link:hover,
+  .student-event-card:hover,
+  .student-chapter-card:hover,
+  .student-credential-card:hover { transform: none; }
+}
+
 /* Accessibility: Skip to Content */
 .skip-to-content {
   position: absolute;
