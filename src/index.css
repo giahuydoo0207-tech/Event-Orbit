@@ -149,58 +149,22 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 
 /* Student Hub visual layer. Scoped to protected student routes by DashboardLayout. */
 .student-hub main {
-  background:
-    radial-gradient(circle at 96% 2%, rgba(0, 237, 190, 0.08), transparent 22rem),
-    linear-gradient(145deg, #f7f8ff 0%, #eff1ff 54%, #f7fbff 100%);
+  background: linear-gradient(180deg, #f7f8ff 0%, #eff1ff 100%);
 }
 
 .student-hub aside {
-  background:
-    radial-gradient(circle at 25% 8%, rgba(20, 27, 235, 0.4), transparent 15rem),
-    linear-gradient(180deg, #07094d 0%, #080b3f 100%);
+  background: #07094d;
 }
 
 .student-hub .student-nav-link:hover {
   transform: translateX(2px);
 }
 
-.student-welcome,
-.student-achievement-hero {
-  background-image:
-    radial-gradient(circle at 86% 18%, rgba(0, 237, 190, 0.17), transparent 17rem),
-    linear-gradient(135deg, #07094d 0%, #111789 100%);
+.student-welcome {
+  background-image: linear-gradient(90deg, rgba(239, 241, 255, 0.78), rgba(255, 255, 255, 0.96));
 }
 
-.student-orbit-motif {
-  position: absolute;
-  right: -2.5rem;
-  top: 50%;
-  width: 13rem;
-  height: 13rem;
-  transform: translateY(-50%);
-  border: 1px solid rgba(194, 199, 251, 0.24);
-  border-radius: 999px;
-  pointer-events: none;
-}
-.student-orbit-motif::before,
-.student-orbit-motif::after {
-  content: '';
-  position: absolute;
-  inset: 1.8rem;
-  border: 1px solid rgba(194, 199, 251, 0.2);
-  border-radius: inherit;
-}
-.student-orbit-motif::after { inset: 3.8rem; }
-.student-orbit-motif span {
-  position: absolute;
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 999px;
-  background: #00edbe;
-}
-.student-orbit-motif span:nth-child(1) { left: 0.65rem; top: 4.2rem; }
-.student-orbit-motif span:nth-child(2) { right: 2.4rem; top: 1.35rem; background: #7075ff; }
-.student-orbit-motif span:nth-child(3) { bottom: 2.3rem; right: 4rem; width: 0.45rem; height: 0.45rem; }
+.student-achievement-hero { background: #07094d; }
 
 .student-page-heading {
   display: flex;
@@ -218,18 +182,18 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 .student-event-card:hover,
 .student-chapter-card:hover,
 .student-credential-card:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   border-color: rgba(20, 27, 235, 0.35);
-  box-shadow: 0 18px 36px -18px rgba(7, 9, 77, 0.32), 0 8px 18px -10px rgba(20, 27, 235, 0.15);
+  box-shadow: 0 8px 18px -10px rgba(7, 9, 77, 0.24), 0 3px 8px -5px rgba(20, 27, 235, 0.1);
 }
-.student-chapter-card { border-left: 3px solid rgba(0, 237, 190, 0.72); }
+.student-chapter-card { border-left: 3px solid rgba(0, 142, 123, 0.62); }
 .student-credential-card { position: relative; }
 .student-credential-card::before {
   content: '';
   position: absolute;
   inset: 0 0 auto;
   height: 3px;
-  background: linear-gradient(90deg, #141beb, #00edbe);
+  background: #141beb;
 }
 
 .student-empty-state { position: relative; overflow: hidden; }
@@ -242,7 +206,6 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
   border-radius: 1rem;
   background: #eff1ff;
   border: 1px solid rgba(194, 199, 251, 0.75);
-  transform: rotate(-5deg);
 }
 .student-empty-icon span {
   width: 1.45rem;
@@ -253,11 +216,7 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 }
 
 .student-chapter-hero {
-  background-image: radial-gradient(circle at 100% 0%, rgba(0, 237, 190, 0.1), transparent 18rem);
-}
-
-@media (max-width: 640px) {
-  .student-orbit-motif { right: -7rem; opacity: 0.62; }
+  border-top: 3px solid rgba(0, 142, 123, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {

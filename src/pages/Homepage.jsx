@@ -87,15 +87,14 @@ export function Homepage() {
   return (
     <div className="space-y-8">
       {/* Welcome header */}
-      <section className="student-welcome relative overflow-hidden rounded-xl bg-oc-navy px-6 py-8 text-white shadow-oc-lg sm:px-8 sm:py-10" aria-labelledby="student-home-title">
+      <section className="student-welcome relative overflow-hidden rounded-xl border border-oc-periwinkle/70 bg-white px-6 py-8 shadow-oc-sm sm:px-8 sm:py-10" aria-labelledby="student-home-title">
         <div className="relative max-w-2xl space-y-3">
-          <p className="text-xs font-bold text-oc-turquoise">Your campus, in orbit</p>
-          <h1 id="student-home-title" className="text-2xl font-black leading-tight tracking-tight text-white sm:text-4xl">
+          <p className="text-xs font-bold text-oc-blue">Your campus, in orbit</p>
+          <h1 id="student-home-title" className="text-2xl font-black leading-tight tracking-tight text-oc-navy sm:text-4xl">
           Welcome back, {user.fullName || 'Student'}
           </h1>
-          <p className="max-w-xl text-sm font-medium leading-6 text-oc-periwinkle">Catch the next activity from the chapters you follow and keep building your campus record.</p>
+          <p className="max-w-xl text-sm font-medium leading-6 text-slate-600">Catch the next activity from the chapters you follow and keep building your campus record.</p>
         </div>
-        <div className="student-orbit-motif" aria-hidden="true"><span /><span /><span /></div>
       </section>
 
       {/* Feed Content */}

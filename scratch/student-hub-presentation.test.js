@@ -33,6 +33,8 @@ assert.ok(home.includes("getFeedViewState({"), 'Home must derive its view state 
 assert.doesNotMatch(myEvents, /student-page-mark/, 'My Events must not render a meaningless corner orbit mark');
 assert.doesNotMatch(following, /student-page-mark/, 'Following must not render a meaningless corner orbit mark');
 assert.doesNotMatch(studentStyles, /\.student-page-mark/, 'Removed corner decoration must not retain unused styling');
+assert.doesNotMatch(home, /student-orbit-motif/, 'Home must not render a large cosmic orbit decoration');
+assert.doesNotMatch(studentStyles, /\.student-orbit-motif/, 'Large cosmic orbit styling must be removed');
 for (const [name, source] of [['Home', home], ['My Events', myEvents], ['Achievements', read('src/pages/DashboardStudent.jsx')], ['Following', following]]) {
   assert.doesNotMatch(source, /rounded-3xl|rounded-\[(?:32|36)px\]/, `${name} must use the disciplined Student Hub radius scale`);
 }
