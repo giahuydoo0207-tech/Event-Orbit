@@ -1,6 +1,39 @@
 import { Link } from 'react-router-dom';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useCountUp } from '../hooks/useCountUp';
+import chapterCommunitiesIllustration from '../assets/feature-chapter-communities.png';
+import confirmedAttendanceIllustration from '../assets/feature-confirmed-attendance.png';
+import achievementPortfolioIllustration from '../assets/feature-achievement-portfolio.png';
+
+const features = [
+  {
+    title: 'Chapter Communities',
+    description:
+      'Follow campus chapters to discover workshops, hackathons, seminars, and community activities from the groups you care about.',
+    benefits: ['Follow chapters', 'Personalized event feed', 'Campus communities'],
+    image: chapterCommunitiesIllustration,
+    imageAlt: 'Students exploring activities together at a campus chapter board',
+    imageSide: 'right',
+  },
+  {
+    title: 'Confirmed Attendance',
+    description:
+      'Use Open Campus ID and live QR check-in to connect real event participation with a trusted student identity.',
+    benefits: ['QR check-in', 'Verified participation', 'Attendance record'],
+    image: confirmedAttendanceIllustration,
+    imageAlt: 'A student completing QR check-in at a campus event desk',
+    imageSide: 'left',
+  },
+  {
+    title: 'Achievement Portfolio',
+    description:
+      'Turn verified participation into a clean credential record that students can view, share, and build on over time.',
+    benefits: ['Credential records', 'Student profile', 'Evidence when available'],
+    image: achievementPortfolioIllustration,
+    imageAlt: 'A student reviewing credential records in a participation portfolio',
+    imageSide: 'right',
+  },
+];
 
 function StatCounter({ value, label, suffix = '' }) {
   const { ref, count } = useCountUp(value, 1300);
@@ -16,24 +49,6 @@ function StatCounter({ value, label, suffix = '' }) {
 
 export function Landing() {
   const containerRef = useScrollReveal();
-
-  const valueProps = [
-    {
-      title: 'Chapter Communities',
-      description:
-        'Follow your department\u2019s chapter to stay updated on workshops, hackathons, and meetups.',
-    },
-    {
-      title: 'Confirmed Attendance',
-      description:
-        'Check in with QR codes and keep a trusted participation record linked to your Open Campus ID.',
-    },
-    {
-      title: 'Achievement Portfolio',
-      description:
-        'Build a public OCID-linked profile showcasing your campus participation credentials.',
-    },
-  ];
 
   return (
     <div ref={containerRef} className="min-h-screen flex flex-col bg-oc-mist font-sans">
@@ -104,21 +119,49 @@ export function Landing() {
       </section>
 
       {/* Value Proposition Cards — staggered reveal */}
-      <section className="relative -mt-12 px-6 pb-20">
-        <div className="mx-auto max-w-5xl">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {valueProps.map((prop, idx) => (
+      <section className="bg-white px-6 py-16 sm:py-20 lg:py-24" aria-label="How Event Orbit works">
+        <div className="mx-auto max-w-7xl divide-y divide-oc-periwinkle/35">
+          {features.map((feature, idx) => (
+            <article
+              key={feature.title}
+              className={`reveal reveal-delay-${idx + 1} grid grid-cols-1 items-center gap-8 py-14 first:pt-0 last:pb-0 sm:gap-10 sm:py-20 lg:grid-cols-2 lg:gap-16 xl:gap-24`}
+            >
               <div
-                key={idx}
-                className={`reveal reveal-delay-${idx + 1} rounded-xl border border-oc-periwinkle/60 bg-white p-7 shadow-oc-sm space-y-3 transition-colors hover:border-oc-blue/35`}
+                className={`relative order-1 flex min-h-64 items-center justify-center sm:min-h-80 ${feature.imageSide === 'right' ? 'lg:order-2' : 'lg:order-1'}`}
               >
-                <h3 className="text-lg font-bold text-oc-ink">{prop.title}</h3>
-                <p className="text-sm leading-6 text-slate-600 font-medium">
-                  {prop.description}
-                </p>
+                <div className="pointer-events-none absolute h-56 w-56 rounded-full bg-oc-mist sm:h-72 sm:w-72" />
+                <div className="pointer-events-none absolute right-[12%] top-[12%] h-3 w-3 rounded-full bg-oc-turquoise/70" />
+                <img
+                  src={feature.image}
+                  alt={feature.imageAlt}
+                  loading="lazy"
+                  decoding="async"
+                  className="relative z-10 max-h-[300px] w-full max-w-xl object-contain drop-shadow-[0_18px_28px_rgba(20,27,235,0.10)] sm:max-h-[380px]"
+                />
               </div>
-            ))}
-          </div>
+
+              <div
+                className={`order-2 max-w-xl ${feature.imageSide === 'right' ? 'lg:order-1' : 'lg:order-2 lg:justify-self-end'}`}
+              >
+                <h2 className="text-3xl font-black leading-tight tracking-tight text-oc-ink sm:text-4xl">
+                  {feature.title}
+                </h2>
+                <p className="mt-5 text-base font-medium leading-8 text-slate-600 sm:text-lg">
+                  {feature.description}
+                </p>
+                <ul className="mt-7 flex flex-wrap gap-2.5" aria-label={`${feature.title} benefits`}>
+                  {feature.benefits.map((benefit) => (
+                    <li
+                      key={benefit}
+                      className="inline-flex items-center rounded-full border border-oc-periwinkle/70 bg-oc-mist/70 px-3.5 py-2 text-xs font-bold text-oc-navy"
+                    >
+                      {benefit}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
