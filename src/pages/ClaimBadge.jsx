@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useOCAuth } from '@opencampus/ocid-connect-js';
 import { getAuthHeaders } from '../api/mockApi';
 import { useStore } from '../store/useStore';
+import { hasTrustedStudentIdentity } from '../../lib/studentIdentity';
 
 export default function ClaimBadge() {
   const { token } = useParams();
@@ -43,13 +44,13 @@ export default function ClaimBadge() {
   const normalizeIdentity = (value) => String(value || '').trim().toLowerCase();
   const intendedIdentities = [data?.claim?.importMssv, data?.claim?.importEmail].map(normalizeIdentity).filter(Boolean);
   const currentIdentities = [user?.mssv, user?.email, user?.ocid].map(normalizeIdentity).filter(Boolean);
-  const isOrganizer = user?.role === 'organizer';
+  const hasStudentIdentity = hasTrustedStudentIdentity(user);
   const identityMatches = intendedIdentities.length > 0 && intendedIdentities.some((identity) => currentIdentities.includes(identity));
   const hasIdentityMismatch = Boolean(user?.isAuthenticated && intendedIdentities.length > 0 && !identityMatches);
-  const canClaim = Boolean(user?.isAuthenticated && !isOrganizer && !hasIdentityMismatch);
+  const canClaim = Boolean(user?.isAuthenticated && hasStudentIdentity && !hasIdentityMismatch);
   const currentIdentity = user?.ocid || user?.mssv || user?.email || 'unknown identity';
-  const reconnect = () => {
-    logout();
+  const reconnect = async () => {
+    await logout();
     ocAuth.signInWithRedirect({ state: 'opencampus' });
   };
   return <main className="min-h-[100dvh] bg-oc-navy px-4 py-10 font-sans text-white sm:px-8">
@@ -62,7 +63,7 @@ export default function ClaimBadge() {
       <section className="border border-white/20 bg-white/5 p-6 sm:p-8 rounded-xl">
         {!data && !error && <p className="font-mono text-sm text-white/65" aria-live="polite">Loading claim details...</p>}
         {error && <p className="text-sm leading-6 text-white/80" role="alert">{error}</p>}
-        {data && !success && <div className="space-y-6"><div><p className="font-mono text-xs tracking-[0.12em] text-oc-turquoise">THIS LINK IS FOR</p><p className="mt-2 text-xl font-bold">{data.claim.importName}</p><p className="mt-1 text-sm text-white/70">{recipient}</p></div>{user?.isAuthenticated ? <div className="space-y-4"><p className="text-sm text-white/70">Connected as {currentIdentity}</p>{isOrganizer || hasIdentityMismatch ? <div className="space-y-4"><p className="border-l-2 border-oc-turquoise pl-4 text-sm leading-6 text-white/80" role="alert">{isOrganizer ? "You are connected as an organizer. This credential link is intended for a student. Please sign out and reconnect with the student's Open Campus ID." : `This link appears to be for ${data.claim.importName} (${recipient}), but you are connected as ${currentIdentity}.`}</p><button onClick={reconnect} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px">Sign out and reconnect</button></div> : <button onClick={claim} disabled={claiming} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px disabled:opacity-60">{claiming ? 'Claiming...' : 'Claim My Credential'}</button>}</div> : <button onClick={() => ocAuth.signInWithRedirect({ state: 'opencampus' })} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px">Connect with Open Campus ID</button>}</div>}
+        {data && !success && <div className="space-y-6"><div><p className="font-mono text-xs tracking-[0.12em] text-oc-turquoise">THIS LINK IS FOR</p><p className="mt-2 text-xl font-bold">{data.claim.importName}</p><p className="mt-1 text-sm text-white/70">{recipient}</p></div>{user?.isAuthenticated ? <div className="space-y-4"><p className="text-sm text-white/70">Connected as {currentIdentity}</p>{!hasStudentIdentity || hasIdentityMismatch ? <div className="space-y-4"><p className="border-l-2 border-oc-turquoise pl-4 text-sm leading-6 text-white/80" role="alert">{!hasStudentIdentity ? "This account does not have a trusted student identity. Please sign out and reconnect with the student's Open Campus ID." : `This link appears to be for ${data.claim.importName} (${recipient}), but you are connected as ${currentIdentity}.`}</p><button onClick={reconnect} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px">Sign out and reconnect</button></div> : <button onClick={claim} disabled={claiming} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px disabled:opacity-60">{claiming ? 'Claiming...' : 'Claim My Credential'}</button>}</div> : <button onClick={() => ocAuth.signInWithRedirect({ state: 'opencampus' })} className="w-full rounded-lg bg-oc-turquoise px-5 py-3 text-sm font-extrabold text-oc-navy transition active:translate-y-px">Connect with Open Campus ID</button>}</div>}
         {success && <div className="space-y-5"><div className="border border-oc-turquoise bg-oc-navy p-5"><p className="font-mono text-xs font-bold tracking-[0.16em] text-oc-turquoise">OPEN CAMPUS ID</p><p className="mt-3 text-3xl font-extrabold tracking-tight text-oc-turquoise">CLAIMED</p></div><p className="text-lg font-bold">{success.eventName}</p><p className="font-mono text-sm text-white/70">{success.points} POINTS</p>{success.txHash && <p className="break-all font-mono text-xs text-white/60">Transaction: {success.txHash}</p>}</div>}
       </section>
     </div>

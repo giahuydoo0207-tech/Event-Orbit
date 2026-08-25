@@ -4,6 +4,7 @@ import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { classifyMintError, mintBadge } from '../lib/relayer.js';
 import { AuthorizationError, assertEventOwnership } from '../lib/authorization.js';
+import { hasTrustedStudentIdentity } from '../lib/studentIdentity.js';
 import { serializeSessionCookie } from '../lib/sessionCookie.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
 
 async function handleGetMyReadyClaims(req, res) {
   const session = await verifySession(req);
-  if (!session || session.role !== 'student') return res.status(401).json({ error: 'Student authentication required.' });
+  if (!session || !hasTrustedStudentIdentity(session)) return res.status(401).json({ error: 'Student authentication required.' });
 
   const select = 'id, claim_token, import_name, expires_at, event:events!pending_claims_event_id_fkey(id, slug, name, datetime)';
   const expiresAfter = new Date().toISOString();
@@ -278,7 +279,7 @@ async function handlePostClaim(req, res) {
     if (!session) {
       return res.status(401).json({ error: 'You must be logged in with Open Campus ID to claim this credential.' });
     }
-    if (session.role !== 'student' || !session.ocid) {
+    if (!hasTrustedStudentIdentity(session)) {
       return res.status(403).json({ error: 'Credential claims require a student Open Campus ID.' });
     }
 

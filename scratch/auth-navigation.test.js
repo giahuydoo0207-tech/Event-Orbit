@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
-import { getPostLoginDestination } from '../src/lib/authNavigation.js';
+import { getPostLoginDestination, hasVerifiedPermission } from '../src/lib/authNavigation.js';
 import { resolveVerifiedPermissions } from '../lib/sessionPermissions.js';
 
 const multiRoleSession = {
@@ -30,6 +30,13 @@ test('unknown roles and unrecognized destinations receive a safe fallback', () =
   assert.equal(getPostLoginDestination(multiRoleSession, '/events'), '/home');
   assert.equal(getPostLoginDestination(multiRoleSession, 'https://example.com'), '/home');
   assert.equal(getPostLoginDestination(null, '/admin'), '/home');
+});
+
+test('protected role checks use explicit verified permissions for multi-role accounts', () => {
+  assert.equal(hasVerifiedPermission(multiRoleSession, 'admin'), true);
+  assert.equal(hasVerifiedPermission(multiRoleSession, 'organizer'), true);
+  assert.equal(hasVerifiedPermission({ role: 'admin', permissions: { admin: false } }, 'admin'), false);
+  assert.equal(hasVerifiedPermission({ role: 'organizer', chapterId: 'chapter-1' }, 'organizer'), false);
 });
 
 test('active admin grant wins even when the stored session role is organizer', async () => {
@@ -78,4 +85,11 @@ test('Redirect persists and routes with the returned permissions object', async 
   assert.match(redirect, /permissions:\s*verifiedUser\.permissions/);
   assert.match(redirect, /destination\s*=\s*getPostLoginDestination\(verifiedUser,\s*returnTo\)/);
   assert.doesNotMatch(redirect, /getPostLoginDestination\(verifiedUser\.role/);
+});
+
+test('ProtectedRoute authorizes privileged routes from verified permissions', async () => {
+  const protectedRoute = await readFile(new URL('../src/components/ProtectedRoute.jsx', import.meta.url), 'utf8');
+
+  assert.match(protectedRoute, /hasVerifiedPermission\(serverSession, requireRole\)/);
+  assert.doesNotMatch(protectedRoute, /serverSession\.role !== requireRole/);
 });

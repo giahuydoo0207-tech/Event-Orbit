@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect, useState, useRef } from 'react';
 import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
-import { fetchEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
+import { fetchManagedEventById, fetchEventAttendees, checkInStudent, deleteEventApi, getAuthHeaders } from '../api/mockApi';
 import QRCode from 'qrcode';
 import { StatusBadge } from '../components/StatusBadge';
 import useToastStore from '../store/useToastStore';
@@ -57,7 +57,7 @@ export function EventManage() {
     try {
       // Execute event data, attendees, and signed QR data fetching in parallel
       const [ev, atts] = await Promise.all([
-        fetchEventById(id),
+        fetchManagedEventById(id),
         fetchEventAttendees(id),
         fetchQRData()
       ]);

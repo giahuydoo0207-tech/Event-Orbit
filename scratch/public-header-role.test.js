@@ -34,6 +34,17 @@ test('the actual public header renders Student Hub for a multi-role account on c
   assert.doesNotMatch(markup, /Admin Console|href="\/admin"/);
 });
 
+test('logged-out public navigation renders no privileged portal link', () => {
+  const markup = renderToStaticMarkup(
+    React.createElement(MemoryRouter, null,
+      React.createElement(PublicPortalLink, { session: null, pathname: '/events' }),
+    ),
+  );
+
+  assert.equal(markup, '');
+  assert.doesNotMatch(markup, /Student Hub|Organizer Portal|Admin Console/);
+});
+
 test('route context retains authorized manage and admin portal destinations', () => {
   assert.deepEqual(
     getPublicPortalLink({ role: 'organizer', chapterId: 'chapter-1' }, '/manage/chapter-1'),

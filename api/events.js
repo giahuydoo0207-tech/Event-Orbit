@@ -21,15 +21,18 @@ export default async function handler(req, res) {
   try {
     // ── GET: Fetch events list or single event ──
     if (req.method === 'GET') {
-      const { includeDeleted, chapterId, reviewQueue, id, eventId, slug } = req.query;
+      const { includeDeleted, chapterId, reviewQueue, privateRead, id, eventId, slug } = req.query;
       const targetId = id || eventId;
 
       if (targetId) {
-        const { data, error } = await supabase
+        let eventQuery = supabase
           .from('events')
           .select('*, chapters(*)')
-          .eq('id', targetId)
-          .maybeSingle();
+          .eq('id', targetId);
+        if (privateRead !== 'true') {
+          eventQuery = eventQuery.eq('status', 'published').is('deleted_at', null);
+        }
+        const { data, error } = await eventQuery.maybeSingle();
 
         if (error) {
           console.error('Supabase Event fetch error by ID:', error);
@@ -37,6 +40,13 @@ export default async function handler(req, res) {
         }
         if (!data) {
           return res.status(404).json({ error: 'Event not found.' });
+        }
+        if (privateRead === 'true') {
+          const session = await verifySession(req);
+          try { assertEventOwnership(session, data); } catch (error) {
+            if (error instanceof AuthorizationError) return res.status(403).json({ error: error.message });
+            throw error;
+          }
         }
         return res.status(200).json(mapEventDbToClient(data));
       }
@@ -46,6 +56,8 @@ export default async function handler(req, res) {
           .from('events')
           .select('*, chapters(*)')
           .eq('slug', slug)
+          .eq('status', 'published')
+          .is('deleted_at', null)
           .maybeSingle();
 
         if (error) {

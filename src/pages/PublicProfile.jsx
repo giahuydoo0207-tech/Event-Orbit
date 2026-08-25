@@ -5,6 +5,7 @@ import NotFoundState from '../components/NotFoundState';
 import { LoadingBar } from '../components/LoadingBar';
 import { CredentialCard } from '../components/CredentialCard';
 import { CredentialDetailModal } from '../components/CredentialDetailModal';
+import { CredentialEvidenceRow } from '../components/CredentialEvidenceRow';
 
 export function PublicProfile() {
   const { ocid } = useParams();
@@ -152,22 +153,7 @@ export function PublicProfile() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {achievements.map((ach) => (
-                    <tr key={ach.id} className="hover:bg-slate-50/50">
-                      <td className="p-4 font-semibold text-navy">{ach.eventName}</td>
-                      <td className="p-4 text-success font-bold">+{ach.points} pts</td>
-                      <td className="p-4">
-                        <a
-                          href={`https://edu-chain-testnet.blockscout.com/tx/${ach.txHash}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-mono text-accent-blue hover:underline"
-                        >
-                          {ach.txHash.substring(0, 10)}...{ach.txHash.substring(ach.txHash.length - 4)}
-                        </a>
-                      </td>
-                    </tr>
-                  ))}
+                  {achievements.map((ach) => <CredentialEvidenceRow key={ach.id} achievement={ach} />)}
                 </tbody>
               </table>
             </div>

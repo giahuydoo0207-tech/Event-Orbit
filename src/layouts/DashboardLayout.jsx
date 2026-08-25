@@ -12,9 +12,9 @@ export function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const organizerSession = useOrganizerSession();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
   };
 
   const isManageSection = location.pathname.startsWith('/manage');

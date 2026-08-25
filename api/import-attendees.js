@@ -4,6 +4,7 @@ import { verifySession } from '../lib/verifySession.js';
 import { checkRateLimit } from '../lib/rateLimit.js';
 import { classifyMintError, mintBadge } from '../lib/relayer.js';
 import { AuthorizationError, assertEventOwnership, assertOrganizer } from '../lib/authorization.js';
+import { getImportEventAvailability } from '../lib/eventWorkflow.js';
 
 const CLAIM_BASE_URL = process.env.CLAIM_BASE_URL || 'https://event-orbit-app.vercel.app';
 
@@ -242,14 +243,14 @@ export default async function handler(req, res) {
     if (uuidRegex.test(eventId)) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, points, chapter_id')
+        .select('id, name, points, chapter_id, status, deleted_at')
         .eq('id', eventId)
         .maybeSingle();
       targetEvent = data;
     } else if (eventId) {
       const { data } = await supabase
         .from('events')
-        .select('id, name, points, chapter_id')
+        .select('id, name, points, chapter_id, status, deleted_at')
         .eq('slug', eventId)
         .maybeSingle();
       targetEvent = data;
@@ -268,6 +269,14 @@ export default async function handler(req, res) {
         return res.status(403).json({ error: error.message });
       }
       throw error;
+    }
+
+    const availability = getImportEventAvailability(event);
+    if (!availability.allowed) {
+      return res.status(availability.status).json({
+        error: availability.message,
+        code: availability.code,
+      });
     }
 
     const issuedList = [];

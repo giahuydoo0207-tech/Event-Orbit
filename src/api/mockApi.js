@@ -86,8 +86,22 @@ export async function fetchEventById(id) {
   } catch (err) {
     console.warn('Direct fetchEventById failed, falling back to list:', err);
   }
-  const events = await fetchEvents({ includeDeleted: true }).catch(() => fetchEvents());
+  const events = await fetchEvents();
   return events?.find?.(e => e.id === id) || null;
+}
+
+export async function fetchManagedEventById(id) {
+  if (!id) return null;
+  const res = await fetch(`/api/events?id=${encodeURIComponent(id)}&privateRead=true`, {
+    headers: getAuthHeaders(),
+    credentials: 'include'
+  });
+  if (!res.ok) {
+    const error = new Error(await parseErrorMessage(res, 'Failed to load managed event.'));
+    error.status = res.status;
+    throw error;
+  }
+  return await res.json();
 }
 
 export async function fetchEventBySlug(slug) {
