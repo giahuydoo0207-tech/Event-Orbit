@@ -24,6 +24,55 @@ const roles = [
   },
 ];
 
+function RoleSticker() {
+  const stickers = [
+    {
+      className: '-rotate-6 bg-white text-[#141BEB]',
+      icon: (
+        <>
+          <path d="m8 11 8-4 8 4-8 4-8-4Z" />
+          <path d="M11 13.5v3.2c2.8 1.8 7.2 1.8 10 0v-3.2M24 11v5" />
+        </>
+      ),
+    },
+    {
+      className: 'z-10 -translate-y-3 rotate-3 bg-oc-turquoise text-[#070A3F]',
+      icon: (
+        <>
+          <circle cx="16" cy="10" r="3" />
+          <path d="M10.5 22v-1.7a5.5 5.5 0 0 1 11 0V22M22 8h4v7h-4l-2-2" />
+        </>
+      ),
+    },
+    {
+      className: 'rotate-6 bg-[#7075FF] text-white',
+      icon: (
+        <>
+          <path d="M16 6.5 23 9v5.5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V9l7-2.5Z" />
+          <path d="m13 15.5 2 2 4-4" />
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <div aria-hidden="true" className="relative mx-auto flex w-fit items-end -space-x-2 pb-1 lg:mx-0">
+      <span className="absolute -left-5 bottom-1 h-2 w-2 rounded-full bg-oc-turquoise/80" />
+      <span className="absolute -right-5 top-1 h-3 w-3 rounded-full border-2 border-white/35" />
+      {stickers.map((sticker, index) => (
+        <span
+          key={index}
+          className={`flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#10175C] shadow-[0_10px_24px_rgba(0,0,0,0.18)] sm:h-[4.5rem] sm:w-[4.5rem] ${sticker.className}`}
+        >
+          <svg viewBox="0 0 32 32" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {sticker.icon}
+          </svg>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function Login() {
   const { ocAuth } = useOCAuth();
   const showToast = useToastStore((state) => state.showToast);
@@ -55,7 +104,7 @@ export function Login() {
             </Link>
           </header>
 
-          <div className="relative flex flex-1 items-center py-10 lg:py-5">
+          <div className="relative pt-10 sm:pt-12 lg:pt-10 xl:pt-12">
             <div className="max-w-xl">
               <h1 id="login-title" className="text-4xl font-black leading-[1.08] tracking-[-0.035em] text-white sm:text-5xl lg:text-[2.6rem] xl:text-5xl">
                 <span className="block text-white">Connect with</span>
@@ -66,9 +115,13 @@ export function Login() {
               </p>
             </div>
           </div>
+
+          <div className="relative mt-12 pb-1 sm:mt-14 lg:mt-auto lg:pt-8">
+            <RoleSticker />
+          </div>
         </div>
 
-        <div className="flex min-w-0 flex-col justify-center bg-white p-6 sm:p-10 lg:justify-start lg:px-10 lg:pb-14 lg:pt-12 xl:px-12 xl:pb-16 xl:pt-14">
+        <div className="flex min-w-0 flex-col justify-center bg-white p-6 sm:p-10 lg:justify-start lg:px-10 lg:pb-12 lg:pt-9 xl:px-12 xl:pb-14 xl:pt-10">
           <div className="max-w-2xl">
             <p className="text-sm font-extrabold tracking-tight text-[#070A3F]">Select a workspace</p>
             <p className="mt-1.5 text-sm leading-6 text-[#63708A]">Use the role that matches what you want to do next.</p>
