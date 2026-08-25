@@ -478,18 +478,6 @@ export function EventCreate() {
               )}
             </div>
 
-            {/* AI Enhancement Section */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={handleEnhanceContent}
-                disabled={isAiGenerating || (!title && !description)}
-                className="w-full py-2.5 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 hover:border-purple-300 text-purple-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-              >
-                <span>{isAiGenerating ? '✨ AI Generating Details...' : '✨ Enhance Description & Suggest Tags with AI'}</span>
-              </button>
-            </div>
-
             {/* Submit Action Buttons */}
             <div className="pt-6 border-t border-border flex items-center justify-end gap-3">
               <button
