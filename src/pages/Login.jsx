@@ -9,67 +9,52 @@ const roles = [
     destination: '/home',
     description: 'Discover events, check in, and view your credential records.',
     action: 'Enter Student Hub',
+    stickerClassName: '-rotate-6 bg-white text-[#141BEB]',
+    stickerIcon: (
+      <>
+        <path d="m8 11 8-4 8 4-8 4-8-4Z" />
+        <path d="M11 13.5v3.2c2.8 1.8 7.2 1.8 10 0v-3.2M24 11v5" />
+      </>
+    ),
   },
   {
     title: 'Manage',
     destination: '/manage',
     description: 'Create events, import attendees, and manage check-ins.',
     action: 'Enter Organizer Portal',
+    stickerClassName: 'rotate-3 bg-oc-turquoise text-[#070A3F]',
+    stickerIcon: (
+      <>
+        <circle cx="16" cy="10" r="3" />
+        <path d="M10.5 22v-1.7a5.5 5.5 0 0 1 11 0V22M22 8h4v7h-4l-2-2" />
+      </>
+    ),
   },
   {
     title: 'Admin',
     destination: '/admin',
     description: 'Review events, publish approved activities, and protect quality.',
     action: 'Enter Admin Console',
+    stickerClassName: 'rotate-6 bg-[#7075FF] text-white',
+    stickerIcon: (
+      <>
+        <path d="M16 6.5 23 9v5.5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V9l7-2.5Z" />
+        <path d="m13 15.5 2 2 4-4" />
+      </>
+    ),
   },
 ];
 
-function RoleSticker() {
-  const stickers = [
-    {
-      className: '-rotate-6 bg-white text-[#141BEB]',
-      icon: (
-        <>
-          <path d="m8 11 8-4 8 4-8 4-8-4Z" />
-          <path d="M11 13.5v3.2c2.8 1.8 7.2 1.8 10 0v-3.2M24 11v5" />
-        </>
-      ),
-    },
-    {
-      className: 'z-10 -translate-y-3 rotate-3 bg-oc-turquoise text-[#070A3F]',
-      icon: (
-        <>
-          <circle cx="16" cy="10" r="3" />
-          <path d="M10.5 22v-1.7a5.5 5.5 0 0 1 11 0V22M22 8h4v7h-4l-2-2" />
-        </>
-      ),
-    },
-    {
-      className: 'rotate-6 bg-[#7075FF] text-white',
-      icon: (
-        <>
-          <path d="M16 6.5 23 9v5.5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V9l7-2.5Z" />
-          <path d="m13 15.5 2 2 4-4" />
-        </>
-      ),
-    },
-  ];
-
+function RoleSticker({ role }) {
   return (
-    <div aria-hidden="true" className="relative mx-auto flex w-fit items-end -space-x-2 pb-1 lg:mx-0">
-      <span className="absolute -left-5 bottom-1 h-2 w-2 rounded-full bg-oc-turquoise/80" />
-      <span className="absolute -right-5 top-1 h-3 w-3 rounded-full border-2 border-white/35" />
-      {stickers.map((sticker, index) => (
-        <span
-          key={index}
-          className={`flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-[#10175C] shadow-[0_10px_24px_rgba(0,0,0,0.18)] sm:h-[4.5rem] sm:w-[4.5rem] ${sticker.className}`}
-        >
-          <svg viewBox="0 0 32 32" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            {sticker.icon}
-          </svg>
-        </span>
-      ))}
-    </div>
+    <span
+      aria-hidden="true"
+      className={`mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-[3px] border-[#10175C] shadow-[0_10px_24px_rgba(0,0,0,0.18)] ${role.stickerClassName}`}
+    >
+      <svg viewBox="0 0 32 32" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        {role.stickerIcon}
+      </svg>
+    </span>
   );
 }
 
@@ -116,9 +101,6 @@ export function Login() {
             </div>
           </div>
 
-          <div className="relative mt-12 pb-1 sm:mt-14 lg:mt-auto lg:pt-8">
-            <RoleSticker />
-          </div>
         </div>
 
         <div className="flex min-w-0 flex-col justify-center bg-white p-6 sm:p-10 lg:justify-start lg:px-10 lg:pb-12 lg:pt-9 xl:px-12 xl:pb-14 xl:pt-10">
@@ -137,10 +119,7 @@ export function Login() {
                   aria-label={`Continue as ${role.title}`}
                 >
                   <span className="flex items-start gap-4 sm:gap-5">
-                    <span className="relative mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#CFD8F0] bg-white transition-colors group-hover:border-oc-turquoise group-hover:bg-[#F0FFFB]">
-                      <span className="h-4 w-4 rounded-full border border-[#53648D] transition-transform duration-300 group-hover:scale-110 group-hover:border-[#009E88]" />
-                      <span className="absolute right-1.5 top-2 h-1.5 w-1.5 rounded-full bg-oc-turquoise transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none" />
-                    </span>
+                    <RoleSticker role={role} />
 
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-4">
