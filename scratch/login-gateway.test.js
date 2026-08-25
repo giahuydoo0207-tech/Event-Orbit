@@ -49,12 +49,12 @@ test('login gateway fits desktop viewport and keeps the identity headline intact
   assert.doesNotMatch(source, /lg:text-\[3\.5rem\]/);
 });
 
-test('login gateway links back to landing and includes a restrained identity preview', async () => {
+test('login gateway keeps the landing link with the brand and omits extra bottom visuals', async () => {
   const source = await readFile(new URL('../src/pages/Login.jsx', import.meta.url), 'utf8');
 
   assert.match(source, /import \{ Link \} from 'react-router-dom'/);
   assert.match(source, /<Link[\s\S]*?to="\/"[\s\S]*?Back to (?:landing|Event Orbit)/);
-  assert.match(source, /Identity access/);
+  assert.match(source, /<header[\s\S]*?Event Orbit[\s\S]*?Choose your workspace[\s\S]*?<Link/);
   assert.match(source, /lg:justify-start/);
-  assert.doesNotMatch(source, /h-72 w-72|h-44 w-44/);
+  assert.doesNotMatch(source, /Identity access|Workspace access is checked|h-72 w-72|h-44 w-44/);
 });
