@@ -27,3 +27,12 @@ test('login gateway gives every role the same accessible card treatment', async 
   assert.match(source, /Review events, publish approved activities, and protect quality\./);
   assert.doesNotMatch(source, /onClick=\{\(\) => handleOCIDLogin\('\/home'\)\}[\s\S]*?bg-accent-blue/);
 });
+
+test('login gateway uses a calm identity-product visual treatment', async () => {
+  const source = await readFile(new URL('../src/pages/Login.jsx', import.meta.url), 'utf8');
+
+  assert.match(source, /bg-\[#F5F7FF\]/);
+  assert.match(source, /border-\[#DCE3F5\]/);
+  assert.match(source, /hover:border-oc-turquoise/);
+  assert.doesNotMatch(source, /h-\[620px\]|shadow-\[0_22px_60px_rgba\(0,230,195/);
+});
