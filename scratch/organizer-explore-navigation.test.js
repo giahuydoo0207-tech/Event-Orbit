@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
+import { isOrganizerNavLinkActive } from '../src/lib/organizerNavigation.js';
+
+test('organizer sidebar selects only the route-specific navigation item', () => {
+  assert.equal(isOrganizerNavLinkActive('/manage', '/manage'), true);
+  assert.equal(isOrganizerNavLinkActive('/manage', '/manage/explore'), false);
+
+  assert.equal(isOrganizerNavLinkActive('/manage/chapter-1', '/manage'), true);
+  assert.equal(isOrganizerNavLinkActive('/manage/chapter-1/events/create', '/manage'), true);
+
+  assert.equal(isOrganizerNavLinkActive('/manage/explore', '/manage'), false);
+  assert.equal(isOrganizerNavLinkActive('/manage/explore', '/manage/explore'), true);
+});
 
 test('Organizer Portal Explore Events links to an organizer-scoped route', async () => {
   const dashboardSource = await readFile(

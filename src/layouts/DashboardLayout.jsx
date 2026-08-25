@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { LoadingBar } from '../components/LoadingBar';
 import { useOrganizerSession } from '../contexts/OrganizerSessionContext';
+import { isOrganizerNavLinkActive } from '../lib/organizerNavigation';
 
 export function DashboardLayout({ children }) {
   const { user, logout } = useStore();
@@ -83,9 +84,9 @@ export function DashboardLayout({ children }) {
           {/* Menu Links */}
           <nav className="flex flex-col space-y-2">
             {navLinks.map((link) => {
-              const isActive =
-                location.pathname === link.path ||
-                (link.path === '/manage' && location.pathname.startsWith('/manage'));
+              const isActive = isManageSection
+                ? isOrganizerNavLinkActive(location.pathname, link.path)
+                : location.pathname === link.path;
               return (
                 <Link
                   key={link.path}
