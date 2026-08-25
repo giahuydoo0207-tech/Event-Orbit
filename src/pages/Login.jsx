@@ -62,7 +62,8 @@ export function Login() {
           <div className="w-full">
             <div className="max-w-2xl">
               <h1 id="login-title" className="text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-                Connect with Open Campus ID
+                <span className="block text-white">Connect with</span>
+                <span className="block text-oc-turquoise sm:whitespace-nowrap">Open Campus ID</span>
               </h1>
               <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-oc-periwinkle sm:text-base">
                 Choose how you want to continue into Event Orbit.
