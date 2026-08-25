@@ -183,7 +183,8 @@ export function Landing() {
           <div className="badge-kicker text-oc-blue">Open Campus Ecosystem</div>
           <h2 className="text-2xl font-black text-oc-ink">Decentralized Credentials for Education</h2>
           <p className="text-xs text-slate-500 max-w-xl mx-auto font-medium leading-relaxed">
-            Confirmed event participation can become a digital credential linked to your Open Campus ID (OCID).
+            Confirmed event participation can become a digital credential linked to your{' '}
+            <span className="whitespace-nowrap">Open Campus ID (OCID).</span>
           </p>
         </div>
       </section>
