@@ -235,7 +235,7 @@ export function EventCreate() {
               </div>
             </div>
 
-            {/* Meta row 1: Category & Cover Image */}
+            {/* Category */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
@@ -253,57 +253,6 @@ export function EventCreate() {
                 </select>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
-                  Cover Image
-                </label>
-                <div className="flex gap-2 text-[10px] mb-1">
-                  <button
-                    type="button"
-                    onClick={() => { setImageMode('seed'); setImageError(''); }}
-                    className={`px-2 py-1 border rounded font-semibold transition-all ${
-                      imageMode === 'seed'
-                        ? 'bg-navy text-white border-navy'
-                        : 'bg-white text-navy border-border hover:bg-slate-50'
-                    }`}
-                  >
-                    Use placeholder
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setImageMode('upload'); setImageError(''); }}
-                    className={`px-2 py-1 border rounded font-semibold transition-all ${
-                      imageMode === 'upload'
-                        ? 'bg-navy text-white border-navy'
-                        : 'bg-white text-navy border-border hover:bg-slate-50'
-                    }`}
-                  >
-                    Upload image
-                  </button>
-                </div>
-
-                {imageMode === 'seed' ? (
-                  <input
-                    type="text"
-                    value={coverSeed}
-                    onChange={(e) => setCoverSeed(e.target.value)}
-                    placeholder="e.g. matrix"
-                    className="w-full border-b border-border py-2 text-sm focus:outline-none"
-                  />
-                ) : (
-                  <div className="space-y-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="w-full text-xs text-text-secondary file:mr-2 file:py-1 file:px-2 file:rounded file:border file:border-border file:text-[10px] file:bg-surface file:text-navy hover:file:bg-slate-50 file:cursor-pointer"
-                    />
-                    {imageError && (
-                      <div className="text-[10px] text-error font-medium">{imageError}</div>
-                    )}
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Meta row 2 */}
@@ -469,6 +418,9 @@ export function EventCreate() {
                     onChange={handleImageUpload}
                     className="text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-oc-blue/10 file:text-oc-blue hover:file:bg-oc-blue/20 cursor-pointer"
                   />
+                  {imageError && (
+                    <span className="text-[11px] text-error font-medium block">{imageError}</span>
+                  )}
                   {coverImageData && (
                     <span className="text-[11px] text-emerald-600 font-medium block">
                       Custom image loaded for preview.
@@ -514,7 +466,7 @@ export function EventCreate() {
             <span className="text-[10px] text-accent-blue">{selectedTheme} Theme</span>
           </div>
 
-          <div className={`border border-border rounded-2xl overflow-hidden shadow-lg transition-all ${themeStyle.card}`}>
+          <div className={`border rounded-2xl overflow-hidden shadow-lg transition-all ${themeStyle.bg} ${themeStyle.text} ${themeStyle.border}`}>
             {/* Header Banner */}
             <div className="relative aspect-[2.4/1] w-full bg-slate-800 flex items-end p-6">
               <img
@@ -523,7 +475,7 @@ export function EventCreate() {
                 className="absolute inset-0 w-full h-full object-cover opacity-60"
               />
               <div className="relative z-10 space-y-1">
-                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${themeStyle.badge}`}>
+                <span className={`px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${themeStyle.accent}`}>
                   {category}
                 </span>
               </div>
