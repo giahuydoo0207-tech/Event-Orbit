@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { fetchAdminConsole, fetchReviewQueue, transitionEventApi, updateAccessApi } from '../api/mockApi';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createChapterApi, fetchAdminConsole, fetchReviewQueue, transitionEventApi, updateAccessApi } from '../api/mockApi';
 import useToastStore from '../store/useToastStore';
 import { LoadingBar } from '../components/LoadingBar';
 
-const statusClass = 'inline-block bg-oc-navy text-white px-2 py-1 rounded-md font-mono text-[10px] font-bold uppercase tracking-wider';
-const buttonClass = 'whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold transition active:translate-y-px disabled:opacity-50';
+const statusClass = 'inline-block rounded-full bg-oc-navy px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-white';
+const buttonClass = 'whitespace-nowrap rounded-lg px-3 py-2 text-xs font-bold transition active:translate-y-px disabled:opacity-50';
+const sectionTabs = [
+  ['events', 'Event Review'],
+  ['chapters', 'Chapter Management'],
+  ['research', 'Research & Lookup'],
+  ['access', 'Access Control'],
+];
+
+const includesQuery = (values, query) => values.some((value) => String(value ?? '').toLowerCase().includes(query));
 
 export default function AdminReview() {
   const [data, setData] = useState({ events: [], admins: [], organizers: [], chapters: [] });
@@ -15,6 +23,12 @@ export default function AdminReview() {
   const [rejection, setRejection] = useState({ eventId: '', reason: '' });
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeSection, setActiveSection] = useState('events');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [eventStatus, setEventStatus] = useState('all');
+  const [lookupTab, setLookupTab] = useState('events');
+  const [creatingChapter, setCreatingChapter] = useState(false);
+  const [chapterForm, setChapterForm] = useState({ name: '', slug: '', category: '', ocid: '', description: '' });
   const showToast = useToastStore((state) => state.showToast);
 
   const load = async () => {
@@ -90,6 +104,39 @@ export default function AdminReview() {
     setRejection({ eventId: '', reason: '' });
   };
 
+  const query = searchQuery.trim().toLowerCase();
+  const filteredEvents = useMemo(() => data.events.filter((event) => {
+    const matchesStatus = eventStatus === 'all' || event.status === eventStatus;
+    return matchesStatus && (!query || includesQuery([event.name, event.chapter?.name, event.status], query));
+  }), [data.events, eventStatus, query]);
+  const lookupEvents = useMemo(() => data.events.filter((event) =>
+    !query || includesQuery([event.name, event.chapter?.name, event.status], query)
+  ), [data.events, query]);
+  const filteredChapters = useMemo(() => data.chapters.filter((chapter) =>
+    !query || includesQuery([chapter.name, chapter.slug, chapter.category, chapter.ocid], query)
+  ), [data.chapters, query]);
+  const filteredAdmins = useMemo(() => data.admins.filter((row) =>
+    !query || includesQuery([row.ocid, row.status, 'admin'], query)
+  ), [data.admins, query]);
+  const filteredOrganizers = useMemo(() => data.organizers.filter((row) =>
+    !query || includesQuery([row.ocid, row.status, row.chapters?.name, 'organizer'], query)
+  ), [data.organizers, query]);
+
+  const createChapter = async (event) => {
+    event.preventDefault();
+    setCreatingChapter(true);
+    try {
+      await createChapterApi(chapterForm);
+      setChapterForm({ name: '', slug: '', category: '', ocid: '', description: '' });
+      await load();
+      showToast('Chapter created successfully.', 'success');
+    } catch (e) {
+      showToast(e.message, 'error');
+    } finally {
+      setCreatingChapter(false);
+    }
+  };
+
   // Check client-side if organizerForm.ocid is already active for another chapter
   const activeConflict = organizerForm.ocid.trim()
     ? data.organizers.find(
@@ -109,53 +156,75 @@ export default function AdminReview() {
   }
 
   return (
-    <div className="space-y-12 pb-12">
-      <header className="max-w-3xl border-b border-oc-periwinkle pb-7">
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em] text-oc-blue">Administration</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-oc-ink md:text-4xl">Control what earns public trust.</h1>
-        <p className="mt-4 max-w-[62ch] text-sm leading-6 text-slate-600">
-          Review events and manage verified OCID access. Every change is enforced by the server and invalidates existing sessions.
-        </p>
+    <div className="space-y-6 pb-12">
+      <header className="rounded-xl border border-oc-periwinkle/70 bg-white p-5 shadow-oc-sm sm:p-7">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-oc-blue">Academic governance workspace</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight text-oc-ink">Admin Console</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review event quality, manage chapters, and audit trusted OCID access.</p>
+          </div>
+          <label className="block w-full lg:max-w-md">
+            <span className="sr-only">Search active admin section</span>
+            <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search events, chapters, OCID access, credentials..." className="w-full rounded-lg border border-oc-periwinkle bg-oc-mist/40 px-4 py-3 text-sm text-oc-ink outline-none focus:border-oc-blue focus:ring-2 focus:ring-oc-blue/10" />
+          </label>
+        </div>
+        <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+          <SummaryCard label="Pending review" value={data.events.filter((event) => event.status === 'pending_review').length} />
+          <SummaryCard label="Chapters" value={data.chapters.length} />
+          <SummaryCard label="Active access records" value={[...data.admins, ...data.organizers].filter((row) => row.status === 'active').length} />
+        </dl>
       </header>
 
       {error && (
-        <div role="alert" className="rounded-md border border-oc-blue bg-white p-4 text-sm font-semibold text-oc-ink">
+        <div role="alert" className="rounded-lg border border-oc-blue bg-white p-4 text-sm font-semibold text-oc-ink">
           {error} <button className="ml-3 text-oc-blue underline" onClick={load}>Try again</button>
         </div>
       )}
 
-      <section aria-labelledby="event-review" className="space-y-6">
+      <nav className="flex gap-2 overflow-x-auto rounded-xl border border-oc-periwinkle/70 bg-white p-2 shadow-oc-sm" aria-label="Admin sections">
+        {sectionTabs.map(([id, label]) => <button key={id} onClick={() => { setActiveSection(id); setSearchQuery(''); }} className={`rounded-lg px-4 py-2.5 text-xs font-bold ${activeSection === id ? 'bg-oc-navy text-white' : 'text-slate-600 hover:bg-oc-mist'}`}>{label}</button>)}
+      </nav>
+
+      {activeSection === 'events' && <section aria-labelledby="event-review" className="space-y-4">
         <div>
           <h2 id="event-review" className="text-2xl font-black text-oc-ink">Event Review</h2>
-          <p className="mt-1 text-sm text-slate-500">All active workflow states, ordered by submission time.</p>
+          <p className="mt-1 text-sm text-slate-500">Review active workflow states without changing the event lifecycle.</p>
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter events by status">
+          {['all', 'pending_review', 'approved', 'published', 'rejected', 'draft'].map((status) => <button key={status} onClick={() => setEventStatus(status)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${eventStatus === status ? 'border-oc-blue bg-oc-blue text-white' : 'border-oc-periwinkle bg-white text-slate-600'}`}>{status === 'all' ? 'All' : status.replaceAll('_', ' ')}</button>)}
         </div>
         <div
           aria-label="Scrollable event review list"
           tabIndex="0"
-          className="rounded-lg border border-oc-periwinkle/70 bg-white shadow-oc-sm overflow-hidden"
+          className="overflow-hidden rounded-xl border border-oc-periwinkle/70 bg-white shadow-oc-sm"
         >
           <div className="sticky top-0 z-10 hidden grid-cols-[minmax(0,1fr)_minmax(8rem,0.45fr)_5rem_7rem_5rem] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500 sm:grid">
             <span>Event</span><span>Chapter</span><span>Points</span><span>Status</span><span className="text-right pr-2">Action</span>
           </div>
           <div className="max-h-[305px] overflow-y-auto overscroll-contain no-scrollbar divide-y divide-oc-periwinkle/60">
-            {data.events.map((event) => (
+            {filteredEvents.map((event) => (
               <EventReviewRow key={event.id} event={event} onReview={setSelectedEvent} />
             ))}
           </div>
-          {data.events.length === 0 && (
+          {filteredEvents.length === 0 && (
             <div className="p-8 text-center" role="status">
-              <p className="text-sm font-semibold text-oc-ink">No events are available for review.</p>
-              <p className="mt-1 text-xs text-slate-500">New submissions will appear here.</p>
+              <p className="text-sm font-semibold text-oc-ink">No events match this view.</p>
+              <p className="mt-1 text-xs text-slate-500">Adjust the status filter or search query.</p>
             </div>
           )}
         </div>
-      </section>
+      </section>}
 
-      <AccessSection
+      {activeSection === 'chapters' && <ChapterManagement chapters={filteredChapters} form={chapterForm} setForm={setChapterForm} onSubmit={createChapter} submitting={creatingChapter} />}
+
+      {activeSection === 'research' && <ResearchLookup activeTab={lookupTab} setActiveTab={setLookupTab} events={lookupEvents} chapters={filteredChapters} admins={filteredAdmins} organizers={filteredOrganizers} />}
+
+      {activeSection === 'access' && <section aria-labelledby="access-control" className="space-y-8"><div><h2 id="access-control" className="text-2xl font-black text-oc-ink">Access Control</h2><p className="mt-1 text-sm text-slate-500">Manage verified OCID roles. The server remains the source of truth.</p></div><AccessSection
         title="Organizer Access"
         warning={
           activeConflict ? (
-            <div className="flex items-center gap-2 rounded-md bg-amber-400/20 border border-amber-400/40 px-3 py-2 text-xs font-semibold text-amber-200">
+            <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-300 px-3 py-2 text-xs font-semibold text-amber-900">
               <span>⚠️</span>
               <span>
                 <strong>{activeConflict.ocid}</strong> is currently active for <em>"{activeConflict.chapters?.name || activeConflict.chapter_id}"</em>. Revoke that access first before assigning a new chapter.
@@ -189,7 +258,7 @@ export default function AdminReview() {
         }
         onGrant={() => updateAccess({ resource: 'organizer', action: 'grant', ...organizerForm })}
         grantLabel="Grant Organizer Access"
-        rows={data.organizers.map((row) => ({
+        rows={filteredOrganizers.map((row) => ({
           key: `${row.chapter_id}:${row.ocid}`,
           resource: 'organizer',
           ocid: row.ocid,
@@ -228,7 +297,7 @@ export default function AdminReview() {
         }
         onGrant={() => updateAccess({ resource: 'admin', action: 'grant', ocid: adminOcid })}
         grantLabel="Grant Admin Access"
-        rows={data.admins.map((row) => ({
+        rows={filteredAdmins.map((row) => ({
           key: row.ocid,
           resource: 'admin',
           ocid: row.ocid,
@@ -249,7 +318,7 @@ export default function AdminReview() {
             detail: 'Platform administrator',
           })
         }
-      />
+      /></section>}
 
       {selectedEvent && (
         <EventReviewModal
@@ -270,6 +339,53 @@ export default function AdminReview() {
       )}
     </div>
   );
+}
+
+function SummaryCard({ label, value }) {
+  return <div className="rounded-xl border border-oc-periwinkle/60 bg-oc-mist/45 p-4"><dt className="text-xs font-bold text-slate-500">{label}</dt><dd className="num mt-2 text-2xl font-black text-oc-navy">{value}</dd></div>;
+}
+
+function ChapterManagement({ chapters, form, setForm, onSubmit, submitting }) {
+  const update = (field, value) => setForm({ ...form, [field]: value });
+  return <section aria-labelledby="chapter-management" className="space-y-4">
+    <div><h2 id="chapter-management" className="text-2xl font-black text-oc-ink">Chapter Management</h2><p className="mt-1 text-sm text-slate-500">Create and review trusted campus chapters.</p></div>
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+      <form onSubmit={onSubmit} className="grid gap-4 rounded-xl border border-oc-periwinkle/70 bg-white p-5 shadow-oc-sm sm:grid-cols-2">
+        <AdminField label="Chapter name" value={form.name} onChange={(value) => update('name', value)} required />
+        <AdminField label="Slug" value={form.slug} onChange={(value) => update('slug', value.toLowerCase().replace(/\s+/g, '-'))} required />
+        <AdminField label="Category" value={form.category} onChange={(value) => update('category', value)} required />
+        <AdminField label="Chapter OCID" value={form.ocid} onChange={(value) => update('ocid', value)} required />
+        <label className="sm:col-span-2"><span className="text-xs font-bold text-oc-ink">Description <span className="font-normal text-slate-400">(optional)</span></span><textarea rows="4" value={form.description} onChange={(event) => update('description', event.target.value)} className="mt-2 w-full rounded-lg border border-oc-periwinkle px-3 py-2.5 text-sm outline-none focus:border-oc-blue" /></label>
+        <button disabled={submitting} className="rounded-lg bg-oc-blue px-4 py-3 text-sm font-bold text-white sm:col-span-2">{submitting ? 'Creating chapter...' : 'Create Chapter'}</button>
+      </form>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-oc-periwinkle/70 bg-oc-navy p-5 text-white shadow-oc-sm"><p className="text-[10px] font-bold uppercase tracking-widest text-oc-turquoise">Chapter preview</p><div className="mt-4 border-l-4 border-oc-turquoise pl-4"><h3 className="text-lg font-black">{form.name || 'Chapter name'}</h3><p className="mt-1 text-xs text-white/65">/{form.slug || 'chapter-slug'} · {form.category || 'Category'}</p><p className="mt-3 text-sm leading-6 text-white/80">{form.description || 'A short chapter description will appear here.'}</p></div></div>
+        <ChapterList rows={chapters} />
+      </div>
+    </div>
+  </section>;
+}
+
+function AdminField({ label, value, onChange, required }) {
+  return <label><span className="text-xs font-bold text-oc-ink">{label}</span><input required={required} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-lg border border-oc-periwinkle px-3 py-2.5 text-sm outline-none focus:border-oc-blue" /></label>;
+}
+
+function ChapterList({ rows }) {
+  return <div className="max-h-72 overflow-y-auto rounded-xl border border-oc-periwinkle/70 bg-white shadow-oc-sm">{rows.map((chapter) => <article key={chapter.id} className="border-b border-oc-periwinkle/50 p-4 last:border-0"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-black text-oc-ink">{chapter.name}</h3><p className="mt-1 text-xs text-slate-500">/{chapter.slug || 'unavailable'} · {chapter.category || 'Uncategorized'}</p></div><span className="rounded-full bg-oc-mist px-2 py-1 text-[10px] font-bold text-oc-blue">Chapter</span></div></article>)}{rows.length === 0 && <p className="p-6 text-center text-sm text-slate-500" role="status">No chapters match your search.</p>}</div>;
+}
+
+function ResearchLookup({ activeTab, setActiveTab, events, chapters, admins, organizers }) {
+  const tabs = [['events', 'Events'], ['chapters', 'Chapters'], ['users', 'Users / OCID Access'], ['credentials', 'Credentials / Claims']];
+  return <section aria-labelledby="research-lookup" className="space-y-4"><div><h2 id="research-lookup" className="text-2xl font-black text-oc-ink">Research &amp; Lookup</h2><p className="mt-1 text-sm text-slate-500">Search only the admin-safe records already available to this console.</p></div><div className="flex flex-wrap gap-2" role="tablist" aria-label="Research data type">{tabs.map(([id, label]) => <button key={id} role="tab" aria-selected={activeTab === id} onClick={() => setActiveTab(id)} className={`rounded-lg px-3 py-2 text-xs font-bold ${activeTab === id ? 'bg-oc-blue text-white' : 'border border-oc-periwinkle bg-white text-slate-600'}`}>{label}</button>)}</div><div className="rounded-xl border border-oc-periwinkle/70 bg-white p-5 shadow-oc-sm">{activeTab === 'events' && <LookupRows rows={events.map((event) => ({ title: event.name, detail: `${event.chapter?.name || 'Unknown chapter'} · ${event.status}` }))} />}{activeTab === 'chapters' && <LookupRows rows={chapters.map((chapter) => ({ title: chapter.name, detail: `/${chapter.slug || 'unavailable'} · ${chapter.category || 'Uncategorized'}` }))} />}{activeTab === 'users' && <LookupRows rows={[...admins.map((row) => ({ title: row.ocid, detail: `Admin · ${row.status}` })), ...organizers.map((row) => ({ title: row.ocid, detail: `Organizer · ${row.chapters?.name || row.chapter_id} · ${row.status}` }))]} empty="No admin lookup data available yet." />}{activeTab === 'credentials' && <LimitedState />}</div></section>;
+}
+
+function LookupRows({ rows, empty = 'No records match your search.' }) {
+  if (!rows.length) return <p className="py-8 text-center text-sm text-slate-500" role="status">{empty}</p>;
+  return <div className="divide-y divide-oc-periwinkle/50">{rows.map((row, index) => <div key={`${row.title}-${index}`} className="py-3 first:pt-0 last:pb-0"><p className="text-sm font-bold text-oc-ink">{row.title}</p><p className="mt-1 text-xs text-slate-500">{row.detail}</p></div>)}</div>;
+}
+
+function LimitedState() {
+  return <div className="py-8 text-center" role="status"><p className="text-sm font-bold text-oc-ink">No admin lookup data available yet</p><p className="mt-1 text-xs text-slate-500">Requires admin API support. No credential or claim data is being mocked.</p></div>;
 }
 
 function EventReviewRow({ event, onReview }) {
@@ -302,7 +418,7 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-oc-navy/70 p-0 sm:items-center sm:p-6" onMouseDown={onClose}>
-      <section role="dialog" aria-modal="true" aria-labelledby="event-review-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-md bg-white p-5 sm:rounded-xl sm:p-7 space-y-6 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+      <section role="dialog" aria-modal="true" aria-labelledby="event-review-title" className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-t-xl bg-white p-5 sm:rounded-xl sm:p-7 space-y-6 shadow-oc-lg" onMouseDown={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-start justify-between gap-5 border-b border-oc-periwinkle/70 pb-4">
           <div className="min-w-0">
@@ -347,7 +463,7 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
         {event.description && (
           <div>
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-1.5">Summary</p>
-            <p className="text-xs font-semibold leading-6 text-oc-ink bg-slate-50 border border-slate-200/70 rounded-md p-3.5 whitespace-pre-line">
+            <p className="text-xs font-semibold leading-6 text-oc-ink bg-slate-50 border border-slate-200/70 rounded-lg p-3.5 whitespace-pre-line">
               {event.description}
             </p>
           </div>
@@ -357,7 +473,7 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
         {event.content && (
           <div>
             <p className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-1.5">Full Event Details &amp; Content</p>
-            <div className="text-xs leading-6 text-slate-700 bg-white border border-oc-periwinkle/60 rounded-md p-4 space-y-2 whitespace-pre-line">
+            <div className="text-xs leading-6 text-slate-700 bg-white border border-oc-periwinkle/60 rounded-lg p-4 space-y-2 whitespace-pre-line">
               {event.content}
             </div>
           </div>
@@ -411,7 +527,7 @@ function EventReviewModal({ event, rejection, setRejection, transition, onClose 
                     rows="3"
                     value={rejection.reason}
                     onChange={(e) => setRejection({ ...rejection, reason: e.target.value })}
-                    className="w-full resize-y rounded-md border border-slate-400 px-3 py-2 text-xs focus:border-oc-blue focus:outline-none"
+                    className="w-full resize-y rounded-lg border border-slate-400 px-3 py-2 text-xs focus:border-oc-blue focus:outline-none"
                     placeholder="Provide a clear reason for the organizer..."
                   />
                   <div className="flex flex-wrap gap-2">
@@ -461,9 +577,9 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
           e.preventDefault();
           onGrant();
         }}
-        className="rounded-md bg-oc-navy p-5 space-y-3"
+        className="rounded-xl bg-oc-navy p-5 space-y-3"
       >
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] [&_input]:rounded-md [&_input]:border-0 [&_input]:px-3 [&_input]:py-3 [&_select]:rounded-md [&_select]:border-0 [&_select]:px-3 [&_select]:py-3">
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] [&_input]:rounded-lg [&_input]:border-0 [&_input]:px-3 [&_input]:py-3 [&_select]:rounded-lg [&_select]:border-0 [&_select]:px-3 [&_select]:py-3">
           {fields}
           <button className={`${buttonClass} bg-oc-turquoise px-5 text-oc-ink hover:bg-oc-turquoise/90`}>
             {grantLabel}
@@ -474,7 +590,7 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
       <div
         aria-label={`${title} list`}
         tabIndex="0"
-        className="rounded-lg border border-oc-periwinkle/70 bg-white shadow-oc-sm overflow-hidden"
+        className="rounded-xl border border-oc-periwinkle/70 bg-white shadow-oc-sm overflow-hidden"
       >
         <div className="sticky top-0 z-10 hidden sm:grid sm:grid-cols-[minmax(0,1fr)_130px_180px] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500">
           <span>Identity &amp; Scope</span>
@@ -545,7 +661,7 @@ function DeleteConfirmModal({ target, onConfirm, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl border border-oc-periwinkle/70 space-y-4"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-oc-lg border border-oc-periwinkle/70 space-y-4"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">

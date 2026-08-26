@@ -161,6 +161,17 @@ export async function updateAccessApi(payload) {
   return res.json();
 }
 
+export async function createChapterApi(payload) {
+  const res = await fetch('/api/admin/chapters', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await parseErrorMessage(res, 'Unable to create chapter.'));
+  return res.json();
+}
+
 // ── Registration & Check-in Endpoints ──
 
 export async function registerForEvent(eventId, student) {

@@ -33,7 +33,7 @@ export default async function handler(req, res) {
       const [admins, organizers, chapters] = await Promise.all([
         supabase.from('admin_users').select('ocid, status, created_at').order('created_at'),
         supabase.from('chapter_organizers').select('ocid, chapter_id, status, created_at, chapters(name)').order('created_at'),
-        supabase.from('chapters').select('id, name').order('name'),
+        supabase.from('chapters').select('id, slug, name, ocid, description, category, avatar_gradient, follower_count, created_at').order('name'),
       ]);
       if (admins.error || organizers.error || chapters.error) return res.status(500).json({ error: 'Unable to load access records.' });
       return res.status(200).json({ admins: admins.data || [], organizers: organizers.data || [], chapters: chapters.data || [] });

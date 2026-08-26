@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:student-hub": "node scratch/student-hub-presentation.test.js",
+    "test:admin-console": "node --test scratch/admin-console.test.js",
     "test:organizer-presentation": "node scratch/organizer-presentation.test.js && node --test scratch/organizer-explore-navigation.test.js scratch/event-create.test.js src/lib/organizerEventFilters.test.js",
     "test:claim": "node scratch/test_5_claim_cases.js",
     "test:credential-presentation": "node scratch/credential-presentation.test.js"
