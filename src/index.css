@@ -172,7 +172,7 @@ button:active:not(:disabled), a.btn:active:not(:disabled) {
 }
 .student-header-sticker {
   padding: 0.25rem;
-  filter: drop-shadow(0 6px 10px rgba(7, 9, 77, 0.08));
+  filter: drop-shadow(0 6px 10px rgba(7, 9, 77, 0.06));
 }
 .student-event-card,
 .student-chapter-card,
