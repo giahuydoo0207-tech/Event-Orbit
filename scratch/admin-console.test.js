@@ -55,6 +55,13 @@ test('admin console exposes three focused sections with useful local search', as
   assert.match(source, /Search chapters/);
   assert.match(source, /Search OCID, role, or chapter/);
   assert.match(source, /Credential lookup requires a dedicated admin-safe API\./);
+  assert.match(source, /data-visual-direction="header-b"/);
+  assert.match(source, /data-visual-direction="event-review-g"/);
+  assert.match(source, /data-visual-direction="chapter-management-c"/);
+  assert.match(source, /data-visual-direction="access-control-h"/);
+  assert.match(source, /ACADEMIC GOVERNANCE WORKSPACE/);
+  assert.match(source, /border-t-\[6px\].*border-t-oc-navy/);
+  assert.match(source, /\+ New Chapter/);
   assert.match(source, /createChapterApi/);
   assert.doesNotMatch(source, /rounded-\[(32|36)px\]/);
   assert.doesNotMatch(source, /neon|cosmic|glow/i);

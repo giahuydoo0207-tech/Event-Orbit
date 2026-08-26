@@ -26,6 +26,7 @@ export default function AdminReview() {
   const [sectionSearch, setSectionSearch] = useState({ events: '', chapters: '', access: '' });
   const [eventStatus, setEventStatus] = useState('all');
   const [creatingChapter, setCreatingChapter] = useState(false);
+  const [chapterFormOpen, setChapterFormOpen] = useState(true);
   const [chapterForm, setChapterForm] = useState({ name: '', slug: '', category: '', ocid: '', description: '' });
   const showToast = useToastStore((state) => state.showToast);
 
@@ -154,14 +155,14 @@ export default function AdminReview() {
 
   return (
     <div className="pb-10">
-      <div className="overflow-hidden rounded-xl border border-[#DCE3F5] bg-white shadow-[0_16px_44px_rgba(7,10,63,0.08)]">
-        <header className="grid lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="bg-[linear-gradient(150deg,#070A3F_0%,#081052_100%)] p-6 text-white sm:p-8">
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-oc-turquoise">Academic governance workspace</p>
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Admin Console</h1>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#C7D0EC]">Review event quality, manage chapters, and audit trusted OCID access.</p>
+      <div className="overflow-hidden rounded-xl border border-[#DCE3F5] bg-white shadow-[0_12px_32px_rgba(7,10,63,0.07)]">
+        <header data-visual-direction="header-b" className="border-t-[6px] border-t-oc-navy bg-white px-4 pb-4 pt-5 sm:px-6 sm:pb-5">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#00A9A5]">ACADEMIC GOVERNANCE WORKSPACE</p>
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-oc-ink">Admin Console</h1>
+            <p className="mt-1.5 max-w-2xl text-sm font-medium leading-5 text-[#63708A]">Review event quality, manage chapters, and audit trusted OCID access.</p>
           </div>
-          <dl className="grid grid-cols-3 gap-px bg-[#DCE3F5] lg:self-stretch">
+          <dl className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-[#DCE3F5] bg-[#DCE3F5] gap-px sm:max-w-2xl">
             <SummaryCard label="Pending" value={data.events.filter((event) => event.status === 'pending_review').length} />
             <SummaryCard label="Chapters" value={data.chapters.length} />
             <SummaryCard label="Active access" value={[...data.admins, ...data.organizers].filter((row) => row.status === 'active').length} />
@@ -179,7 +180,7 @@ export default function AdminReview() {
       </nav>
 
       <div className="bg-white p-4 sm:p-6 lg:p-8">
-      {activeSection === 'events' && <section aria-labelledby="event-review" className="space-y-4">
+      {activeSection === 'events' && <section data-visual-direction="event-review-g" aria-labelledby="event-review" className="space-y-3">
         <div>
           <h2 id="event-review" className="text-2xl font-black text-oc-ink">Event Review</h2>
           <p className="mt-1 text-sm text-slate-500">Review active workflow states without changing the event lifecycle.</p>
@@ -211,9 +212,9 @@ export default function AdminReview() {
         </div>
       </section>}
 
-      {activeSection === 'chapters' && <ChapterManagement chapters={filteredChapters} form={chapterForm} setForm={setChapterForm} onSubmit={createChapter} submitting={creatingChapter} search={sectionSearch.chapters} onSearch={(value) => setSectionSearch({ ...sectionSearch, chapters: value })} />}
+      {activeSection === 'chapters' && <ChapterManagement chapters={filteredChapters} form={chapterForm} setForm={setChapterForm} onSubmit={createChapter} submitting={creatingChapter} search={sectionSearch.chapters} onSearch={(value) => setSectionSearch({ ...sectionSearch, chapters: value })} formOpen={chapterFormOpen} onToggleForm={() => setChapterFormOpen((open) => !open)} />}
 
-      {activeSection === 'access' && <section aria-labelledby="access-control" className="space-y-7"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="access-control" className="text-2xl font-black text-oc-ink">Access Control</h2><p className="mt-1 text-sm text-slate-500">Manage verified OCID roles. The server remains the source of truth.</p></div><input type="search" value={sectionSearch.access} onChange={(event) => setSectionSearch({ ...sectionSearch, access: event.target.value })} placeholder="Search OCID, role, or chapter" aria-label="Search OCID access records" className="w-full rounded-lg border border-[#DCE3F5] bg-[#FBFCFF] px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF] sm:max-w-xs" /></div><AccessSection
+      {activeSection === 'access' && <section data-visual-direction="access-control-h" aria-labelledby="access-control" className="space-y-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="access-control" className="text-2xl font-black text-oc-ink">Access Control</h2><p className="mt-1 text-sm text-slate-500">Manage verified OCID roles. The server remains the source of truth.</p></div><input type="search" value={sectionSearch.access} onChange={(event) => setSectionSearch({ ...sectionSearch, access: event.target.value })} placeholder="Search OCID, role, or chapter" aria-label="Search OCID access records" className="w-full rounded-lg border border-[#DCE3F5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF] sm:max-w-xs" /></div><AccessSection
         title="Organizer Access"
         warning={
           activeConflict ? (
@@ -337,27 +338,26 @@ export default function AdminReview() {
 }
 
 function SummaryCard({ label, value }) {
-  return <div className="flex min-h-24 flex-col justify-center bg-white px-3 py-4 text-center"><dt className="text-[10px] font-bold uppercase tracking-wide text-[#63708A]">{label}</dt><dd className="num mt-1 text-2xl font-black text-[#070A3F]">{value}</dd></div>;
+  return <div className="flex min-h-16 flex-col justify-center bg-white px-3 py-2.5 text-center"><dt className="text-[9px] font-bold uppercase tracking-wide text-[#63708A]">{label}</dt><dd className="num mt-0.5 text-xl font-black text-[#070A3F]">{value}</dd></div>;
 }
 
-function ChapterManagement({ chapters, form, setForm, onSubmit, submitting, search, onSearch }) {
+function ChapterManagement({ chapters, form, setForm, onSubmit, submitting, search, onSearch, formOpen, onToggleForm }) {
   const update = (field, value) => setForm({ ...form, [field]: value });
-  return <section aria-labelledby="chapter-management" className="space-y-4">
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 id="chapter-management" className="text-2xl font-black text-oc-ink">Chapter Management</h2><p className="mt-1 text-sm text-slate-500">Create and review trusted campus chapters.</p></div><input type="search" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search chapters" aria-label="Search chapters" className="w-full rounded-lg border border-[#DCE3F5] bg-[#FBFCFF] px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF] sm:max-w-xs" /></div>
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
-      <form onSubmit={onSubmit} className="grid content-start gap-3 rounded-xl border border-[#DCE3F5] bg-[#FBFCFF] p-4 shadow-[0_8px_24px_rgba(7,10,63,0.04)] sm:grid-cols-2 sm:p-5">
+  return <section data-visual-direction="chapter-management-c" aria-labelledby="chapter-management" className="space-y-4">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div><h2 id="chapter-management" className="text-2xl font-black text-oc-ink">Chapter Management</h2><p className="mt-1 text-sm text-slate-500">Create and review trusted campus chapters.</p></div>
+      <div className="flex w-full gap-2 sm:w-auto"><input type="search" value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Search chapters" aria-label="Search chapters" className="min-w-0 flex-1 rounded-lg border border-[#DCE3F5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF] sm:w-64" /><button type="button" onClick={onToggleForm} aria-expanded={formOpen} className="rounded-lg bg-[#1D24FF] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#141BEB]">{formOpen ? 'Close' : '+ New Chapter'}</button></div>
+    </div>
+    {formOpen && <form onSubmit={onSubmit} className="grid gap-3 rounded-xl border border-[#DCE3F5] bg-white p-4 shadow-[0_8px_24px_rgba(7,10,63,0.04)] sm:grid-cols-2 sm:p-5">
+        <div className="sm:col-span-2 flex items-center justify-between border-b border-[#E7EBF7] pb-3"><div><h3 className="text-sm font-black text-oc-ink">Create Chapter</h3><p className="mt-0.5 text-xs text-slate-500">Add a trusted campus organization.</p></div><span className="rounded-full bg-[#EEF1FF] px-2.5 py-1 text-[9px] font-bold uppercase text-[#1D24FF]">Preview: /{form.slug || 'chapter-slug'}</span></div>
         <AdminField label="Chapter name" value={form.name} onChange={(value) => update('name', value)} required />
         <AdminField label="Slug" value={form.slug} onChange={(value) => update('slug', value.toLowerCase().replace(/\s+/g, '-'))} required />
         <AdminField label="Category" value={form.category} onChange={(value) => update('category', value)} required />
         <AdminField label="Chapter OCID" value={form.ocid} onChange={(value) => update('ocid', value)} required />
         <label className="sm:col-span-2"><span className="text-xs font-bold text-oc-ink">Description <span className="font-normal text-slate-400">(optional)</span></span><textarea rows="3" value={form.description} onChange={(event) => update('description', event.target.value)} className="mt-1.5 w-full rounded-lg border border-[#DCE3F5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF]" /></label>
-        <div className="sm:col-span-2"><button disabled={submitting} className="rounded-lg bg-[#1D24FF] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#141BEB]">{submitting ? 'Creating chapter...' : 'Create Chapter'}</button></div>
-      </form>
-      <div className="space-y-3">
-        <div className="rounded-xl bg-[linear-gradient(150deg,#070A3F_0%,#081052_100%)] p-4 text-white"><p className="text-[9px] font-bold uppercase tracking-widest text-oc-turquoise">Chapter preview</p><div className="mt-3 border-l-2 border-oc-turquoise pl-3"><h3 className="text-base font-black">{form.name || 'Chapter name'}</h3><p className="mt-1 text-[11px] text-[#C7D0EC]">/{form.slug || 'chapter-slug'} · {form.category || 'Category'}</p><p className="mt-2 line-clamp-2 text-xs leading-5 text-white/75">{form.description || 'A short chapter description will appear here.'}</p></div></div>
-        <ChapterList rows={chapters} />
-      </div>
-    </div>
+        <div className="sm:col-span-2 flex justify-end gap-2"><button type="button" onClick={onToggleForm} className="rounded-lg px-4 py-2.5 text-xs font-bold text-[#63708A] hover:bg-[#F5F7FF]">Cancel</button><button disabled={submitting} className="rounded-lg bg-[#1D24FF] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#141BEB]">{submitting ? 'Creating chapter...' : 'Create Chapter'}</button></div>
+      </form>}
+    <div><div className="mb-2 flex items-center justify-between"><h3 className="text-sm font-black text-oc-ink">Chapters</h3><span className="text-xs font-semibold text-slate-500">{chapters.length} records</span></div><ChapterList rows={chapters} /></div>
   </section>;
 }
 
@@ -366,7 +366,7 @@ function AdminField({ label, value, onChange, required }) {
 }
 
 function ChapterList({ rows }) {
-  return <div className="rounded-xl border border-[#DCE3F5] bg-white shadow-[0_8px_24px_rgba(7,10,63,0.04)]">{rows.map((chapter) => <article key={chapter.id} className="border-b border-[#E7EBF7] p-3.5 last:border-0"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-black text-oc-ink">{chapter.name}</h3><p className="mt-1 text-xs text-slate-500">/{chapter.slug || 'unavailable'} · {chapter.category || 'Uncategorized'}</p></div><span className="rounded-full bg-[#EEF1FF] px-2 py-1 text-[10px] font-bold text-[#1D24FF]">Chapter</span></div></article>)}{rows.length === 0 && <p className="p-6 text-center text-sm text-slate-500" role="status">No chapters match your search.</p>}</div>;
+  return <div className="overflow-hidden rounded-xl border border-[#DCE3F5] bg-white shadow-[0_8px_24px_rgba(7,10,63,0.04)]"><div className="hidden grid-cols-[minmax(0,1fr)_minmax(7rem,.45fr)_minmax(7rem,.5fr)_minmax(9rem,.65fr)] gap-4 border-b border-[#E7EBF7] bg-[#F7F8FF] px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 md:grid"><span>Chapter</span><span>Slug</span><span>Category</span><span>Chapter OCID</span></div>{rows.map((chapter) => <article key={chapter.id} className="grid gap-1 border-b border-[#E7EBF7] px-4 py-3 last:border-0 md:grid-cols-[minmax(0,1fr)_minmax(7rem,.45fr)_minmax(7rem,.5fr)_minmax(9rem,.65fr)] md:items-center md:gap-4"><h3 className="truncate text-sm font-black text-oc-ink">{chapter.name}</h3><p className="truncate text-xs text-slate-500">/{chapter.slug || 'unavailable'}</p><p className="truncate text-xs font-semibold text-slate-600">{chapter.category || 'Uncategorized'}</p><p className="truncate font-mono text-[11px] text-slate-500">{chapter.ocid || 'Not available'}</p></article>)}{rows.length === 0 && <p className="p-6 text-center text-sm text-slate-500" role="status">No chapters match your search.</p>}</div>;
 }
 
 function EventReviewRow({ event, onReview }) {
@@ -558,7 +558,7 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
           e.preventDefault();
           onGrant();
         }}
-        className="space-y-3 rounded-xl border border-[#DCE3F5] bg-[#FBFCFF] p-4 shadow-[0_8px_24px_rgba(7,10,63,0.04)]"
+        className="space-y-3 rounded-xl border border-[#DCE3F5] bg-white p-4 shadow-[0_8px_24px_rgba(7,10,63,0.04)]"
       >
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] [&_input]:rounded-lg [&_input]:border [&_input]:border-[#DCE3F5] [&_input]:bg-white [&_input]:px-3 [&_input]:py-2.5 [&_select]:rounded-lg [&_select]:border [&_select]:border-[#DCE3F5] [&_select]:bg-white [&_select]:px-3 [&_select]:py-2.5">
           {fields}
@@ -570,31 +570,25 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
       </form>
       <div
         aria-label={`${title} list`}
-        tabIndex="0"
         className="overflow-hidden rounded-xl border border-[#DCE3F5] bg-white shadow-[0_8px_24px_rgba(7,10,63,0.04)]"
       >
-        <div className="sticky top-0 z-10 hidden sm:grid sm:grid-cols-[minmax(0,1fr)_130px_180px] gap-4 border-b border-oc-periwinkle/70 bg-oc-mist px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500">
-          <span>Identity &amp; Scope</span>
-          <span>Status</span>
-          <span className="text-right pr-2">Actions</span>
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(8rem,.6fr)_6rem_7rem_11rem] gap-4 border-b border-[#E7EBF7] bg-[#F7F8FF] px-4 py-2.5 font-mono text-[9px] font-bold uppercase tracking-wider text-slate-500">
+          <span>Identity &amp; Scope</span><span>Chapter</span><span>Status</span><span>Granted on</span><span className="text-right pr-2">Actions</span>
         </div>
         <div className="divide-y divide-[#E7EBF7] px-4">
           {rows.map((row) => (
             <div
               key={row.key}
-              className="grid gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_130px_180px] sm:items-center sm:gap-4"
+              className="grid gap-3 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(8rem,.6fr)_6rem_7rem_11rem] lg:items-center lg:gap-4"
             >
               <div className="min-w-0">
                 <strong className="text-sm font-bold text-oc-ink truncate block">{row.ocid}</strong>
-                <p className="text-xs text-slate-500 truncate">{row.detail}</p>
+                <p className="text-[11px] text-slate-500 truncate">{row.resource === 'admin' ? 'Platform administrator' : 'Organizer access'}</p>
               </div>
-              <div className="min-w-0">
-                <span className={statusClass}>{row.status}</span>
-                <p className="mt-1 text-[11px] text-slate-500 font-mono">
-                  {new Date(row.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center justify-start sm:justify-end gap-2 shrink-0">
+              <p className="truncate text-xs font-semibold text-slate-600">{row.detail}</p>
+              <span className={statusClass}>{row.status}</span>
+              <p className="text-[11px] text-slate-500 font-mono">{new Date(row.created_at).toLocaleDateString()}</p>
+              <div className="flex items-center justify-start lg:justify-end gap-2 shrink-0">
                 <button
                   className={`${buttonClass} w-24 text-center ${
                     row.status === 'active'
@@ -614,7 +608,7 @@ function AccessSection({ title, warning, fields, onGrant, grantLabel, rows, onTo
                     Delete
                   </button>
                 ) : (
-                  <div className="hidden sm:block w-[72px]" aria-hidden="true" />
+                  <div className="hidden lg:block w-[72px]" aria-hidden="true" />
                 )}
               </div>
             </div>
