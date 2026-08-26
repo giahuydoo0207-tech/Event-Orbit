@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { fetchEventBySlug, registerForEvent, checkInStudent, fetchEventAttendees, fetchChapterById } from '../api/mockApi';
 import { useStore } from '../store/useStore';
 import { THEMES } from '../constants/themes';
@@ -10,6 +10,7 @@ import { hasRealTransaction } from '../lib/credentialPresentation';
 
 export function EventDetail() {
   const { slug } = useParams();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const user = useStore((state) => state.user);
 
@@ -33,6 +34,7 @@ export function EventDetail() {
   
   // Canvas refs
   const qrCanvasRef = useRef(null);
+  const isOrganizerExploreDetail = pathname.startsWith('/manage/explore/events/');
 
   // Load Event and Attendees details
   const loadData = async () => {
@@ -204,8 +206,8 @@ export function EventDetail() {
       <NotFoundState
         title="Event not found"
         message="This event may have been removed or the link is incorrect."
-        backTo="/events"
-        backLabel="Browse events"
+        backTo={isOrganizerExploreDetail ? '/manage/explore' : '/events'}
+        backLabel={isOrganizerExploreDetail ? 'Back to Explore Events' : 'Browse events'}
       />
     );
   }
@@ -228,8 +230,8 @@ export function EventDetail() {
     <div className="space-y-8">
       {/* Back link */}
       <div>
-        <Link to="/events" className="text-xs font-bold text-text-secondary hover:text-navy uppercase tracking-wider">
-          &larr; Back to Events
+        <Link to={isOrganizerExploreDetail ? '/manage/explore' : '/events'} className="text-xs font-bold text-text-secondary hover:text-navy uppercase tracking-wider">
+          &larr; {isOrganizerExploreDetail ? 'Back to Explore Events' : 'Back to Events'}
         </Link>
       </div>
 

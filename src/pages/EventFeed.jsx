@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { fetchEvents, fetchChapters, isEventInChapter } from '../api/mockApi';
 import { CategoryIcon } from '../components/CategoryIcon';
 
@@ -12,6 +12,7 @@ const CATEGORIES = [
 ];
 
 export function EventFeed() {
+  const { pathname } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [chapters, setChapters] = useState([]);
@@ -19,6 +20,7 @@ export function EventFeed() {
   const [selectedChapterId, setSelectedChapterId] = useState('');
 
   const activeTag = searchParams.get('tag') || 'All';
+  const isOrganizerExplore = pathname.startsWith('/manage/explore');
 
   useEffect(() => {
     async function load() {
@@ -194,7 +196,7 @@ export function EventFeed() {
             return (
               <Link
                 key={event.id}
-                to={`/e/${event.slug}`}
+                to={isOrganizerExplore ? `/manage/explore/events/${event.slug}` : `/e/${event.slug}`}
                 className="group flex flex-col overflow-hidden rounded-xl border border-oc-periwinkle/60 bg-white shadow-oc-sm transition-colors hover:border-oc-blue/35"
               >
                 {/* Cover Image */}

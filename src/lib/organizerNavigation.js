@@ -9,7 +9,7 @@ export function getOrganizerChapterRedirect(routeChapterId, organizerSession) {
 
 export function isOrganizerNavLinkActive(pathname, linkPath) {
   if (linkPath === '/manage/explore') {
-    return pathname === linkPath;
+    return pathname === linkPath || pathname.startsWith('/manage/explore/');
   }
 
   if (linkPath === '/manage') {

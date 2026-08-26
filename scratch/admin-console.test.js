@@ -29,6 +29,16 @@ test('chapter input is normalized and does not accept unsupported website data',
   assert.throws(() => normalizeChapterInput({ name: 'AI', slug: 'Not valid!', category: 'Tech', ocid: 'ai.edu' }), /slug/i);
 });
 
+test('checked-in Supabase chapter schema matches the consolidated create payload', async () => {
+  const schema = await readFile(new URL('../api/schema.sql', import.meta.url), 'utf8');
+  const chapterTable = schema.slice(schema.indexOf('create table chapters'), schema.indexOf('-- 2.'));
+  for (const column of ['name text not null', 'slug text unique not null', 'category text', 'ocid text unique not null', 'description text']) {
+    assert.match(chapterTable, new RegExp(column.replaceAll(' ', '\\s+')));
+  }
+  assert.match(chapterTable, /avatar_gradient text/);
+  assert.match(chapterTable, /follower_count int default 0/);
+});
+
 test('create chapter endpoint is admin-only and maps duplicate database conflicts', async () => {
   const source = await readFile(new URL('../api/chapters-follow.js', import.meta.url), 'utf8');
   assert.match(source, /action\s*===\s*['"]createChapter['"]/);

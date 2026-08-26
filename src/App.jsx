@@ -81,6 +81,7 @@ function App() {
           >
             <Route path="/manage" element={<ManageHub />} />
             <Route path="/manage/explore" element={<EventFeed />} />
+            <Route path="/manage/explore/events/:slug" element={<EventDetail />} />
             <Route path="/manage/:chapterId" element={<ChapterManage />} />
             <Route path="/manage/:chapterId/events/create" element={<EventCreate />} />
             <Route path="/manage/:chapterId/events/:id" element={<EventManage />} />
