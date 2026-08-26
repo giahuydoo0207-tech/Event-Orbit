@@ -44,13 +44,17 @@ test('create chapter endpoint is admin-only and maps duplicate database conflict
   assert.doesNotMatch(source, /website|domain/i);
 });
 
-test('admin console exposes four sections, useful search, and truthful limited state', async () => {
+test('admin console exposes three focused sections with useful local search', async () => {
   const source = await readFile(new URL('../src/pages/AdminReview.jsx', import.meta.url), 'utf8');
-  for (const section of ['Event Review', 'Chapter Management', 'Research & Lookup', 'Access Control']) {
+  for (const section of ['Event Review', 'Chapter Management', 'Access Control']) {
     assert.match(source, new RegExp(section.replace('&', '\\&')));
   }
-  assert.match(source, /Search events, chapters, OCID access, credentials/);
-  assert.match(source, /No admin lookup data available yet|Requires admin API support/);
+  assert.doesNotMatch(source, /\['research',\s*'Research & Lookup'\]/);
+  assert.doesNotMatch(source, /ResearchLookup|lookupTab|LookupRows/);
+  assert.match(source, /Search events/);
+  assert.match(source, /Search chapters/);
+  assert.match(source, /Search OCID, role, or chapter/);
+  assert.match(source, /Credential lookup requires a dedicated admin-safe API\./);
   assert.match(source, /createChapterApi/);
   assert.doesNotMatch(source, /rounded-\[(32|36)px\]/);
   assert.doesNotMatch(source, /neon|cosmic|glow/i);
