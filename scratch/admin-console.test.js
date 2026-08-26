@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import { normalizeChapterInput } from '../lib/adminChapters.js';
 
 test('chapter input requires all admin-managed identity fields', () => {
@@ -30,13 +30,17 @@ test('chapter input is normalized and does not accept unsupported website data',
 });
 
 test('create chapter endpoint is admin-only and maps duplicate database conflicts', async () => {
-  const source = await readFile(new URL('../api/admin/chapters.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../api/chapters-follow.js', import.meta.url), 'utf8');
+  assert.match(source, /action\s*===\s*['"]createChapter['"]/);
   assert.match(source, /verifySession\(req\)/);
   assert.match(source, /assertAdmin\(session\)/);
   assert.match(source, /status\(session\s*\?\s*403\s*:\s*401\)/);
   assert.match(source, /\.from\('chapters'\)[\s\S]*?\.insert\(/);
   assert.match(source, /23505|duplicate/i);
   assert.match(source, /status\(409\)/);
+  assert.match(source, /\.eq\('slug', chapter\.slug\)\.maybeSingle\(\)/);
+  assert.match(source, /\.eq\('ocid', chapter\.ocid\)\.maybeSingle\(\)/);
+  assert.match(source, /status\(201\)\.json\(\{ chapter: data \}\)/);
   assert.doesNotMatch(source, /website|domain/i);
 });
 
@@ -54,9 +58,34 @@ test('admin console exposes four sections, useful search, and truthful limited s
 
 test('admin client API posts chapter creation with the verified session cookie', async () => {
   const source = await readFile(new URL('../src/api/mockApi.js', import.meta.url), 'utf8');
-  assert.match(source, /fetch\('\/api\/admin\/chapters'/);
+  assert.match(source, /fetch\('\/api\/chapters-follow'/);
   assert.match(source, /method:\s*'POST'/);
   assert.match(source, /credentials:\s*'include'/);
+  assert.match(source, /action:\s*'createChapter'/);
+  assert.match(source, /chapterOcid:/);
+});
+
+test('admin chapter creation is consolidated within the Hobby function limit', async () => {
+  await assert.rejects(access(new URL('../api/admin/chapters.js', import.meta.url)));
+
+  async function countJsFiles(directory) {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const counts = await Promise.all(entries.map((entry) => {
+      const child = new URL(`${entry.name}${entry.isDirectory() ? '/' : ''}`, directory);
+      return entry.isDirectory() ? countJsFiles(child) : Number(entry.isFile() && entry.name.endsWith('.js'));
+    }));
+    return counts.reduce((total, count) => total + count, 0);
+  }
+
+  assert.ok(await countJsFiles(new URL('../api/', import.meta.url)) <= 12);
+});
+
+test('consolidated endpoint preserves follow and unfollow branches', async () => {
+  const source = await readFile(new URL('../api/chapters-follow.js', import.meta.url), 'utf8');
+  assert.match(source, /action\s*===\s*['"]follow['"]/);
+  assert.match(source, /action\s*===\s*['"]unfollow['"]/);
+  assert.match(source, /resolveChapterUuid\(supabase, chapterId\)/);
+  assert.match(source, /onConflict:\s*['"]chapter_id,user_id['"]/);
 });
 
 test('admin route remains permission protected and public event rules remain unchanged', async () => {

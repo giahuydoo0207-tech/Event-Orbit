@@ -1,6 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { verifySession } from '../lib/verifySession.js';
 import { resolveChapterUuid } from '../lib/resolveChapter.js';
+import { AuthorizationError, assertAdmin } from '../lib/authorization.js';
+import { normalizeChapterInput } from '../lib/adminChapters.js';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -70,6 +72,9 @@ export default async function handler(req, res) {
       }
 
       const { chapterId, action } = req.body || {};
+      if (action === 'createChapter') {
+        return createChapter(req, res, session);
+      }
       if (!chapterId || !action) {
         return res.status(400).json({ error: 'Missing chapterId or action.' });
       }
@@ -154,4 +159,44 @@ export default async function handler(req, res) {
     console.error('Chapters Follow API Error:', error);
     return res.status(500).json({ error: error.message || 'Internal Server Error' });
   }
+}
+
+async function createChapter(req, res, session) {
+  try {
+    assertAdmin(session);
+  } catch (error) {
+    if (error instanceof AuthorizationError) {
+      return res.status(session ? 403 : 401).json({ error: error.message });
+    }
+    throw error;
+  }
+
+  let chapter;
+  try {
+    chapter = normalizeChapterInput({ ...req.body, ocid: req.body?.chapterOcid });
+  } catch (error) {
+    return res.status(400).json({ error: error.message });
+  }
+
+  const [slugMatch, ocidMatch] = await Promise.all([
+    supabase.from('chapters').select('id').eq('slug', chapter.slug).maybeSingle(),
+    supabase.from('chapters').select('id').eq('ocid', chapter.ocid).maybeSingle(),
+  ]);
+  if (slugMatch.error || ocidMatch.error) throw slugMatch.error || ocidMatch.error;
+  if (slugMatch.data) return res.status(409).json({ error: 'A chapter with this slug already exists.' });
+  if (ocidMatch.data) return res.status(409).json({ error: 'A chapter with this Chapter OCID already exists.' });
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .insert({ ...chapter, avatar_gradient: 'from-blue-600 to-cyan-600' })
+    .select('id, slug, name, ocid, description, category, avatar_gradient, follower_count, created_at')
+    .single();
+
+  if (error) {
+    if (error.code === '23505' || /duplicate/i.test(error.message || '')) {
+      return res.status(409).json({ error: 'A chapter with this slug or Chapter OCID already exists.' });
+    }
+    throw error;
+  }
+  return res.status(201).json({ chapter: data });
 }
