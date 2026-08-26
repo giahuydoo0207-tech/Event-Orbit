@@ -163,9 +163,9 @@ export default function AdminReview() {
             <p className="mt-1.5 max-w-2xl text-sm font-medium leading-5 text-[#63708A]">Review event quality, manage chapters, and audit trusted OCID access.</p>
           </div>
           <dl className="mt-4 grid grid-cols-3 overflow-hidden rounded-xl border border-[#DCE3F5] bg-[#DCE3F5] gap-px sm:max-w-2xl">
-            <SummaryCard label="Pending" value={data.events.filter((event) => event.status === 'pending_review').length} />
-            <SummaryCard label="Chapters" value={data.chapters.length} />
-            <SummaryCard label="Active access" value={[...data.admins, ...data.organizers].filter((row) => row.status === 'active').length} />
+            <SummaryCard icon="pending" label="Pending" value={data.events.filter((event) => event.status === 'pending_review').length} />
+            <SummaryCard icon="chapters" label="Chapters" value={data.chapters.length} />
+            <SummaryCard icon="access" label="Active access" value={[...data.admins, ...data.organizers].filter((row) => row.status === 'active').length} />
           </dl>
         </header>
 
@@ -185,10 +185,10 @@ export default function AdminReview() {
           <h2 id="event-review" className="text-2xl font-black text-oc-ink">Event Review</h2>
           <p className="mt-1 text-sm text-slate-500">Review active workflow states without changing the event lifecycle.</p>
         </div>
-        <div className="flex flex-col gap-3 rounded-xl border border-[#DCE3F5] bg-[#FBFCFF] p-3 sm:flex-row sm:items-center sm:justify-between">
-          <input type="search" value={sectionSearch.events} onChange={(event) => setSectionSearch({ ...sectionSearch, events: event.target.value })} placeholder="Search events" aria-label="Search events" className="w-full rounded-lg border border-[#DCE3F5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF] sm:max-w-xs" />
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter events by status">
-          {['all', 'pending_review', 'approved', 'published', 'rejected', 'draft'].map((status) => <button key={status} onClick={() => setEventStatus(status)} className={`rounded-lg border px-3 py-2 text-xs font-bold ${eventStatus === status ? 'border-[#1D24FF] bg-[#1D24FF] text-white' : 'border-[#DCE3F5] bg-white text-[#63708A]'}`}>{status === 'all' ? 'All' : status.replaceAll('_', ' ')}</button>)}
+        <div className="space-y-2.5 rounded-xl border border-[#DCE3F5] bg-[#FBFCFF] p-3">
+          <input type="search" value={sectionSearch.events} onChange={(event) => setSectionSearch({ ...sectionSearch, events: event.target.value })} placeholder="Search events" aria-label="Search events" className="w-full rounded-lg border border-[#DCE3F5] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#1D24FF]" />
+          <div className="flex flex-nowrap gap-2 overflow-x-auto pb-0.5" role="group" aria-label="Filter events by status">
+          {['all', 'pending_review', 'approved', 'published', 'rejected', 'draft'].map((status) => <button key={status} onClick={() => setEventStatus(status)} className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold ${eventStatus === status ? 'border-[#1D24FF] bg-[#1D24FF] text-white' : 'border-[#DCE3F5] bg-white text-[#63708A]'}`}>{status === 'all' ? 'All' : status.replaceAll('_', ' ')}</button>)}
           </div>
         </div>
         <div
@@ -337,8 +337,16 @@ export default function AdminReview() {
   );
 }
 
-function SummaryCard({ label, value }) {
-  return <div className="flex min-h-16 flex-col justify-center bg-white px-3 py-2.5 text-center"><dt className="text-[9px] font-bold uppercase tracking-wide text-[#63708A]">{label}</dt><dd className="num mt-0.5 text-xl font-black text-[#070A3F]">{value}</dd></div>;
+function SummaryCard({ icon, label, value }) {
+  return <div className="flex min-h-16 items-center justify-center gap-2 bg-white px-2.5 py-2.5 sm:px-3"><MetricIcon kind={icon} /><div className="min-w-0"><dt className="truncate text-[9px] font-bold uppercase tracking-wide text-[#63708A]">{label}</dt><dd className="num mt-0.5 text-xl font-black leading-none text-[#070A3F]">{value}</dd></div></div>;
+}
+
+function MetricIcon({ kind }) {
+  const iconClass = 'h-4 w-4';
+  const wrapperClass = 'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E8FBFA] text-[#078EAC]';
+  if (kind === 'pending') return <span data-metric-icon="pending" aria-hidden="true" className={wrapperClass}><svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 7.5V12l3 2" /></svg></span>;
+  if (kind === 'chapters') return <span data-metric-icon="chapters" aria-hidden="true" className={wrapperClass}><svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5A2.5 2.5 0 0 1 7.5 3H11v15H7.5A2.5 2.5 0 0 0 5 20.5v-15ZM19 5.5A2.5 2.5 0 0 0 16.5 3H13v15h3.5a2.5 2.5 0 0 1 2.5 2.5v-15Z" /></svg></span>;
+  return <span data-metric-icon="access" aria-hidden="true" className={wrapperClass}><svg className={iconClass} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.5 19a5 5 0 0 1 10 0M16 10a2.5 2.5 0 1 0 0-5M15 14.5a4.5 4.5 0 0 1 5.5 4.5" /></svg></span>;
 }
 
 function ChapterManagement({ chapters, form, setForm, onSubmit, submitting, search, onSearch, formOpen, onToggleForm }) {

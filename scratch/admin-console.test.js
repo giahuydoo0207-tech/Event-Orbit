@@ -61,6 +61,13 @@ test('admin console exposes three focused sections with useful local search', as
   assert.match(source, /data-visual-direction="access-control-h"/);
   assert.match(source, /ACADEMIC GOVERNANCE WORKSPACE/);
   assert.match(source, /border-t-\[6px\].*border-t-oc-navy/);
+  for (const icon of ['pending', 'chapters', 'access']) {
+    assert.match(source, new RegExp(`data-metric-icon="${icon}"`));
+  }
+  assert.match(source, /data-metric-icon="pending"[\s\S]*?aria-hidden="true"/);
+  assert.match(source, /placeholder="Search events"[\s\S]*?aria-label="Filter events by status"/);
+  assert.match(source, /\['all', 'pending_review', 'approved', 'published', 'rejected', 'draft'\]/);
+  assert.match(source, /flex-nowrap[^\"]*overflow-x-auto/);
   assert.match(source, /\+ New Chapter/);
   assert.match(source, /createChapterApi/);
   assert.doesNotMatch(source, /rounded-\[(32|36)px\]/);
