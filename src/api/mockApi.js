@@ -162,11 +162,18 @@ export async function updateAccessApi(payload) {
 }
 
 export async function createChapterApi(payload) {
-  const res = await fetch('/api/admin/chapters', {
+  const res = await fetch('/api/chapters-follow', {
     method: 'POST',
     headers: getAuthHeaders(),
     credentials: 'include',
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      action: 'createChapter',
+      name: payload.name,
+      slug: payload.slug,
+      category: payload.category,
+      chapterOcid: payload.ocid,
+      description: payload.description,
+    }),
   });
   if (!res.ok) throw new Error(await parseErrorMessage(res, 'Unable to create chapter.'));
   return res.json();

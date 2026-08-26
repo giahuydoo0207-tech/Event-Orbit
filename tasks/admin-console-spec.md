@@ -20,7 +20,7 @@ Redesign only `/admin` into a compact academic governance workspace with four in
 ## Functional Requirements
 1. Global search filters the active section without server request spam.
 2. Event Review keeps existing review actions and adds status filters plus searchable event/chapter/status rows.
-3. Chapter Management lists real chapters and creates one through `POST /api/admin/chapters`.
+3. Chapter Management lists real chapters through the existing admin console data and creates one through the consolidated `POST /api/chapters-follow` action `{ action: "createChapter", ... }`.
 4. Create Chapter validates server-side: active admin session, trimmed name, normalized unique slug, required category, required unique chapter OCID, optional description. It returns 201 on success, 400/401/403/409 with stable error messages otherwise.
 5. Research & Lookup has Events, Chapters, Users / OCID Access, Credentials / Claims tabs. Events, chapters, and verified access use current real data. Credentials/claims show a truthful limited state if no safe current API exists.
 6. Access Control preserves current grant/revoke/reactivate/delete behavior and session invalidation.
