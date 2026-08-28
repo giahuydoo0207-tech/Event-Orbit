@@ -227,12 +227,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { eventId, attendees } = req.body || {};
+    const { eventId, attendees, mode, lumaEvent } = req.body || {};
 
-    if (!eventId || !Array.isArray(attendees)) {
+    if (!eventId || (mode === 'luma-preview' ? !lumaEvent : !Array.isArray(attendees))) {
       return res.status(400).json({ error: 'Invalid payload. Event ID and attendees array are required.' });
     }
-    if (attendees.length === 0 || attendees.length > MAX_IMPORT_ROWS) {
+    if (mode !== 'luma-preview' && (attendees.length === 0 || attendees.length > MAX_IMPORT_ROWS)) {
       return res.status(400).json({ error: 'Each import batch must contain between 1 and 500 attendees.' });
     }
 
@@ -276,6 +276,23 @@ export default async function handler(req, res) {
       return res.status(availability.status).json({
         error: availability.message,
         code: availability.code,
+      });
+    }
+
+    if (mode === 'luma-preview') {
+      const lumaAttendees = await fetchLumaGuests(lumaEvent);
+      const previewAttendees = await classifyPreviewAttendees(lumaAttendees, event.id);
+      const summary = previewAttendees.reduce((counts, attendee) => {
+        counts.total += 1;
+        counts[attendee.status] = (counts[attendee.status] || 0) + 1;
+        return counts;
+      }, { total: 0 });
+
+      return res.status(200).json({
+        ok: true,
+        source: 'luma',
+        attendees: previewAttendees,
+        summary
       });
     }
 
